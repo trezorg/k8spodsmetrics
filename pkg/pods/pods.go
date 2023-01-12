@@ -59,31 +59,19 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 			containerResource := ContainerResource{
 				Name: container.Name,
 			}
-			cpuLimit, ok := limits[v1.ResourceCPU]
-			if ok {
-				cpu, ok := cpuLimit.AsInt64()
-				if ok {
-					containerResource.Limits.CPU = cpu
-				}
+			if cpuLimit, ok := limits[v1.ResourceCPU]; ok {
+				containerResource.Limits.CPU = cpuLimit.MilliValue()
 			}
-			memoryLimit, ok := limits[v1.ResourceMemory]
-			if ok {
-				memory, ok := memoryLimit.AsInt64()
-				if ok {
+			if memoryLimit, ok := limits[v1.ResourceMemory]; ok {
+				if memory, ok := memoryLimit.AsInt64(); ok {
 					containerResource.Limits.Memory = memory
 				}
 			}
-			cpuRequest, ok := requests[v1.ResourceCPU]
-			if ok {
-				cpu, ok := cpuRequest.AsInt64()
-				if ok {
-					containerResource.Requests.CPU = cpu
-				}
+			if cpuRequest, ok := requests[v1.ResourceCPU]; ok {
+				containerResource.Requests.CPU = cpuRequest.MilliValue()
 			}
-			memoryRequest, ok := requests[v1.ResourceMemory]
-			if ok {
-				memory, ok := memoryRequest.AsInt64()
-				if ok {
+			if memoryRequest, ok := requests[v1.ResourceMemory]; ok {
+				if memory, ok := memoryRequest.AsInt64(); ok {
 					containerResource.Requests.Memory = memory
 				}
 			}
@@ -93,6 +81,7 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 		sort.Slice(podResource.Containers, func(i, j int) bool {
 			return podResource.Containers[i].Name < podResource.Containers[j].Name
 		})
+		result = append(result, podResource)
 	}
 	return result, nil
 }

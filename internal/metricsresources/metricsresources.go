@@ -11,6 +11,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slog"
 )
 
@@ -23,16 +24,22 @@ const (
 )
 
 var (
-	metricsResourcesTemplate = template.Must(template.New("metricResources").Parse(
-		`Namespace: {{.Namespace}}. Name: {{.Name}}
+	metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Namespace: {{.Namespace}}. Name: {{.Name}}
 Containers:
-  {{ range $index, $container := .PodResource.Containers -}}
+  {{ range $index, $container := .ContainersMetrics -}}
   Name:         {{ $container.Name }}
-  Requests: 	{{ $.ContainerMetricsText $index 0 }}
-  Limits:    	{{ $.ContainerMetricsText $index 1 -}}
+  Requests: 	{{ index $container.MetricsResources 0 }}
+  Limits:    	{{ index $container.MetricsResources 1 }}
   {{ end -}}`))
+	metricsPodsTemplate = template.Must(template.New("metricPods").Parse(`{{ range $index, $pod := . -}}
+{{ $pod }}
+{{ end -}}`))
+	sizes = [...]string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
 )
 
+type Number interface {
+	constraints.Integer | constraints.Float
+}
 type PodMetricsResource struct {
 	pods.PodResource
 	podmetrics.PodMetric
@@ -43,94 +50,132 @@ type MetricsResource struct {
 	MemoryRequest int64
 	CPUMetric     int64
 	MemoryMetric  int64
+	AlertColor    string
+}
+type ContainerMetricsResource struct {
+	Name             string
+	MetricsResources []MetricsResource
 }
 
-func resourceText(metricResource MetricsResource, alertColor string) string {
+func (c ContainerMetricsResource) IsAlerted() bool {
+	for _, m := range c.MetricsResources {
+		if m.CPUAlert() || m.MemoryAlert() {
+			return true
+		}
+	}
+	return false
+}
+
+type ContainerMetricsResources []ContainerMetricsResource
+
+func (c ContainerMetricsResources) IsAlerted() bool {
+	for _, container := range c {
+		if container.IsAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
+func (m MetricsResource) CPUAlert() bool {
+	return m.CPURequest > 0 && m.CPURequest <= m.CPUMetric
+}
+func (m MetricsResource) MemoryAlert() bool {
+	return m.MemoryRequest > 0 && m.MemoryRequest <= m.MemoryMetric
+}
+
+func (metricResource MetricsResource) String() string {
 	cpuStartColor := ""
 	cpuEndColor := ""
-	if metricResource.CPURequest <= metricResource.CPUMetric {
-		cpuStartColor = alertColor
+	if metricResource.CPUAlert() {
+		cpuStartColor = metricResource.AlertColor
 		cpuEndColor = escapes.ColorReset
 	}
 	memoryStartColor := ""
 	memoryEndColor := ""
-	if metricResource.MemoryRequest <= metricResource.MemoryMetric {
-		memoryStartColor = alertColor
+	if metricResource.MemoryAlert() {
+		memoryStartColor = metricResource.AlertColor
 		memoryEndColor = escapes.ColorReset
 	}
 	if metricResource.MemoryMetric == unset && metricResource.CPUMetric == unset {
 		return fmt.Sprintf(
-			"CPU=%d, Memory=%d",
+			"CPU=%d, Memory=%s",
 			metricResource.CPURequest,
-			metricResource.MemoryRequest,
+			humanizeBytes(uint64(metricResource.MemoryRequest)),
 		)
 	}
 	return fmt.Sprintf(
-		"CPU=%d/%s%d%s, Memory=%d/%s%d%s",
+		"CPU=%d/%s%d%s, Memory=%s/%s%s%s",
 		metricResource.CPURequest,
 		cpuStartColor,
 		metricResource.CPUMetric,
 		cpuEndColor,
-		metricResource.MemoryRequest,
+		humanizeBytes(uint64(metricResource.MemoryRequest)),
 		memoryStartColor,
-		metricResource.MemoryMetric,
+		humanizeBytes(uint64(metricResource.MemoryMetric)),
 		memoryEndColor,
 	)
 }
 
-func (r PodMetricsResource) ContainerMetrics(i int, resourceType ResourceType) *MetricsResource {
-	if i >= len(r.PodResource.Containers) {
-		return nil
+func (r PodMetricsResource) ContainersMetrics() ContainerMetricsResources {
+	var containerMetricsResources ContainerMetricsResources
+	alertColors := []string{escapes.TextColorYellow, escapes.TextColorRed}
+	for i, container := range r.PodResource.Containers {
+		containerMetricsResource := ContainerMetricsResource{
+			Name:             container.Name,
+			MetricsResources: make([]MetricsResource, 0, 2),
+		}
+		cpuMetric, memoryMetric := int64(0), int64(0)
+		if i < len(r.PodMetric.Containers) {
+			metrics := r.PodMetric.Containers[i]
+			cpuMetric = metrics.CPU
+			memoryMetric = metrics.Memory
+		} else {
+			cpuMetric = unset
+			memoryMetric = unset
+		}
+		for i, resource := range []pods.Resource{container.Requests, container.Limits} {
+			alertColor := alertColors[i]
+			containerMetricsResource.MetricsResources = append(containerMetricsResource.MetricsResources, MetricsResource{
+				CPURequest:    resource.CPU,
+				MemoryRequest: resource.Memory,
+				CPUMetric:     cpuMetric,
+				MemoryMetric:  memoryMetric,
+				AlertColor:    alertColor,
+			})
+		}
+		containerMetricsResources = append(containerMetricsResources, containerMetricsResource)
 	}
-	container := r.PodResource.Containers[i]
-	var resources pods.Resource
-	switch resourceType {
-	case Requests:
-		resources = container.Requests
-	case Limits:
-		resources = container.Limits
-	default:
-		return nil
-	}
-	cpuMetric, memoryMetric := int64(0), int64(0)
-	if i < len(r.PodMetric.Containers) {
-		metrics := r.PodMetric.Containers[i]
-		cpuMetric = metrics.CPU
-		memoryMetric = metrics.Memory
-	} else {
-		cpuMetric = unset
-		memoryMetric = unset
-	}
-	return &MetricsResource{
-		CPURequest:    resources.CPU,
-		MemoryRequest: resources.Memory,
-		CPUMetric:     cpuMetric,
-		MemoryMetric:  memoryMetric,
-	}
-}
-
-func (r PodMetricsResource) ContainerMetricsText(i int, resourceType ResourceType) string {
-	containerMetrics := r.ContainerMetrics(i, resourceType)
-	if containerMetrics == nil {
-		return ""
-	}
-	alertColor := escapes.TextColorYellow
-	if resourceType == Limits {
-		alertColor = escapes.TextColorRed
-	}
-	return resourceText(*containerMetrics, alertColor)
-
+	return containerMetricsResources
 }
 
 func (r PodMetricsResource) String() string {
 	var buffer bytes.Buffer
-	if err := metricsResourcesTemplate.Execute(&buffer, r); err != nil {
-		return ""
+	if err := metricsPodTemplate.Execute(&buffer, r); err != nil {
+		panic(err)
 	}
 	return buffer.String()
 }
 
 type PodMetricsResourceList []PodMetricsResource
+
+func (rList PodMetricsResourceList) String() string {
+	var buffer bytes.Buffer
+	if err := metricsPodsTemplate.Execute(&buffer, rList); err != nil {
+		panic(err)
+	}
+	return buffer.String()
+}
+
+func (rList PodMetricsResourceList) FilterAlerts() PodMetricsResourceList {
+	var result PodMetricsResourceList
+	for _, pod := range rList {
+		if pod.ContainersMetrics().IsAlerted() {
+			result = append(result, pod)
+		}
+	}
+	return result
+}
 
 func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMetricList) PodMetricsResourceList {
 	podsMap := make(map[pods.NamespaceName]*PodMetricsResource)
@@ -159,4 +204,23 @@ func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMet
 		return podMetricsResourceList[i].Name < podMetricsResourceList[j].Name
 	})
 	return podMetricsResourceList
+}
+
+func humanizeBytes[V Number](s V) string {
+	div := 1024
+
+	sf := float64(s)
+
+	var i int
+	for i = range sizes {
+		t := sf / float64(div)
+		if t < 1 {
+			break
+		}
+		sf = t
+	}
+	if sf-float64(int(sf)) < 0.001 {
+		return fmt.Sprintf("%d%s", int(sf), sizes[i])
+	}
+	return fmt.Sprintf("%0.1f%s", sf, sizes[i])
 }

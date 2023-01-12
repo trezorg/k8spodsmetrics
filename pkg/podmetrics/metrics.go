@@ -46,10 +46,7 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 			containerMetric := ContainerMetric{
 				Name: container.Name,
 			}
-			cpu, ok := container.Usage.Cpu().AsInt64()
-			if ok {
-				containerMetric.CPU = cpu
-			}
+			containerMetric.CPU = container.Usage.Cpu().MilliValue()
 			memory, ok := container.Usage.Memory().AsInt64()
 			if ok {
 				containerMetric.Memory = memory
@@ -59,6 +56,7 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 		sort.Slice(metric.Containers, func(i, j int) bool {
 			return metric.Containers[i].Name < metric.Containers[j].Name
 		})
+		result = append(result, metric)
 	}
 	return result, nil
 }

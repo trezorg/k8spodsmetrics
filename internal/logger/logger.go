@@ -14,31 +14,35 @@ var onceLog sync.Once
 var defaultLogger = "INFO"
 var serviceName = "k8spodmetrics"
 
-func levelToSlogLevel(level string) slog.Level {
+func LevelToSlogLevel(level string) (slog.Level, error) {
 	switch level {
 	case "DEBUG":
-		return slog.LevelDebug
+		return slog.LevelDebug, nil
 	case "INFO":
-		return slog.LevelInfo
+		return slog.LevelInfo, nil
 	case "WARNING", "WARN":
-		return slog.LevelWarn
+		return slog.LevelWarn, nil
 	case "ERROR":
-		return slog.LevelError
+		return slog.LevelError, nil
 	default:
-		panic(fmt.Sprintf("Unknown level: %s", level))
+		return slog.LevelError, fmt.Errorf("Unknown level: %s", level)
 	}
 }
 
 func initLogger(logLevel string) {
+	level, err := LevelToSlogLevel(logLevel)
+	if err != nil {
+		panic(err)
+	}
 	opts := slog.HandlerOptions{
-		Level: levelToSlogLevel(logLevel),
+		Level: level,
 	}
 	jsonHandler := opts.NewJSONHandler(os.Stdout).WithAttrs([]slog.Attr{slog.String("service", serviceName)})
 	log = slog.New(jsonHandler)
 }
 
 // InitLogger initializes logger instance
-func InitLogger(logLevel string, logPrettyPrint bool) {
+func InitLogger(logLevel string) {
 	onceLog.Do(func() {
 		initLogger(logLevel)
 	})
@@ -46,7 +50,7 @@ func InitLogger(logLevel string, logPrettyPrint bool) {
 
 // InitDefaultLogger initializes logger instance
 func InitDefaultLogger() {
-	InitLogger(defaultLogger, true)
+	InitLogger(defaultLogger)
 }
 
 // Info logs a message at level Info
@@ -62,4 +66,8 @@ func Error(message string, err error, args ...any) {
 // Warn logs a message at level Info
 func Warn(message string, args ...any) {
 	log.Warn(message, args...)
+}
+
+func Debug(message string, args ...any) {
+	log.Debug(message, args...)
 }

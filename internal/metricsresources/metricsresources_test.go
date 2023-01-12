@@ -1,6 +1,7 @@
 package metricsresources
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -60,7 +61,7 @@ func TestMergeSameNamespaceAndName(t *testing.T) {
 		require.Len(t, pod.PodResource.Containers, 1)
 		require.Contains(t, pod.String(), "/", pod.String())
 	}
-
+	require.Contains(t, pods.String(), "/", pods.String())
 }
 
 func TestMergeDifferentNamespaceAndName(t *testing.T) {
@@ -72,7 +73,7 @@ func TestMergeDifferentNamespaceAndName(t *testing.T) {
 	for _, pod := range pods {
 		require.NotContains(t, pod.String(), "/", pod.String())
 	}
-
+	require.NotContains(t, pods.String(), "/", pods.String())
 }
 
 func TestStringify(t *testing.T) {
@@ -84,5 +85,26 @@ func TestStringify(t *testing.T) {
 	text := pods[0].String()
 	require.Greater(t, len(text), 0)
 	require.NotContains(t, text, "/", text)
+	require.NotContains(t, pods.String(), "/", pods.String())
+}
+
+func TestHumanizeBytes(t *testing.T) {
+	type check[T Number] struct {
+		val    T
+		result string
+	}
+	var checks = []check[int]{
+		{10, "10B"},
+		{1023, "1023B"},
+		{1025, "1KiB"},
+		{1024*1024, "1MiB"},
+		{1024*1024*6, "6MiB"},
+	}
+
+	for i := range checks {
+		t.Run(fmt.Sprintf("%v", checks[i]), func(t *testing.T) {
+			require.Equal(t, checks[i].result, humanizeBytes(checks[i].val))
+		})
+	}
 
 }

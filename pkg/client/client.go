@@ -1,6 +1,9 @@
 package client
 
 import (
+	"os"
+
+	"github.com/mitchellh/go-homedir"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
@@ -12,7 +15,7 @@ import (
 
 func restConfig(kubeconfigPath string, context string) (*rest.Config, error) {
 	if kubeconfigPath == "" {
-		klog.Warning("Neither --kubeconfig nor --master was specified.  Using the inClusterConfig.  This might not work.")
+		klog.Warning("--kubeconfig was not specified. Using the inClusterConfig.  This might not work.")
 		kubeconfig, err := rest.InClusterConfig()
 		if err == nil {
 			return kubeconfig, nil
@@ -57,4 +60,16 @@ func Clients(kubeconfigPath string, context string) (metricsv1beta1.MetricsV1bet
 		return nil, nil, err
 	}
 	return mc, pc, nil
+}
+
+func FindKubeConfig() (string, error) {
+	env := os.Getenv("KUBECONFIG")
+	if env != "" {
+		return env, nil
+	}
+	path, err := homedir.Expand("~/.kube/config")
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
