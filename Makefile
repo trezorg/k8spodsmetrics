@@ -9,7 +9,7 @@ golangci:
 ifndef HAS_GOLANGCI
 	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
 endif
-	golangci-lint run
+	golangci-lint run --timeout 5m0s
 
 test:
 	go test -v -race -count 1 ./...
