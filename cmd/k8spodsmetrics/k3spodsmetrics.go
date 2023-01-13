@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
@@ -51,7 +50,6 @@ func processK8sMetrics(config metricsresources.Config) error {
 	if config.WatchMetrics {
 		config.Watch(
 			ctx,
-			time.Duration(config.WatchPeriod)*time.Second,
 			func(rList metricsresources.PodMetricsResourceList) { fmt.Println(rList) },
 			func(err error) { logger.Error("", err) },
 		)

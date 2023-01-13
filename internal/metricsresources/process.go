@@ -88,7 +88,7 @@ func (config Config) Request(ctx context.Context) (PodMetricsResourceList, error
 type SuccessFunction func(PodMetricsResourceList)
 type ErrorFunction func(error)
 
-func (config Config) Watch(ctx context.Context, period time.Duration, successFunc SuccessFunction, errorFunc ErrorFunction) {
+func (config Config) Watch(ctx context.Context, successFunc SuccessFunction, errorFunc ErrorFunction) {
 	var err error
 	logger.Debug("Preparing client...")
 	metricsClient, podsClient, err := client.Clients(config.KubeConfig, config.KubeContext)
@@ -96,7 +96,7 @@ func (config Config) Watch(ctx context.Context, period time.Duration, successFun
 		errorFunc(nil)
 		return
 	}
-	ticker := time.NewTicker(period)
+	ticker := time.NewTicker(time.Duration(config.WatchPeriod) * time.Second)
 	defer ticker.Stop()
 
 	p := func() {
