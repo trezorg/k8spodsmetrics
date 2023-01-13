@@ -15,7 +15,7 @@ test:
 	go test -v -race -count 1 ./...
 
 build:
-	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags $(LDFLAGS) -o build/k3spodsmetrics-$(GOOS)-$(GOARCH) ./cmd/k8spodsmetrics
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags $(LDFLAGS) -o build/k8spodsmetrics-$(GOOS)-$(GOARCH) ./cmd/k8spodsmetrics
 
 lint: golangci
 	go vet ./...
