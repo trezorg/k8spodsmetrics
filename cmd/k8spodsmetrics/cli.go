@@ -61,6 +61,20 @@ func processArgs() error {
 			Usage:       "Show only metrics with alert",
 			Destination: &config.OnlyAlert,
 		},
+		&cli.BoolFlag{
+			Name:        "watch",
+			Aliases:     []string{"w"},
+			Value:       false,
+			Usage:       "Watch for metrics for some period",
+			Destination: &config.WatchMetrics,
+		},
+		&cli.UintFlag{
+			Name:        "watch-period",
+			Aliases:     []string{"p"},
+			Value:       5,
+			Usage:       "Watch period",
+			Destination: &config.WatchPeriod,
+		},
 		&cli.StringFlag{
 			Name:        "loglevel",
 			Aliases:     []string{"level"},

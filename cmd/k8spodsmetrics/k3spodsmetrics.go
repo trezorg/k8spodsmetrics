@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
@@ -47,15 +48,23 @@ func processK8sMetrics(config metricsresources.Config) error {
 		}
 	}()
 
-	resources, err := config.Request(ctx)
-	if err != nil {
-		return fmt.Errorf("Cannot get k8s resources: %w", err)
+	if config.WatchMetrics {
+		config.Watch(
+			ctx,
+			time.Duration(config.WatchPeriod)*time.Second,
+			func(rList metricsresources.PodMetricsResourceList) { fmt.Println(rList) },
+			func(err error) { logger.Error("", err) },
+		)
+		return nil
+	} else {
+		resources, err := config.Request(ctx)
+		if err != nil {
+			return fmt.Errorf("Cannot get k8s resources: %w", err)
+		}
+		fmt.Println(resources)
+		return nil
+
 	}
-	if config.OnlyAlert {
-		resources = resources.FilterAlerts()
-	}
-	fmt.Println(resources)
-	return nil
 }
 
 func main() {

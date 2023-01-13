@@ -3,6 +3,7 @@ package metricsresources
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
@@ -14,13 +15,15 @@ import (
 )
 
 type Config struct {
-	KubeConfig  string
-	KubeContext string
-	Namespace   string
-	Label       string
-	LogLevel    string
-	KLogLevel   uint
-	OnlyAlert   bool
+	KubeConfig   string
+	KubeContext  string
+	Namespace    string
+	Label        string
+	LogLevel     string
+	KLogLevel    uint
+	OnlyAlert    bool
+	WatchMetrics bool
+	WatchPeriod  uint
 }
 
 func (config Config) request(ctx context.Context, metricsClient metricsv1beta1.MetricsV1beta1Interface, podsClient corev1.CoreV1Interface) (PodMetricsResourceList, error) {
@@ -66,6 +69,9 @@ func (config Config) request(ctx context.Context, metricsClient metricsv1beta1.M
 	}
 
 	podMetricsResourceList = merge(podsList, metricsList)
+	if config.OnlyAlert {
+		podMetricsResourceList = podMetricsResourceList.FilterAlerts()
+	}
 	return podMetricsResourceList, nil
 }
 
@@ -77,4 +83,40 @@ func (config Config) Request(ctx context.Context) (PodMetricsResourceList, error
 		return nil, err
 	}
 	return config.request(ctx, metricsClient, podsClient)
+}
+
+type SuccessFunction func(PodMetricsResourceList)
+type ErrorFunction func(error)
+
+func (config Config) Watch(ctx context.Context, period time.Duration, successFunc SuccessFunction, errorFunc ErrorFunction) {
+	var err error
+	logger.Debug("Preparing client...")
+	metricsClient, podsClient, err := client.Clients(config.KubeConfig, config.KubeContext)
+	if err != nil {
+		errorFunc(nil)
+		return
+	}
+	ticker := time.NewTicker(period)
+	defer ticker.Stop()
+
+	p := func() {
+		r, err := config.request(ctx, metricsClient, podsClient)
+		if err != nil {
+			errorFunc(err)
+			return
+		}
+		successFunc(r)
+	}
+
+	p()
+
+	for {
+		select {
+		case <-ticker.C:
+			p()
+		case <-ctx.Done():
+			return
+		}
+	}
+
 }
