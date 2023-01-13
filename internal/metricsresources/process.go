@@ -55,7 +55,9 @@ func (config Config) request(ctx context.Context, metricsClient metricsv1beta1.M
 
 	for _, err := range errors {
 		if err != nil {
-			multierror.Append(mErrs, err)
+			if err := multierror.Append(mErrs, err); err != nil {
+				logger.Error("MultiError append error", err)
+			}
 		}
 	}
 
