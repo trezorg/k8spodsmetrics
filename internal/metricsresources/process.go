@@ -70,7 +70,7 @@ func (config Config) request(ctx context.Context, metricsClient metricsv1beta1.M
 
 	podMetricsResourceList = merge(podsList, metricsList)
 	if config.OnlyAlert {
-		podMetricsResourceList = podMetricsResourceList.FilterAlerts()
+		podMetricsResourceList = podMetricsResourceList.filterAlerts()
 	}
 	return podMetricsResourceList, nil
 }
@@ -84,9 +84,6 @@ func (config Config) Request(ctx context.Context) (PodMetricsResourceList, error
 	}
 	return config.request(ctx, metricsClient, podsClient)
 }
-
-type SuccessFunction func(PodMetricsResourceList)
-type ErrorFunction func(error)
 
 func (config Config) Watch(ctx context.Context, successFunc SuccessFunction, errorFunc ErrorFunction) {
 	var err error

@@ -167,7 +167,7 @@ func (rList PodMetricsResourceList) String() string {
 	return buffer.String()
 }
 
-func (rList PodMetricsResourceList) FilterAlerts() PodMetricsResourceList {
+func (rList PodMetricsResourceList) filterAlerts() PodMetricsResourceList {
 	var result PodMetricsResourceList
 	for _, pod := range rList {
 		if pod.ContainersMetrics().IsAlerted() {

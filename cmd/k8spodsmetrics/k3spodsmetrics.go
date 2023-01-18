@@ -50,8 +50,8 @@ func processK8sMetrics(config metricsresources.Config) error {
 	if config.WatchMetrics {
 		config.Watch(
 			ctx,
-			func(rList metricsresources.PodMetricsResourceList) { fmt.Println(rList) },
-			func(err error) { logger.Error("", err) },
+			metricsresources.ScreenSuccessWriter(),
+			metricsresources.ScreenErrorWriter(),
 		)
 		return nil
 	} else {
