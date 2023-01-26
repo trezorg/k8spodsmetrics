@@ -7,12 +7,7 @@ Pods metrics
 Download
 ------------------------------------
 
-    tag_name=$(curl -s https://api.github.com/repos/trezorg/k8spodsmetrics/releases/latest | jq -r '.tag_name')
-    curl --fail-with-body -sL \
-        "https://github.com/trezorg/k8spodsmetrics/releases/download/${tag_name}/k8spodsmetrics-$(go env GOOS)-$(go env GOARCH)" -o \
-        "$(go env GOBIN)/k8spodsmetrics" && \
-        chmod +x "$(go env GOBIN)/k8spodsmetrics" && \
-        "$(go env GOBIN)/k8spodsmetrics" --help
+    curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | sh -s -- -d your_directory
 
 Install
 ------------------------------------
