@@ -15,6 +15,7 @@ func metricsConfigToNodeConfig(config metricsresources.Config) noderesources.Con
 		KubeContext: config.KubeContext,
 		LogLevel:    config.LogLevel,
 		KLogLevel:   config.KLogLevel,
+		OnlyAlert:   config.OnlyAlert,
 	}
 }
 
@@ -55,13 +56,6 @@ func processArgs() error {
 					Value:       "",
 					Usage:       "K8S namespace",
 					Destination: &config.Namespace,
-				},
-				&cli.BoolFlag{
-					Name:        "alerts",
-					Aliases:     []string{"a"},
-					Value:       false,
-					Usage:       "Show only metrics with alert",
-					Destination: &config.OnlyAlert,
 				},
 				&cli.BoolFlag{
 					Name:        "watch",
@@ -115,6 +109,13 @@ func processArgs() error {
 			Value:       3,
 			Usage:       "k8s client log level",
 			Destination: &config.KLogLevel,
+		},
+		&cli.BoolFlag{
+			Name:        "alerts",
+			Aliases:     []string{"a"},
+			Value:       false,
+			Usage:       "Show only metrics with alert",
+			Destination: &config.OnlyAlert,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {

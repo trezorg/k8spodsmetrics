@@ -63,6 +63,20 @@ func (n NodeResource) MemoryTemplate() string {
 	)
 }
 
+func (n NodeResource) IsAlerted() bool {
+	return n.CPU <= n.PodsCPULimit || n.CPU <= n.PodsCPURequest || n.Memory <= n.PodsMemoryLimit || n.Memory <= n.PodsMemoryRequest
+}
+
+func (n NodeResourceList) filterAlerts() NodeResourceList {
+	var result NodeResourceList
+	for _, node := range n {
+		if node.IsAlerted() {
+			result = append(result, node)
+		}
+	}
+	return result
+}
+
 func (n NodeResource) CPUTemplate() string {
 	cpuRequestStartColor := ""
 	cpuRequestEndColor := ""

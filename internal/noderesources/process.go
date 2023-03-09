@@ -17,6 +17,7 @@ type Config struct {
 	KubeContext string
 	LogLevel    string
 	KLogLevel   uint
+	OnlyAlert   bool
 }
 
 func (config Config) request(ctx context.Context, client corev1.CoreV1Interface) (NodeResourceList, error) {
@@ -56,6 +57,9 @@ func (config Config) request(ctx context.Context, client corev1.CoreV1Interface)
 	}
 
 	nodeResources = merge(podsList, nodesList)
+	if config.OnlyAlert {
+		nodeResources = nodeResources.filterAlerts()
+	}
 	return nodeResources, nil
 }
 
