@@ -5,8 +5,18 @@ import (
 
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
+	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/urfave/cli/v2"
 )
+
+func metricsConfigToNodeConfig(config metricsresources.Config) noderesources.Config {
+	return noderesources.Config{
+		KubeConfig:  config.KubeConfig,
+		KubeContext: config.KubeContext,
+		LogLevel:    config.LogLevel,
+		KLogLevel:   config.KLogLevel,
+	}
+}
 
 func processArgs() error {
 
@@ -25,6 +35,58 @@ func processArgs() error {
 	app.Action = func(c *cli.Context) error {
 		return processK8sMetrics(config)
 	}
+	app.Commands = []*cli.Command{{
+		Name:    "summary",
+		Aliases: []string{"s"},
+		Action: func(c *cli.Context) error {
+			return processSummary(metricsConfigToNodeConfig(config))
+		},
+	},
+		{
+			Name:    "pods",
+			Aliases: []string{"p"},
+			Action: func(c *cli.Context) error {
+				return processK8sMetrics(config)
+			},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "namespace",
+					Aliases:     []string{"n"},
+					Value:       "",
+					Usage:       "K8S namespace",
+					Destination: &config.Namespace,
+				},
+				&cli.BoolFlag{
+					Name:        "alerts",
+					Aliases:     []string{"a"},
+					Value:       false,
+					Usage:       "Show only metrics with alert",
+					Destination: &config.OnlyAlert,
+				},
+				&cli.BoolFlag{
+					Name:        "watch",
+					Aliases:     []string{"w"},
+					Value:       false,
+					Usage:       "Watch for metrics for some period",
+					Destination: &config.WatchMetrics,
+				},
+				&cli.UintFlag{
+					Name:        "watch-period",
+					Aliases:     []string{"p"},
+					Value:       5,
+					Usage:       "Watch period",
+					Destination: &config.WatchPeriod,
+				},
+				&cli.StringFlag{
+					Name:        "label",
+					Aliases:     []string{"l"},
+					Value:       "",
+					Usage:       "K8S pod label",
+					Destination: &config.Label,
+				},
+			},
+		},
+	}
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:        "kubeconfig",
@@ -39,41 +101,6 @@ func processArgs() error {
 			Value:       "",
 			Usage:       "K8S config context",
 			Destination: &config.KubeContext,
-		},
-		&cli.StringFlag{
-			Name:        "namespace",
-			Aliases:     []string{"n"},
-			Value:       "",
-			Usage:       "K8S namespace",
-			Destination: &config.Namespace,
-		},
-		&cli.StringFlag{
-			Name:        "label",
-			Aliases:     []string{"l"},
-			Value:       "",
-			Usage:       "K8S pod label",
-			Destination: &config.Label,
-		},
-		&cli.BoolFlag{
-			Name:        "alerts",
-			Aliases:     []string{"a"},
-			Value:       false,
-			Usage:       "Show only metrics with alert",
-			Destination: &config.OnlyAlert,
-		},
-		&cli.BoolFlag{
-			Name:        "watch",
-			Aliases:     []string{"w"},
-			Value:       false,
-			Usage:       "Watch for metrics for some period",
-			Destination: &config.WatchMetrics,
-		},
-		&cli.UintFlag{
-			Name:        "watch-period",
-			Aliases:     []string{"p"},
-			Value:       5,
-			Usage:       "Watch period",
-			Destination: &config.WatchPeriod,
 		},
 		&cli.StringFlag{
 			Name:        "loglevel",

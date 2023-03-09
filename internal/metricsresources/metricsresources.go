@@ -8,14 +8,12 @@ import (
 	"text/template"
 
 	escapes "github.com/snugfox/ansi-escapes"
+	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
-	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slog"
 )
-
-type ResourceType uint
 
 const (
 	Requests ResourceType = iota
@@ -34,28 +32,27 @@ Containers:
 	metricsPodsTemplate = template.Must(template.New("metricPods").Parse(`{{ range $index, $pod := . -}}
 {{ $pod }}
 {{ end -}}`))
-	sizes = [...]string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
 )
 
-type Number interface {
-	constraints.Integer | constraints.Float
-}
-type PodMetricsResource struct {
-	pods.PodResource
-	podmetrics.PodMetric
-}
+type (
+	ResourceType       uint
+	PodMetricsResource struct {
+		pods.PodResource
+		podmetrics.PodMetric
+	}
 
-type MetricsResource struct {
-	CPURequest    int64
-	MemoryRequest int64
-	CPUMetric     int64
-	MemoryMetric  int64
-	AlertColor    string
-}
-type ContainerMetricsResource struct {
-	Name             string
-	MetricsResources []MetricsResource
-}
+	MetricsResource struct {
+		CPURequest    int64
+		MemoryRequest int64
+		CPUMetric     int64
+		MemoryMetric  int64
+		AlertColor    string
+	}
+	ContainerMetricsResource struct {
+		Name             string
+		MetricsResources []MetricsResource
+	}
+)
 
 func (c ContainerMetricsResource) IsAlerted() bool {
 	for _, m := range c.MetricsResources {
@@ -101,7 +98,7 @@ func (metricResource MetricsResource) String() string {
 		return fmt.Sprintf(
 			"CPU=%d, Memory=%s",
 			metricResource.CPURequest,
-			humanizeBytes(uint64(metricResource.MemoryRequest)),
+			humanize.Bytes(metricResource.MemoryRequest),
 		)
 	}
 	return fmt.Sprintf(
@@ -110,9 +107,9 @@ func (metricResource MetricsResource) String() string {
 		cpuStartColor,
 		metricResource.CPUMetric,
 		cpuEndColor,
-		humanizeBytes(uint64(metricResource.MemoryRequest)),
+		humanize.Bytes(metricResource.MemoryRequest),
 		memoryStartColor,
-		humanizeBytes(uint64(metricResource.MemoryMetric)),
+		humanize.Bytes(metricResource.MemoryMetric),
 		memoryEndColor,
 	)
 }
@@ -204,23 +201,4 @@ func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMet
 		return podMetricsResourceList[i].Name < podMetricsResourceList[j].Name
 	})
 	return podMetricsResourceList
-}
-
-func humanizeBytes[V Number](s V) string {
-	div := 1024
-
-	sf := float64(s)
-
-	var i int
-	for i = range sizes {
-		t := sf / float64(div)
-		if t < 1 {
-			break
-		}
-		sf = t
-	}
-	if sf-float64(int(sf)) < 0.001 {
-		return fmt.Sprintf("%d%s", int(sf), sizes[i])
-	}
-	return fmt.Sprintf("%0.1f%s", sf, sizes[i])
 }

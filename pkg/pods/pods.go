@@ -27,6 +27,7 @@ type NamespaceName struct {
 type PodResource struct {
 	NamespaceName
 	Containers []ContainerResource
+	NodeName   string
 }
 
 type PodResourceList []PodResource
@@ -52,6 +53,7 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
 			},
+			NodeName: pod.Spec.NodeName,
 		}
 		for _, container := range pod.Spec.Containers {
 			limits := container.Resources.Limits

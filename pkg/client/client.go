@@ -62,6 +62,18 @@ func Clients(kubeconfigPath string, context string) (metricsv1beta1.MetricsV1bet
 	return mc, pc, nil
 }
 
+func CoreV1Client(kubeconfigPath string, context string) (corev1.CoreV1Interface, error) {
+	config, err := restConfig(kubeconfigPath, context)
+	if err != nil {
+		return nil, err
+	}
+	pc, err := podsClient(config)
+	if err != nil {
+		return nil, err
+	}
+	return pc, nil
+}
+
 func FindKubeConfig() (string, error) {
 	env := os.Getenv("KUBECONFIG")
 	if env != "" {

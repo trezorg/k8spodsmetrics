@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
@@ -89,7 +90,7 @@ func TestStringify(t *testing.T) {
 }
 
 func TestHumanizeBytes(t *testing.T) {
-	type check[T Number] struct {
+	type check[T humanize.Number] struct {
 		val    T
 		result string
 	}
@@ -97,13 +98,13 @@ func TestHumanizeBytes(t *testing.T) {
 		{10, "10B"},
 		{1023, "1023B"},
 		{1025, "1KiB"},
-		{1024*1024, "1MiB"},
-		{1024*1024*6, "6MiB"},
+		{1024 * 1024, "1MiB"},
+		{1024 * 1024 * 6, "6MiB"},
 	}
 
 	for i := range checks {
 		t.Run(fmt.Sprintf("%v", checks[i]), func(t *testing.T) {
-			require.Equal(t, checks[i].result, humanizeBytes(checks[i].val))
+			require.Equal(t, checks[i].result, humanize.Bytes(checks[i].val))
 		})
 	}
 

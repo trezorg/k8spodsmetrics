@@ -58,12 +58,12 @@ func Info(message string, args ...any) {
 	log.Info(message, args...)
 }
 
-// Error logs a message at level Info
+// Error logs a message at level Error
 func Error(message string, err error, args ...any) {
 	log.Error(message, err, args...)
 }
 
-// Warn logs a message at level Info
+// Warn logs a message at level Warn
 func Warn(message string, args ...any) {
 	log.Warn(message, args...)
 }
