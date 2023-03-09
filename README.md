@@ -7,7 +7,8 @@ Pods metrics
 Download
 ------------------------------------
 
-    curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | sh -s -- -d your_directory
+    curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | bash -s -- -d your_directory
+    curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | bash -s
 
 Install
 ------------------------------------

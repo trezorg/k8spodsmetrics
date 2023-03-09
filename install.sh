@@ -1,6 +1,6 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-set -eou pipefail
+set -euo pipefail
 
 function usage() {
     echo "Usage: $0 [ -d directory ]"
@@ -11,6 +11,12 @@ INSTALL_DIR="${HOME}/bin"
 NAME=k8spodsmetrics
 OS=$(uname -o | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
+OS="${OS##*/}"
+
+case "${ARCH}" in
+x86_64) ARCH="amd64" ;;
+arm) ARCH="arm64" ;;
+esac
 
 if which go &>/dev/null; then
     gobin=$(go env GOBIN)
