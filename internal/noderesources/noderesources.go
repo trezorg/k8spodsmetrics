@@ -8,6 +8,7 @@ import (
 	escapes "github.com/snugfox/ansi-escapes"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
+	"github.com/trezorg/k8spodsmetrics/pkg/nodemetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/nodes"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 	"golang.org/x/exp/slog"
@@ -17,6 +18,10 @@ type (
 	NodeResource struct {
 		CPU               int64
 		Memory            int64
+		UsedCPU           int64
+		UsedMemory        int64
+		AllocatableCPU    int64
+		AllocatableMemory int64
 		PodsCPURequest    int64
 		PodsMemoryRequest int64
 		PodsCPULimit      int64
@@ -52,8 +57,9 @@ func (n NodeResource) MemoryTemplate() string {
 		memoryLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=%s, Requests=%s%s%s, Limits=%s%s%s",
+		"Node=%s/%s, Requests=%s%s%s, Limits=%s%s%s",
 		humanize.Bytes(n.Memory),
+		humanize.Bytes(n.UsedMemory),
 		memoryRequestStartColor,
 		humanize.Bytes(n.PodsMemoryRequest),
 		memoryRequestEndColor,
@@ -91,8 +97,9 @@ func (n NodeResource) CPUTemplate() string {
 		cpuLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=%d, Requests=%s%d%s, Limits=%s%d%s",
+		"Node=%d/%d, Requests=%s%d%s, Limits=%s%d%s",
 		n.CPU,
+		n.UsedCPU,
 		cpuRequestStartColor,
 		n.PodsCPURequest,
 		cpuRequestEndColor,
@@ -118,19 +125,22 @@ func (n NodeResourceList) String() string {
 	return buffer.String()
 }
 
-func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList) NodeResourceList {
+func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMetricList nodemetrics.NodeMetricsList) NodeResourceList {
 	nodesMap := make(map[string]*NodeResource)
 	for _, node := range nodeList {
 		nodesMap[node.Name] = &NodeResource{
-			Name:   node.Name,
-			CPU:    node.CPU,
-			Memory: node.Memory,
+			Name:              node.Name,
+			CPU:               node.CPU,
+			Memory:            node.Memory,
+			AllocatableCPU:    node.AllocatableCPU,
+			AllocatableMemory: node.AllocatableMemory,
 		}
 	}
 	for _, pod := range podResourceList {
 		nodeResource, ok := nodesMap[pod.NodeName]
 		if !ok {
 			logger.Warn("Cannot find node", slog.String("node", pod.NodeName))
+			continue
 		}
 		for _, container := range pod.Containers {
 			nodeResource.PodsCPULimit += container.Limits.CPU
@@ -138,6 +148,15 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList) NodeRe
 			nodeResource.PodsMemoryLimit += container.Limits.Memory
 			nodeResource.PodsMemoryRequest += container.Requests.Memory
 		}
+	}
+	for _, metric := range nodeMetricList {
+		nodeResource, ok := nodesMap[metric.Name]
+		if !ok {
+			logger.Warn("Cannot find node", slog.String("node", metric.Name))
+			continue
+		}
+		nodeResource.UsedCPU = metric.CPU
+		nodeResource.UsedMemory = metric.Memory
 	}
 	nodeResourceList := make(NodeResourceList, 0, len(nodesMap))
 	for _, node := range nodesMap {

@@ -26,5 +26,5 @@ func TestStringify(t *testing.T) {
 	nodeResourceList := nodeResourceList("foo")
 	text := nodeResourceList.String()
 	require.Greater(t, len(text), 0)
-	require.NotContains(t, text, "/", text)
+	require.Contains(t, text, "/", text)
 }

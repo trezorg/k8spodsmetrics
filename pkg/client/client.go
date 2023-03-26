@@ -74,6 +74,19 @@ func CoreV1Client(kubeconfigPath string, context string) (corev1.CoreV1Interface
 	return pc, nil
 }
 
+func MetricsClient(kubeconfigPath string, context string) (metricsv1beta1.MetricsV1beta1Interface, error) {
+	config, err := restConfig(kubeconfigPath, context)
+	if err != nil {
+		return nil, err
+	}
+	mc, err := metricsClient(config)
+	if err != nil {
+		return nil, err
+	}
+	return mc, nil
+}
+
+
 func FindKubeConfig() (string, error) {
 	env := os.Getenv("KUBECONFIG")
 	if env != "" {

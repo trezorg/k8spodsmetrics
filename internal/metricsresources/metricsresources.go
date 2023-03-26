@@ -52,6 +52,7 @@ type (
 		Name             string
 		MetricsResources []MetricsResource
 	}
+	ContainerMetricsResources []ContainerMetricsResource
 )
 
 func (c ContainerMetricsResource) IsAlerted() bool {
@@ -62,8 +63,6 @@ func (c ContainerMetricsResource) IsAlerted() bool {
 	}
 	return false
 }
-
-type ContainerMetricsResources []ContainerMetricsResource
 
 func (c ContainerMetricsResources) IsAlerted() bool {
 	for _, container := range c {
