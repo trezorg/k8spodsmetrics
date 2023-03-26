@@ -16,6 +16,7 @@ func metricsConfigToNodeConfig(config metricsresources.Config) noderesources.Con
 		LogLevel:    config.LogLevel,
 		KLogLevel:   config.KLogLevel,
 		OnlyAlert:   config.OnlyAlert,
+		Label:       config.Label,
 	}
 }
 
@@ -41,6 +42,15 @@ func processArgs() error {
 		Aliases: []string{"s"},
 		Action: func(c *cli.Context) error {
 			return processSummary(metricsConfigToNodeConfig(config))
+		},
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "label",
+				Aliases:     []string{"l"},
+				Value:       "",
+				Usage:       "K8S node label",
+				Destination: &config.Label,
+			},
 		},
 	},
 		{

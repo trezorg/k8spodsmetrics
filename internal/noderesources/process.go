@@ -18,6 +18,7 @@ type Config struct {
 	KubeConfig  string
 	KubeContext string
 	LogLevel    string
+	Label       string
 	KLogLevel   uint
 	OnlyAlert   bool
 }
@@ -34,7 +35,7 @@ func (config Config) request(ctx context.Context, client corev1.CoreV1Interface,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nodesList, errors[0] = nodes.Nodes(ctx, client, nodes.NodeFilter{})
+		nodesList, errors[0] = nodes.Nodes(ctx, client, nodes.NodeFilter{LabelSelector: config.Label})
 	}()
 
 	wg.Add(1)
@@ -46,7 +47,7 @@ func (config Config) request(ctx context.Context, client corev1.CoreV1Interface,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nodeMetricsList, errors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{})
+		nodeMetricsList, errors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: config.Label})
 	}()
 
 	wg.Wait()

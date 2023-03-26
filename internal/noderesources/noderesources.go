@@ -139,7 +139,7 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 	for _, pod := range podResourceList {
 		nodeResource, ok := nodesMap[pod.NodeName]
 		if !ok {
-			logger.Warn("Cannot find node", slog.String("node", pod.NodeName))
+			logger.Debug("Cannot find node", slog.String("node", pod.NodeName))
 			continue
 		}
 		for _, container := range pod.Containers {

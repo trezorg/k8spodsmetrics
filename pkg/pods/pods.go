@@ -37,8 +37,7 @@ type PodFilter struct {
 	FieldSelector string
 }
 
-// Pods get pods for MetricFilter
-func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) (PodResourceList, error) {
+func pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeName string) (PodResourceList, error) {
 	var result PodResourceList
 	pods, err := corev1.Pods(filter.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
@@ -48,6 +47,9 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 		return result, err
 	}
 	for _, pod := range pods.Items {
+		if nodeName != "" && nodeName != pod.Spec.NodeName {
+			continue
+		}
 		podResource := PodResource{
 			NamespaceName: NamespaceName{
 				Name:      pod.Name,
@@ -78,7 +80,6 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 				}
 			}
 			podResource.Containers = append(podResource.Containers, containerResource)
-
 		}
 		sort.Slice(podResource.Containers, func(i, j int) bool {
 			return podResource.Containers[i].Name < podResource.Containers[j].Name
@@ -86,4 +87,14 @@ func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) 
 		result = append(result, podResource)
 	}
 	return result, nil
+}
+
+// Pods get pods for MetricFilter
+func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) (PodResourceList, error) {
+	return pods(ctx, corev1, filter, "")
+}
+
+// PodsByNodeName get pods by node label
+func PodsByNodeName(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeLabel string) (PodResourceList, error) {
+	return pods(ctx, corev1, filter, nodeLabel)
 }
