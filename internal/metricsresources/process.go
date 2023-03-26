@@ -49,7 +49,7 @@ func (config Config) request(ctx context.Context, metricsClient metricsv1beta1.M
 		podsList, errors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
 			Namespace:     config.Namespace,
 			LabelSelector: config.Label,
-		})
+		}, "")
 	}()
 
 	wg.Wait()

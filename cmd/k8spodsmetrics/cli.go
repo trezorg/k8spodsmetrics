@@ -41,7 +41,9 @@ func processArgs() error {
 		Name:    "summary",
 		Aliases: []string{"s"},
 		Action: func(c *cli.Context) error {
-			return processSummary(metricsConfigToNodeConfig(config))
+			summaryConfig := metricsConfigToNodeConfig(config)
+			summaryConfig.Name = c.String("name")
+			return processSummary(summaryConfig)
 		},
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -50,6 +52,12 @@ func processArgs() error {
 				Value:       "",
 				Usage:       "K8S node label",
 				Destination: &config.Label,
+			},
+			&cli.StringFlag{
+				Name:    "name",
+				Aliases: []string{"n"},
+				Value:   "",
+				Usage:   "K8S node name",
 			},
 		},
 	},

@@ -89,12 +89,7 @@ func pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, 
 	return result, nil
 }
 
-// Pods get pods for MetricFilter
-func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter) (PodResourceList, error) {
-	return pods(ctx, corev1, filter, "")
-}
-
-// PodsByNodeName get pods by node label
-func PodsByNodeName(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeLabel string) (PodResourceList, error) {
-	return pods(ctx, corev1, filter, nodeLabel)
+// Pods get pods
+func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeName string) (PodResourceList, error) {
+	return pods(ctx, corev1, filter, nodeName)
 }
