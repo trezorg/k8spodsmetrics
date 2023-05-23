@@ -4,6 +4,18 @@ k8spodsmetrics
 Pods metrics
 [![Actions Status]( https://github.com/trezorg/k8spodsmetrics/actions/workflows/go.yml/badge.svg)](https://github.com/trezorg/k8spodsmetrics/actions)
 
+About
+------------------------------------
+
+The utility displays the consumption of memory and CPU, requests and limits in the context of kubernetes containers and nodes.
+Differs from
+
+    kubernetes top pods
+    kubernetes top nodes
+
+in that it adds requests and limits for each container.
+Also shows total requests and limits by nodes.
+
 Download
 ------------------------------------
 
