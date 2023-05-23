@@ -47,7 +47,7 @@ if [ ! -w "${INSTALL_DIR}" ]; then
 fi
 APP_PATH="${INSTALL_DIR}/${NAME}"
 
-echo "Installalling into ${APP_PATH}..."
+echo "Installing into ${APP_PATH}..."
 
 TAG_NAME=$(curl -s https://api.github.com/repos/trezorg/${NAME}/releases/latest | awk -F ':' '/tag_name/ { gsub("[\", ]", "", $2); print $2 }')
 DOWNLOAD_URL="https://github.com/trezorg/${NAME}/releases/download/${TAG_NAME}/${NAME}-${OS}-${ARCH}"
