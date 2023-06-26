@@ -25,7 +25,7 @@ func LevelToSlogLevel(level string) (slog.Level, error) {
 	case "ERROR":
 		return slog.LevelError, nil
 	default:
-		return slog.LevelError, fmt.Errorf("Unknown level: %s", level)
+		return slog.LevelError, fmt.Errorf("unknown level: %s", level)
 	}
 }
 

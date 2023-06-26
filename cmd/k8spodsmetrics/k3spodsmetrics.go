@@ -58,7 +58,7 @@ func processK8sMetrics(config metricsresources.Config) error {
 	} else {
 		resources, err := config.Request(ctx)
 		if err != nil {
-			return fmt.Errorf("Cannot get k8s resources: %w", err)
+			return fmt.Errorf("cannot get k8s resources: %w", err)
 		}
 		fmt.Println(resources)
 		return nil
@@ -96,7 +96,7 @@ func processSummary(config noderesources.Config) error {
 
 	resources, err := config.Request(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot get k8s resources: %w", err)
+		return fmt.Errorf("cannot get k8s resources: %w", err)
 	}
 	fmt.Println(resources)
 	return nil

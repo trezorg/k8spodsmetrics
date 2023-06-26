@@ -22,7 +22,9 @@ const (
 )
 
 var (
-	metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Namespace: {{.Namespace}}. Name: {{.Name}}
+	metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Name:		{{.Name}}
+Namespace:	{{.Namespace}}
+Node:		{{.NodeName}}
 Containers:
   {{ range $index, $container := .ContainersMetrics -}}
   Name:         {{ $container.Name }}
