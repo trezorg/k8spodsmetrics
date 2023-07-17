@@ -86,7 +86,6 @@ func MetricsClient(kubeconfigPath string, context string) (metricsv1beta1.Metric
 	return mc, nil
 }
 
-
 func FindKubeConfig() (string, error) {
 	env := os.Getenv("KUBECONFIG")
 	if env != "" {
