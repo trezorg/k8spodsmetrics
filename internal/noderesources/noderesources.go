@@ -57,7 +57,7 @@ func (n NodeResource) MemoryTemplate() string {
 		memoryLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=%s/%s, Requests=%s%s%s, Limits=%s%s%s",
+		"Node=Available:%s/Consumed:%s, Requests=%s%s%s, Limits=%s%s%s",
 		humanize.Bytes(n.Memory),
 		humanize.Bytes(n.UsedMemory),
 		memoryRequestStartColor,
@@ -97,7 +97,7 @@ func (n NodeResource) CPUTemplate() string {
 		cpuLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=%d/%d, Requests=%s%d%s, Limits=%s%d%s",
+		"Node=Available:%d/Consumed:%d, Requests=%s%d%s, Limits=%s%d%s",
 		n.CPU,
 		n.UsedCPU,
 		cpuRequestStartColor,
