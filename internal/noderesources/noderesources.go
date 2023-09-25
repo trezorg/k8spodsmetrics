@@ -33,10 +33,8 @@ type (
 
 var (
 	nodeTemplate = template.Must(template.New("nodePod").Parse(`Name: {{.Name}}
-Memory:
-{{.MemoryTemplate}}
-CPU:
-{{.CPUTemplate}}
+Memory: {{.MemoryTemplate}}
+CPU: {{.CPUTemplate}}
 `))
 	nodesTemplate = template.Must(template.New("nodesPod").Parse(`{{ range $index, $node := . -}}
 {{ $node }}
@@ -57,7 +55,7 @@ func (n NodeResource) MemoryTemplate() string {
 		memoryLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=Available:%s/Consumed:%s, Requests=%s%s%s, Limits=%s%s%s",
+		"Node=%s/%s, Requests=%s%s%s, Limits=%s%s%s",
 		humanize.Bytes(n.Memory),
 		humanize.Bytes(n.UsedMemory),
 		memoryRequestStartColor,
@@ -97,7 +95,7 @@ func (n NodeResource) CPUTemplate() string {
 		cpuLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
-		"Node=Available:%d/Consumed:%d, Requests=%s%d%s, Limits=%s%d%s",
+		"Node=%d/%d, Requests=%s%d%s, Limits=%s%d%s",
 		n.CPU,
 		n.UsedCPU,
 		cpuRequestStartColor,
