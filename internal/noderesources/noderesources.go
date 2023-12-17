@@ -16,19 +16,22 @@ import (
 
 type (
 	NodeResource struct {
-		CPU               int64
-		Memory            int64
-		UsedCPU           int64
-		UsedMemory        int64
-		AllocatableCPU    int64
-		AllocatableMemory int64
-		PodsCPURequest    int64
-		PodsMemoryRequest int64
-		PodsCPULimit      int64
-		PodsMemoryLimit   int64
-		Name              string
+		CPU               int64  `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+		Memory            int64  `json:"memory,omitempty" yaml:"memory,omitempty"`
+		UsedCPU           int64  `json:"used_cpu,omitempty" yaml:"used_cpu,omitempty"`
+		UsedMemory        int64  `json:"used_memory,omitempty" yaml:"used_memory,omitempty"`
+		AllocatableCPU    int64  `json:"allocatable_cpu,omitempty" yaml:"allocatable_cpu,omitempty"`
+		AllocatableMemory int64  `json:"allocatable_memory,omitempty" yaml:"allocatable_memory,omitempty"`
+		CPURequest        int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
+		MemoryRequest     int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
+		CPULimit          int64  `json:"cpu_limit,omitempty" yaml:"cpu_limit,omitempty"`
+		MemoryLimit       int64  `json:"memory_limit,omitempty" yaml:"memory_limit,omitempty"`
+		Name              string `json:"name,omitempty" yaml:"name,omitempty"`
 	}
-	NodeResourceList []NodeResource
+	NodeResourceList        []NodeResource
+	NodeResourceListEnvelop struct {
+		Items NodeResourceList `json:"items,omitempty" yaml:"items,omitempty"`
+	}
 )
 
 var (
@@ -46,11 +49,11 @@ func (n NodeResource) MemoryTemplate() string {
 	memoryRequestEndColor := ""
 	memoryLimitStartColor := ""
 	memoryLimitEndColor := ""
-	if n.Memory <= n.PodsMemoryRequest {
+	if n.Memory <= n.MemoryRequest {
 		memoryRequestStartColor = escapes.TextColorYellow
 		memoryRequestEndColor = escapes.ColorReset
 	}
-	if n.Memory <= n.PodsMemoryLimit {
+	if n.Memory <= n.MemoryLimit {
 		memoryLimitStartColor = escapes.TextColorRed
 		memoryLimitEndColor = escapes.ColorReset
 	}
@@ -59,16 +62,58 @@ func (n NodeResource) MemoryTemplate() string {
 		humanize.Bytes(n.Memory),
 		humanize.Bytes(n.UsedMemory),
 		memoryRequestStartColor,
-		humanize.Bytes(n.PodsMemoryRequest),
+		humanize.Bytes(n.MemoryRequest),
 		memoryRequestEndColor,
 		memoryLimitStartColor,
-		humanize.Bytes(n.PodsMemoryLimit),
+		humanize.Bytes(n.MemoryLimit),
 		memoryLimitEndColor,
 	)
 }
 
+func (n NodeResource) MemoryRequestString() string {
+	memoryRequestStartColor := ""
+	memoryRequestEndColor := ""
+	if n.Memory <= n.MemoryRequest {
+		memoryRequestStartColor = escapes.TextColorYellow
+		memoryRequestEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		memoryRequestStartColor,
+		humanize.Bytes(n.MemoryRequest),
+		memoryRequestEndColor,
+	)
+}
+
+func (n NodeResource) MemoryLimitString() string {
+	memoryLimitStartColor := ""
+	memoryLimitEndColor := ""
+	if n.Memory <= n.MemoryLimit {
+		memoryLimitStartColor = escapes.TextColorRed
+		memoryLimitEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		memoryLimitStartColor,
+		humanize.Bytes(n.MemoryLimit),
+		memoryLimitEndColor,
+	)
+}
+
+func (n NodeResource) MemoryNodeString() string {
+	return humanize.Bytes(n.Memory)
+}
+
+func (n NodeResource) MemoryNodeUsedString() string {
+	return humanize.Bytes(n.UsedMemory)
+}
+
+func (n NodeResource) MemoryNodeAlocatableString() string {
+	return humanize.Bytes(n.AllocatableMemory)
+}
+
 func (n NodeResource) IsAlerted() bool {
-	return n.CPU <= n.PodsCPULimit || n.CPU <= n.PodsCPURequest || n.Memory <= n.PodsMemoryLimit || n.Memory <= n.PodsMemoryRequest
+	return n.CPU <= n.CPULimit || n.CPU <= n.CPURequest || n.Memory <= n.MemoryLimit || n.Memory <= n.MemoryRequest
 }
 
 func (n NodeResourceList) filterAlerts() NodeResourceList {
@@ -86,11 +131,11 @@ func (n NodeResource) CPUTemplate() string {
 	cpuRequestEndColor := ""
 	cpuLimitStartColor := ""
 	cpuLimitEndColor := ""
-	if n.CPU <= n.PodsCPURequest {
+	if n.CPU <= n.CPURequest {
 		cpuRequestStartColor = escapes.TextColorYellow
 		cpuRequestEndColor = escapes.ColorReset
 	}
-	if n.CPU <= n.PodsCPULimit {
+	if n.CPU <= n.CPULimit {
 		cpuLimitStartColor = escapes.TextColorRed
 		cpuLimitEndColor = escapes.ColorReset
 	}
@@ -99,10 +144,40 @@ func (n NodeResource) CPUTemplate() string {
 		n.CPU,
 		n.UsedCPU,
 		cpuRequestStartColor,
-		n.PodsCPURequest,
+		n.CPURequest,
 		cpuRequestEndColor,
 		cpuLimitStartColor,
-		n.PodsCPULimit,
+		n.CPULimit,
+		cpuLimitEndColor,
+	)
+}
+
+func (n NodeResource) CPURequestString() string {
+	cpuRequestStartColor := ""
+	cpuRequestEndColor := ""
+	if n.CPU <= n.CPURequest {
+		cpuRequestStartColor = escapes.TextColorYellow
+		cpuRequestEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%d%s",
+		cpuRequestStartColor,
+		n.CPURequest,
+		cpuRequestEndColor,
+	)
+}
+
+func (n NodeResource) CPULimitString() string {
+	cpuLimitStartColor := ""
+	cpuLimitEndColor := ""
+	if n.CPU <= n.CPULimit {
+		cpuLimitStartColor = escapes.TextColorRed
+		cpuLimitEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%d%s",
+		cpuLimitStartColor,
+		n.CPULimit,
 		cpuLimitEndColor,
 	)
 }
@@ -141,10 +216,10 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 			continue
 		}
 		for _, container := range pod.Containers {
-			nodeResource.PodsCPULimit += container.Limits.CPU
-			nodeResource.PodsCPURequest += container.Requests.CPU
-			nodeResource.PodsMemoryLimit += container.Limits.Memory
-			nodeResource.PodsMemoryRequest += container.Requests.Memory
+			nodeResource.CPULimit += container.Limits.CPU
+			nodeResource.CPURequest += container.Requests.CPU
+			nodeResource.MemoryLimit += container.Limits.Memory
+			nodeResource.MemoryRequest += container.Requests.Memory
 		}
 	}
 	for _, metric := range nodeMetricList {

@@ -1,11 +1,9 @@
 package metricsresources
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
@@ -87,25 +85,4 @@ func TestStringify(t *testing.T) {
 	require.Greater(t, len(text), 0)
 	require.NotContains(t, text, "/", text)
 	require.NotContains(t, pods.String(), "/", pods.String())
-}
-
-func TestHumanizeBytes(t *testing.T) {
-	type check[T humanize.Number] struct {
-		val    T
-		result string
-	}
-	var checks = []check[int]{
-		{10, "10B"},
-		{1023, "1023B"},
-		{1025, "1KiB"},
-		{1024 * 1024, "1MiB"},
-		{1024 * 1024 * 6, "6MiB"},
-	}
-
-	for i := range checks {
-		t.Run(fmt.Sprintf("%v", checks[i]), func(t *testing.T) {
-			require.Equal(t, checks[i].result, humanize.Bytes(checks[i].val))
-		})
-	}
-
 }

@@ -10,13 +10,13 @@ import (
 func nodeResourceList(name string) NodeResourceList {
 	return []NodeResource{
 		{
-			Name:              name,
-			CPU:               1024,
-			Memory:            1024,
-			PodsCPURequest:    512,
-			PodsMemoryRequest: 512,
-			PodsCPULimit:      512,
-			PodsMemoryLimit:   512,
+			Name:          name,
+			CPU:           1024,
+			Memory:        1024,
+			CPURequest:    512,
+			MemoryRequest: 512,
+			CPULimit:      512,
+			MemoryLimit:   512,
 		},
 	}
 }

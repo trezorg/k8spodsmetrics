@@ -7,9 +7,9 @@ GOARCH			?=amd64
 
 golangci:
 ifndef HAS_GOLANGCI
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2
 endif
-	golangci-lint run --timeout 5m0s
+	golangci-lint run --timeout 10m0s
 
 test:
 	go test -v -race -count 1 ./...

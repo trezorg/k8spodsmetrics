@@ -3,8 +3,6 @@ package nodes
 import (
 	"context"
 
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
-	"golang.org/x/exp/slog"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -52,11 +50,11 @@ func Nodes(ctx context.Context, corev1 corev1.CoreV1Interface, filter NodeFilter
 	for _, node := range nodes.Items {
 		memory, ok := node.Status.Capacity.Memory().AsInt64()
 		if !ok {
-			logger.Warn("Cannot get node status capacity memory", slog.String("node", node.Name))
+			memory = int64(node.Status.Capacity.Memory().AsApproximateFloat64())
 		}
 		allocatableMemory, ok := node.Status.Allocatable.Memory().AsInt64()
 		if !ok {
-			logger.Warn("Cannot get node status allocatable memory", slog.String("node", node.Name))
+			allocatableMemory = int64(node.Status.Allocatable.Memory().AsApproximateFloat64())
 		}
 		nodeResource := Node{
 			Name:              node.Name,

@@ -10,31 +10,33 @@ import (
 )
 
 type Resource struct {
-	CPU    int64
-	Memory int64
+	CPU    int64 `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+	Memory int64 `json:"memory,omitempty" yaml:"memory,omitempty"`
 }
+
 type ContainerResource struct {
-	Name     string
-	Limits   Resource
-	Requests Resource
+	Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
+	Limits   Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
+	Requests Resource `json:"requests,omitempty" yaml:"requests,omitempty"`
 }
 
 type NamespaceName struct {
-	Namespace string
-	Name      string
+	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Name      string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 type PodResource struct {
-	NamespaceName
-	Containers []ContainerResource
-	NodeName   string
+	NamespaceName `json:"namespace_name,omitempty" yaml:"namespace_name,omitempty"`
+	Containers    []ContainerResource `json:"containers,omitempty" yaml:"containers,omitempty"`
+	NodeName      string              `json:"node_name,omitempty" yaml:"node_name,omitempty"`
 }
 
 type PodResourceList []PodResource
+
 type PodFilter struct {
-	Namespace     string
-	LabelSelector string
-	FieldSelector string
+	Namespace     string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	LabelSelector string `json:"label_selector,omitempty" yaml:"label_selector,omitempty"`
+	FieldSelector string `json:"field_selector,omitempty" yaml:"field_selector,omitempty"`
 }
 
 func pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeName string) (PodResourceList, error) {

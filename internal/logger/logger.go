@@ -11,8 +11,10 @@ import (
 var log *slog.Logger
 var onceLog sync.Once
 
-var defaultLogger = "INFO"
-var serviceName = "k8spodmetrics"
+const (
+	defaultLogger = "INFO"
+	serviceName   = "k8spodmetrics"
+)
 
 func LevelToSlogLevel(level string) (slog.Level, error) {
 	switch level {
@@ -37,7 +39,7 @@ func initLogger(logLevel string) {
 	opts := slog.HandlerOptions{
 		Level: level,
 	}
-	jsonHandler := opts.NewJSONHandler(os.Stdout).WithAttrs([]slog.Attr{slog.String("service", serviceName)})
+	jsonHandler := opts.NewJSONHandler(os.Stderr).WithAttrs([]slog.Attr{slog.String("service", serviceName)})
 	log = slog.New(jsonHandler)
 }
 
