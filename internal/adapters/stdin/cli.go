@@ -268,7 +268,7 @@ func Start(version string) error {
 			Name:        "output",
 			Aliases:     []string{"o"},
 			Value:       "string",
-			Usage:       "Output format",
+			Usage:       "Output format. [string|table|json|yaml]",
 			Destination: &config.Output,
 			Action: func(_ *cli.Context, value string) error {
 				if err := output.Valid(output.Output(value)); err != nil {
