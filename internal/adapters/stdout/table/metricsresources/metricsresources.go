@@ -47,7 +47,7 @@ func Print(list metricsresources.PodMetricsResourceList) {
 				"",
 				"",
 				"",
-				metrics[0].Name,
+				metric.Name,
 				metric.Requests.CPURequestString(),
 				metric.Limits.CPURequestString(),
 				metric.CPUUsed(),
