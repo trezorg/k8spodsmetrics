@@ -29,6 +29,8 @@ type Config struct {
 	Label        string
 	LogLevel     string
 	Output       string
+	Sorting      string
+	Reverse      bool
 	KLogLevel    uint
 	OnlyAlert    bool
 	WatchMetrics bool
@@ -84,6 +86,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 	if c.OnlyAlert {
 		podMetricsResourceList = podMetricsResourceList.filterAlerts()
 	}
+	podMetricsResourceList.sort(c.Sorting, c.Reverse)
 	return podMetricsResourceList, nil
 }
 

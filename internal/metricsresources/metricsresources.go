@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"text/template"
 
@@ -323,18 +322,6 @@ func (r PodMetricsResourceList) filterAlerts() PodMetricsResourceList {
 	return result
 }
 
-func (r PodMetricsResourceList) sortByNameSpace() {
-	sort.Slice(r, func(i, j int) bool {
-		if r[i].Namespace < r[j].Namespace {
-			return true
-		}
-		if r[i].Namespace > r[j].Namespace {
-			return false
-		}
-		return r[i].Name < r[j].Name
-	})
-}
-
 func (r PodMetricsResource) toOutput() PodMetricsResourceOutput {
 	containers := r.ContainersMetrics()
 	return PodMetricsResourceOutput{
@@ -398,6 +385,5 @@ func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMet
 	for _, podMetricsResource := range podsMap {
 		podMetricsResourceList = append(podMetricsResourceList, *podMetricsResource)
 	}
-	podMetricsResourceList.sortByNameSpace()
 	return podMetricsResourceList
 }

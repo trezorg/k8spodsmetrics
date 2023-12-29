@@ -29,6 +29,8 @@ type Config struct {
 	Label        string
 	Name         string
 	Output       string
+	Sorting      string
+	Reverse      bool
 	KLogLevel    uint
 	OnlyAlert    bool
 	WatchMetrics bool
@@ -85,6 +87,7 @@ func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metr
 	if c.OnlyAlert {
 		nodeResources = nodeResources.filterAlerts()
 	}
+	nodeResources.sort(c.Sorting, c.Reverse)
 	return nodeResources, nil
 }
 

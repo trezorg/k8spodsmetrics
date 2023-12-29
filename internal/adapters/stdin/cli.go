@@ -1,6 +1,7 @@
 package stdin
 
 import (
+	"fmt"
 	"os"
 
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
@@ -18,6 +19,8 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
+	metricssorting "github.com/trezorg/k8spodsmetrics/internal/sorting/metricsresources"
+	nodesorting "github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
 	"github.com/urfave/cli/v2"
 )
 
@@ -35,12 +38,16 @@ type config struct {
 type podConfig struct {
 	Namespace string
 	Label     string
+	Sorting   string
+	Reverse   bool
 	config
 }
 
 type summaryConfig struct {
-	Name  string
-	Label string
+	Name    string
+	Label   string
+	Sorting string
+	Reverse bool
 	config
 }
 
@@ -52,6 +59,8 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Label:        c.Label,
 		LogLevel:     c.LogLevel,
 		Output:       c.Output,
+		Sorting:      c.Sorting,
+		Reverse:      c.Reverse,
 		KLogLevel:    c.KLogLevel,
 		OnlyAlert:    c.OnlyAlert,
 		WatchMetrics: c.WatchMetrics,
@@ -67,6 +76,8 @@ func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 		Label:        c.Label,
 		Name:         c.Name,
 		Output:       c.Output,
+		Sorting:      c.Sorting,
+		Reverse:      c.Reverse,
 		KLogLevel:    c.KLogLevel,
 		OnlyAlert:    c.OnlyAlert,
 		WatchMetrics: c.WatchMetrics,
@@ -160,6 +171,8 @@ func Start(version string) error {
 			summaryConfig := summaryConfig{config: config}
 			summaryConfig.Name = c.String("name")
 			summaryConfig.Label = c.String("label")
+			summaryConfig.Sorting = c.String("sorting")
+			summaryConfig.Reverse = c.Bool("reverse")
 			config := nodeResourcesConfig(summaryConfig)
 			outputProcessor := summaryOutputProcessor(output.Output(summaryConfig.Output))
 			errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
@@ -181,6 +194,24 @@ func Start(version string) error {
 				Value:   "",
 				Usage:   "K8S node name",
 			},
+			&cli.StringFlag{
+				Name:    "sorting",
+				Aliases: []string{"s"},
+				Value:   "name",
+				Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
+				Action: func(_ *cli.Context, value string) error {
+					if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
+						return err
+					}
+					return nil
+				},
+			},
+			&cli.BoolFlag{
+				Name:    "reverse",
+				Aliases: []string{"r"},
+				Value:   false,
+				Usage:   "Reverse sort",
+			},
 		},
 	},
 		{
@@ -190,6 +221,8 @@ func Start(version string) error {
 				podConfig := podConfig{config: config}
 				podConfig.Namespace = c.String("namespace")
 				podConfig.Label = c.String("label")
+				podConfig.Sorting = c.String("sorting")
+				podConfig.Reverse = c.Bool("reverse")
 				config := metricsResourcesConfig(podConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podConfig.Output))
 				errorProcessor := outputProcessor.(metricsresources.ErrorProcessor)
@@ -210,6 +243,24 @@ func Start(version string) error {
 					Aliases: []string{"l"},
 					Value:   "",
 					Usage:   "K8S pod label",
+				},
+				&cli.StringFlag{
+					Name:    "sorting",
+					Aliases: []string{"s"},
+					Value:   "namespace",
+					Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
+					Action: func(_ *cli.Context, value string) error {
+						if err := metricssorting.Valid(metricssorting.Sorting(value)); err != nil {
+							return err
+						}
+						return nil
+					},
+				},
+				&cli.BoolFlag{
+					Name:    "reverse",
+					Aliases: []string{"r"},
+					Value:   false,
+					Usage:   "Reverse sort",
 				},
 			},
 		},
@@ -268,7 +319,7 @@ func Start(version string) error {
 			Name:        "output",
 			Aliases:     []string{"o"},
 			Value:       "string",
-			Usage:       "Output format. [string|table|json|yaml]",
+			Usage:       fmt.Sprintf("Output format. [%s]", output.StringListDefault()),
 			Destination: &config.Output,
 			Action: func(_ *cli.Context, value string) error {
 				if err := output.Valid(output.Output(value)); err != nil {
