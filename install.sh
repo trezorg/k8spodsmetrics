@@ -3,11 +3,12 @@
 set -euo pipefail
 
 function usage() {
-	echo "Usage: $0 [ -d directory ]"
+	echo "Usage: bash install.sh [ -d directory ] [ -v version ]"
 	exit 2
 }
 
 INSTALL_DIR="${HOME}/bin"
+VERSION=""
 NAME=k8spodsmetrics
 OS=$(uname -o | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
@@ -24,14 +25,15 @@ if which go &>/dev/null; then
 	gopathbin="${gopath}/bin"
 	if [ -n "${gobin}" ] && [ -d "${gobin}" ]; then
 		INSTALL_DIR="${gobin}"
-	elif [ -n "${gopath}" ] && [ -d ${gopathbin} ]; then
+	elif [ -n "${gopath}" ] && [ -d "${gopathbin}" ]; then
 		INSTALL_DIR="${gopathbin}"
 	fi
 fi
 
-while getopts hd: flag; do
+while getopts hv:d: flag; do
 	case "${flag}" in
 	d) INSTALL_DIR=${OPTARG} ;;
+	v) VERSION=${OPTARG} ;;
 	h) usage ;;
 	*) usage ;;
 	esac
@@ -49,10 +51,15 @@ APP_PATH="${INSTALL_DIR}/${NAME}"
 
 echo "Installing into ${APP_PATH}..."
 
-TAG_NAME=$(curl -s https://api.github.com/repos/trezorg/${NAME}/releases/latest | awk -F ':' '/tag_name/ { gsub("[\", ]", "", $2); print $2 }')
-DOWNLOAD_URL="https://github.com/trezorg/${NAME}/releases/download/${TAG_NAME}/${NAME}-${OS}-${ARCH}"
+if [ -z "${VERSION}" ]; then
+    VERSION=$(
+        curl -sSL --fail-with-body https://api.github.com/repos/trezorg/${NAME}/releases/latest | \
+        awk -F ':' '/tag_name/ { gsub("[\", ]", "", $2); print $2 }'
+    )
+fi
+DOWNLOAD_URL="https://github.com/trezorg/${NAME}/releases/download/${VERSION}/${NAME}-${OS}-${ARCH}"
 
-if ! curl --fail-with-body -sL "${DOWNLOAD_URL}" -o "${APP_PATH}"; then
+if ! curl -sSL --fail-with-body "${DOWNLOAD_URL}" -o "${APP_PATH}"; then
 	err=$?
 	echo "Failed to download ${DOWNLOAD_URL} into ${APP_PATH}"
 	exit ${err}
@@ -60,4 +67,3 @@ fi
 
 chmod +x "${APP_PATH}"
 "${NAME}" --help
-echo $?
