@@ -93,8 +93,24 @@ func (c ContainerMetricsResource) IsMemoryAlerted() bool {
 	return c.Limits.MemoryAlert() || c.Requests.MemoryAlert()
 }
 
+func (c ContainerMetricsResource) IsMemoryRequestAlerted() bool {
+	return c.Requests.MemoryAlert()
+}
+
+func (c ContainerMetricsResource) IsMemoryLimitAlerted() bool {
+	return c.Limits.MemoryAlert()
+}
+
 func (c ContainerMetricsResource) IsCPUAlerted() bool {
 	return c.Limits.CPUAlert() || c.Requests.CPUAlert()
+}
+
+func (c ContainerMetricsResource) IsCPURequestAlerted() bool {
+	return c.Requests.CPUAlert()
+}
+
+func (c ContainerMetricsResource) IsCPULimitAlerted() bool {
+	return c.Limits.CPUAlert()
 }
 
 func (c ContainerMetricsResource) IsAlerted() bool {
@@ -142,9 +158,45 @@ func (c ContainerMetricsResources) IsMemoryAlerted() bool {
 	return false
 }
 
+func (c ContainerMetricsResources) IsMemoryRequestAlerted() bool {
+	for _, container := range c {
+		if container.IsMemoryRequestAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContainerMetricsResources) IsMemoryLimitAlerted() bool {
+	for _, container := range c {
+		if container.IsMemoryLimitAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
 func (c ContainerMetricsResources) IsCPUAlerted() bool {
 	for _, container := range c {
 		if container.IsCPUAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContainerMetricsResources) IsCPURequestAlerted() bool {
+	for _, container := range c {
+		if container.IsCPURequestAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContainerMetricsResources) IsCPULimitAlerted() bool {
+	for _, container := range c {
+		if container.IsCPULimitAlerted() {
 			return true
 		}
 	}
@@ -358,8 +410,16 @@ func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsReso
 		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsAlerted() })
 	case alerts.Memory:
 		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsMemoryAlerted() })
+	case alerts.MemoryRequest:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsMemoryRequestAlerted() })
+	case alerts.MemoryLimit:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsMemoryLimitAlerted() })
 	case alerts.CPU:
 		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPUAlerted() })
+	case alerts.CPURequest:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPURequestAlerted() })
+	case alerts.CPULimit:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPULimitAlerted() })
 	default:
 		return r
 	}

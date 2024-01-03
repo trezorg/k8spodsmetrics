@@ -122,8 +122,24 @@ func (n NodeResource) IsMemoryAlerted() bool {
 	return n.Memory <= n.MemoryLimit || n.Memory <= n.MemoryRequest
 }
 
+func (n NodeResource) IsMemoryRequestAlerted() bool {
+	return n.Memory <= n.MemoryRequest
+}
+
+func (n NodeResource) IsMemoryLimitAlerted() bool {
+	return n.Memory <= n.MemoryLimit
+}
+
 func (n NodeResource) IsCPUAlerted() bool {
 	return n.CPU <= n.CPULimit || n.CPU <= n.CPURequest
+}
+
+func (n NodeResource) IsCPURequestAlerted() bool {
+	return n.CPU <= n.CPURequest
+}
+
+func (n NodeResource) IsCPULimitAlerted() bool {
+	return n.CPU <= n.CPULimit
 }
 
 func (n NodeResourceList) filterBy(predicate nodePredicate) NodeResourceList {
@@ -142,8 +158,16 @@ func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
 		return n.filterBy(func(n NodeResource) bool { return n.IsAlerted() })
 	case alerts.Memory:
 		return n.filterBy(func(n NodeResource) bool { return n.IsMemoryAlerted() })
+	case alerts.MemoryRequest:
+		return n.filterBy(func(n NodeResource) bool { return n.IsMemoryRequestAlerted() })
+	case alerts.MemoryLimit:
+		return n.filterBy(func(n NodeResource) bool { return n.IsMemoryLimitAlerted() })
 	case alerts.CPU:
 		return n.filterBy(func(n NodeResource) bool { return n.IsCPUAlerted() })
+	case alerts.CPURequest:
+		return n.filterBy(func(n NodeResource) bool { return n.IsCPURequestAlerted() })
+	case alerts.CPULimit:
+		return n.filterBy(func(n NodeResource) bool { return n.IsCPULimitAlerted() })
 	default:
 		return n
 	}
