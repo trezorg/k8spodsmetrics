@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	escapes "github.com/snugfox/ansi-escapes"
+	alerts "github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
@@ -37,56 +38,67 @@ Containers:
 {{ end -}}`))
 )
 
-type ResourceType uint
+type (
+	ResourceType uint
 
-type PodMetricsResource struct {
-	pods.PodResource
-	podmetrics.PodMetric
+	PodMetricsResource struct {
+		pods.PodResource
+		podmetrics.PodMetric
+	}
+
+	MetricsResource struct {
+		CPURequest    int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
+		MemoryRequest int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
+		CPUUsed       int64  `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
+		MemoryUsed    int64  `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
+		AlertColor    string `json:"-" yaml:"-"`
+	}
+
+	Resource struct {
+		CPU    int64 `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+		Memory int64 `json:"memory,omitempty" yaml:"memory,omitempty"`
+	}
+
+	ContainerMetricsResource struct {
+		Name     string          `json:"name,omitempty" yaml:"name,omitempty"`
+		Limits   MetricsResource `json:"limits,omitempty" yaml:"limits,omitempty"`
+		Requests MetricsResource `json:"requests,omitempty" yaml:"requests,omitempty"`
+	}
+
+	ContainerMetricsResourceOutput struct {
+		Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
+		Limits   Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
+		Requests Resource `json:"requests,omitempty" yaml:"requests,omitempty"`
+		Used     Resource `json:"used,omitempty" yaml:"used,omitempty"`
+	}
+
+	ContainerMetricsResources        []ContainerMetricsResource
+	ContainerMetricsResourcesOutputs []ContainerMetricsResourceOutput
+
+	PodMetricsResourceOutput struct {
+		Name       string                           `json:"name,omitempty" yaml:"name,omitempty"`
+		Namespace  string                           `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+		Node       string                           `json:"node,omitempty" yaml:"node,omitempty"`
+		Containers ContainerMetricsResourcesOutputs `json:"containers,omitempty" yaml:"containers,omitempty"`
+	}
+	PodMetricsResourceListOutput []PodMetricsResourceOutput
+
+	PodMetricsResourceOutputEnvelope struct {
+		Items PodMetricsResourceListOutput `json:"items,omitempty" yaml:"items,omitempty"`
+	}
+	containerMetricsPredicate func(c ContainerMetricsResources) bool
+)
+
+func (c ContainerMetricsResource) IsMemoryAlerted() bool {
+	return c.Limits.MemoryAlert() || c.Requests.MemoryAlert()
 }
 
-type MetricsResource struct {
-	CPURequest    int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
-	MemoryRequest int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
-	CPUUsed       int64  `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
-	MemoryUsed    int64  `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
-	AlertColor    string `json:"-" yaml:"-"`
-}
-
-type Resource struct {
-	CPU    int64 `json:"cpu,omitempty" yaml:"cpu,omitempty"`
-	Memory int64 `json:"memory,omitempty" yaml:"memory,omitempty"`
-}
-
-type ContainerMetricsResource struct {
-	Name     string          `json:"name,omitempty" yaml:"name,omitempty"`
-	Limits   MetricsResource `json:"limits,omitempty" yaml:"limits,omitempty"`
-	Requests MetricsResource `json:"requests,omitempty" yaml:"requests,omitempty"`
-}
-
-type ContainerMetricsResourceOutput struct {
-	Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Limits   Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
-	Requests Resource `json:"requests,omitempty" yaml:"requests,omitempty"`
-	Used     Resource `json:"used,omitempty" yaml:"used,omitempty"`
-}
-
-type ContainerMetricsResources []ContainerMetricsResource
-type ContainerMetricsResourcesOutputs []ContainerMetricsResourceOutput
-
-type PodMetricsResourceOutput struct {
-	Name       string                           `json:"name,omitempty" yaml:"name,omitempty"`
-	Namespace  string                           `json:"namespace,omitempty" yaml:"namespace,omitempty"`
-	Node       string                           `json:"node,omitempty" yaml:"node,omitempty"`
-	Containers ContainerMetricsResourcesOutputs `json:"containers,omitempty" yaml:"containers,omitempty"`
-}
-type PodMetricsResourceListOutput []PodMetricsResourceOutput
-
-type PodMetricsResourceOutputEnvelope struct {
-	Items PodMetricsResourceListOutput `json:"items,omitempty" yaml:"items,omitempty"`
+func (c ContainerMetricsResource) IsCPUAlerted() bool {
+	return c.Limits.CPUAlert() || c.Requests.CPUAlert()
 }
 
 func (c ContainerMetricsResource) IsAlerted() bool {
-	return c.Limits.CPUAlert() || c.Limits.MemoryAlert() || c.Requests.CPUAlert() || c.Requests.MemoryAlert()
+	return c.IsMemoryAlerted() || c.IsCPUAlerted()
 }
 
 func (c ContainerMetricsResource) MemoryUsed() string {
@@ -119,6 +131,24 @@ func (c ContainerMetricsResource) toOutput() ContainerMetricsResourceOutput {
 			Memory: c.Requests.MemoryUsed,
 		},
 	}
+}
+
+func (c ContainerMetricsResources) IsMemoryAlerted() bool {
+	for _, container := range c {
+		if container.IsMemoryAlerted() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c ContainerMetricsResources) IsCPUAlerted() bool {
+	for _, container := range c {
+		if container.IsCPUAlerted() {
+			return true
+		}
+	}
+	return false
 }
 
 func (c ContainerMetricsResources) IsAlerted() bool {
@@ -312,14 +342,27 @@ func (r PodMetricsResourceList) String() string {
 	return buffer.String()
 }
 
-func (r PodMetricsResourceList) filterAlerts() PodMetricsResourceList {
+func (r PodMetricsResourceList) filterBy(predicate containerMetricsPredicate) PodMetricsResourceList {
 	var result PodMetricsResourceList
 	for _, pod := range r {
-		if pod.ContainersMetrics().IsAlerted() {
+		if predicate(pod.ContainersMetrics()) {
 			result = append(result, pod)
 		}
 	}
 	return result
+}
+
+func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsResourceList {
+	switch alert {
+	case alerts.Any:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsAlerted() })
+	case alerts.Memory:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsMemoryAlerted() })
+	case alerts.CPU:
+		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPUAlerted() })
+	default:
+		return r
+	}
 }
 
 func (r PodMetricsResource) toOutput() PodMetricsResourceOutput {

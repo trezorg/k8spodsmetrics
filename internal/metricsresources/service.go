@@ -13,6 +13,7 @@ import (
 
 	"errors"
 
+	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
@@ -32,7 +33,7 @@ type Config struct {
 	Sorting      string
 	Reverse      bool
 	KLogLevel    uint
-	OnlyAlert    bool
+	Alert        string
 	WatchMetrics bool
 	WatchPeriod  uint
 }
@@ -83,9 +84,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 	}
 
 	podMetricsResourceList = merge(podsList, metricsList)
-	if c.OnlyAlert {
-		podMetricsResourceList = podMetricsResourceList.filterAlerts()
-	}
+	podMetricsResourceList = podMetricsResourceList.filterByAlert(alert.Alert(c.Alert))
 	podMetricsResourceList.sort(c.Sorting, c.Reverse)
 	return podMetricsResourceList, nil
 }

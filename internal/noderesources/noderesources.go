@@ -6,6 +6,7 @@ import (
 	"html/template"
 
 	escapes "github.com/snugfox/ansi-escapes"
+	alerts "github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/nodemetrics"
@@ -32,6 +33,7 @@ type (
 	NodeResourceListEnvelop struct {
 		Items NodeResourceList `json:"items,omitempty" yaml:"items,omitempty"`
 	}
+	nodePredicate func(n NodeResource) bool
 )
 
 var (
@@ -113,17 +115,38 @@ func (n NodeResource) MemoryNodeAlocatableString() string {
 }
 
 func (n NodeResource) IsAlerted() bool {
-	return n.CPU <= n.CPULimit || n.CPU <= n.CPURequest || n.Memory <= n.MemoryLimit || n.Memory <= n.MemoryRequest
+	return n.IsCPUAlerted() || n.IsMemoryAlerted()
 }
 
-func (n NodeResourceList) filterAlerts() NodeResourceList {
+func (n NodeResource) IsMemoryAlerted() bool {
+	return n.Memory <= n.MemoryLimit || n.Memory <= n.MemoryRequest
+}
+
+func (n NodeResource) IsCPUAlerted() bool {
+	return n.CPU <= n.CPULimit || n.CPU <= n.CPURequest
+}
+
+func (n NodeResourceList) filterBy(predicate nodePredicate) NodeResourceList {
 	var result NodeResourceList
 	for _, node := range n {
-		if node.IsAlerted() {
+		if predicate(node) {
 			result = append(result, node)
 		}
 	}
 	return result
+}
+
+func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
+	switch alert {
+	case alerts.Any:
+		return n.filterBy(func(n NodeResource) bool { return n.IsAlerted() })
+	case alerts.Memory:
+		return n.filterBy(func(n NodeResource) bool { return n.IsMemoryAlerted() })
+	case alerts.CPU:
+		return n.filterBy(func(n NodeResource) bool { return n.IsCPUAlerted() })
+	default:
+		return n
+	}
 }
 
 func (n NodeResource) CPUTemplate() string {

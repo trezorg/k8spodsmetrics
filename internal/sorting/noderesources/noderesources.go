@@ -35,7 +35,7 @@ var choices = []Sorting{
 
 func Valid(o Sorting) error {
 	if !slices.Contains(choices, o) {
-		return fmt.Errorf("Sorting should be one of: %s", StringList(", "))
+		return fmt.Errorf("sorting should be one of: %s", StringList(", "))
 	}
 	return nil
 }

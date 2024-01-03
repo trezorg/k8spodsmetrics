@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	"github.com/trezorg/k8spodsmetrics/pkg/nodemetrics"
@@ -32,7 +33,7 @@ type Config struct {
 	Sorting      string
 	Reverse      bool
 	KLogLevel    uint
-	OnlyAlert    bool
+	Alert        string
 	WatchMetrics bool
 	WatchPeriod  uint
 }
@@ -84,9 +85,7 @@ func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metr
 	}
 
 	nodeResources = merge(podsList, nodesList, nodeMetricsList)
-	if c.OnlyAlert {
-		nodeResources = nodeResources.filterAlerts()
-	}
+	nodeResources = nodeResources.filterByAlert(alert.Alert(c.Alert))
 	nodeResources.sort(c.Sorting, c.Reverse)
 	return nodeResources, nil
 }

@@ -1,4 +1,4 @@
-package output
+package alert
 
 import (
 	"fmt"
@@ -6,21 +6,21 @@ import (
 	"strings"
 )
 
-type Output string
+type Alert string
 
 const (
-	Table            Output = "table"
-	Json             Output = "json"
-	String           Output = "string"
-	Yaml             Output = "yaml"
+	Any              Alert  = "any"
+	Memory           Alert  = "memory"
+	CPU              Alert  = "cpu"
+	None             Alert  = "none"
 	defaultSeparator string = "|"
 )
 
-var choices = []Output{Table, Json, String, Yaml}
+var choices = []Alert{Any, Memory, CPU, None}
 
-func Valid(o Output) error {
+func Valid(o Alert) error {
 	if !slices.Contains(choices, o) {
-		return fmt.Errorf("output should be one of: %#v", choices)
+		return fmt.Errorf("alert should be one of: %#v", choices)
 	}
 	return nil
 }

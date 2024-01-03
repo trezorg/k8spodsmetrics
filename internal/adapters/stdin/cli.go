@@ -9,6 +9,7 @@ import (
 	metricsstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
+	"github.com/trezorg/k8spodsmetrics/internal/alert"
 
 	nodesjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/noderesources"
 	nodesscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/noderesources"
@@ -30,7 +31,7 @@ type config struct {
 	LogLevel     string
 	Output       string
 	KLogLevel    uint
-	OnlyAlert    bool
+	Alert        string
 	WatchMetrics bool
 	WatchPeriod  uint
 }
@@ -62,7 +63,7 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Sorting:      c.Sorting,
 		Reverse:      c.Reverse,
 		KLogLevel:    c.KLogLevel,
-		OnlyAlert:    c.OnlyAlert,
+		Alert:        c.Alert,
 		WatchMetrics: c.WatchMetrics,
 		WatchPeriod:  c.WatchPeriod,
 	}
@@ -79,7 +80,7 @@ func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 		Sorting:      c.Sorting,
 		Reverse:      c.Reverse,
 		KLogLevel:    c.KLogLevel,
-		OnlyAlert:    c.OnlyAlert,
+		Alert:        c.Alert,
 		WatchMetrics: c.WatchMetrics,
 		WatchPeriod:  c.WatchPeriod,
 	}
@@ -294,12 +295,19 @@ func Start(version string) error {
 			Usage:       "k8s client log level",
 			Destination: &config.KLogLevel,
 		},
-		&cli.BoolFlag{
+		&cli.StringFlag{
 			Name:        "alerts",
 			Aliases:     []string{"a"},
-			Value:       false,
-			Usage:       "Show only metrics with alert",
-			Destination: &config.OnlyAlert,
+			Value:       string(alert.None),
+			Usage:       fmt.Sprintf("Alert format. [%s]", alert.StringListDefault()),
+			Destination: &config.Alert,
+			Action: func(_ *cli.Context, value string) error {
+				if err := alert.Valid(alert.Alert(value)); err != nil {
+					return err
+				}
+				config.Alert = value
+				return nil
+			},
 		},
 		&cli.BoolFlag{
 			Name:        "watch",
@@ -318,7 +326,7 @@ func Start(version string) error {
 		&cli.StringFlag{
 			Name:        "output",
 			Aliases:     []string{"o"},
-			Value:       "string",
+			Value:       string(output.String),
 			Usage:       fmt.Sprintf("Output format. [%s]", output.StringListDefault()),
 			Destination: &config.Output,
 			Action: func(_ *cli.Context, value string) error {
