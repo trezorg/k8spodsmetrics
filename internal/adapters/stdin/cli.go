@@ -30,26 +30,26 @@ type config struct {
 	KubeContext  string
 	LogLevel     string
 	Output       string
-	KLogLevel    uint
 	Alert        string
-	WatchMetrics bool
+	KLogLevel    uint
 	WatchPeriod  uint
+	WatchMetrics bool
 }
 
 type podConfig struct {
 	Namespace string
 	Label     string
 	Sorting   string
-	Reverse   bool
 	config
+	Reverse bool
 }
 
 type summaryConfig struct {
 	Name    string
 	Label   string
 	Sorting string
-	Reverse bool
 	config
+	Reverse bool
 }
 
 func metricsResourcesConfig(c podConfig) metricsresources.Config {
@@ -149,7 +149,6 @@ func podsWatch(processor PodsWatcher, successProcessor metricsresources.SuccessP
 }
 
 func Start(version string) error {
-
 	config := config{}
 
 	app := cli.NewApp()
@@ -165,56 +164,57 @@ func Start(version string) error {
 	app.Action = func(c *cli.Context) error {
 		return nil
 	}
-	app.Commands = []*cli.Command{{
-		Name:    "summary",
-		Aliases: []string{"s"},
-		Action: func(c *cli.Context) error {
-			summaryConfig := summaryConfig{config: config}
-			summaryConfig.Name = c.String("name")
-			summaryConfig.Label = c.String("label")
-			summaryConfig.Sorting = c.String("sorting")
-			summaryConfig.Reverse = c.Bool("reverse")
-			config := nodeResourcesConfig(summaryConfig)
-			outputProcessor := summaryOutputProcessor(output.Output(summaryConfig.Output))
-			errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
-			if summaryConfig.WatchMetrics {
-				return summaryWatch(config, outputProcessor, errorProcessor)
-			}
-			return summary(config, outputProcessor)
-		},
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "label",
-				Aliases: []string{"l"},
-				Value:   "",
-				Usage:   "K8S node label",
+	app.Commands = []*cli.Command{
+		{
+			Name:    "summary",
+			Aliases: []string{"s"},
+			Action: func(c *cli.Context) error {
+				summaryConfig := summaryConfig{config: config}
+				summaryConfig.Name = c.String("name")
+				summaryConfig.Label = c.String("label")
+				summaryConfig.Sorting = c.String("sorting")
+				summaryConfig.Reverse = c.Bool("reverse")
+				config := nodeResourcesConfig(summaryConfig)
+				outputProcessor := summaryOutputProcessor(output.Output(summaryConfig.Output))
+				errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
+				if summaryConfig.WatchMetrics {
+					return summaryWatch(config, outputProcessor, errorProcessor)
+				}
+				return summary(config, outputProcessor)
 			},
-			&cli.StringFlag{
-				Name:    "name",
-				Aliases: []string{"n"},
-				Value:   "",
-				Usage:   "K8S node name",
-			},
-			&cli.StringFlag{
-				Name:    "sorting",
-				Aliases: []string{"s"},
-				Value:   "name",
-				Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
-				Action: func(_ *cli.Context, value string) error {
-					if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
-						return err
-					}
-					return nil
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "label",
+					Aliases: []string{"l"},
+					Value:   "",
+					Usage:   "K8S node label",
+				},
+				&cli.StringFlag{
+					Name:    "name",
+					Aliases: []string{"n"},
+					Value:   "",
+					Usage:   "K8S node name",
+				},
+				&cli.StringFlag{
+					Name:    "sorting",
+					Aliases: []string{"s"},
+					Value:   "name",
+					Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
+					Action: func(_ *cli.Context, value string) error {
+						if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
+							return err
+						}
+						return nil
+					},
+				},
+				&cli.BoolFlag{
+					Name:    "reverse",
+					Aliases: []string{"r"},
+					Value:   false,
+					Usage:   "Reverse sort",
 				},
 			},
-			&cli.BoolFlag{
-				Name:    "reverse",
-				Aliases: []string{"r"},
-				Value:   false,
-				Usage:   "Reverse sort",
-			},
 		},
-	},
 		{
 			Name:    "pods",
 			Aliases: []string{"p"},

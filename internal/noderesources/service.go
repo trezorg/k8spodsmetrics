@@ -31,16 +31,16 @@ type Config struct {
 	Name         string
 	Output       string
 	Sorting      string
-	Reverse      bool
-	KLogLevel    uint
 	Alert        string
-	WatchMetrics bool
+	KLogLevel    uint
 	WatchPeriod  uint
+	Reverse      bool
+	WatchMetrics bool
 }
 
 type WatchResponse struct {
-	data  NodeResourceList
 	error error
+	data  NodeResourceList
 }
 
 func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metricsClient metricsv1beta1.MetricsV1beta1Interface) (NodeResourceList, error) {

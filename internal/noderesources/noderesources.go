@@ -17,6 +17,7 @@ import (
 
 type (
 	NodeResource struct {
+		Name              string `json:"name,omitempty" yaml:"name,omitempty"`
 		CPU               int64  `json:"cpu,omitempty" yaml:"cpu,omitempty"`
 		Memory            int64  `json:"memory,omitempty" yaml:"memory,omitempty"`
 		UsedCPU           int64  `json:"used_cpu,omitempty" yaml:"used_cpu,omitempty"`
@@ -27,7 +28,6 @@ type (
 		MemoryRequest     int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
 		CPULimit          int64  `json:"cpu_limit,omitempty" yaml:"cpu_limit,omitempty"`
 		MemoryLimit       int64  `json:"memory_limit,omitempty" yaml:"memory_limit,omitempty"`
-		Name              string `json:"name,omitempty" yaml:"name,omitempty"`
 	}
 	NodeResourceList        []NodeResource
 	NodeResourceListEnvelop struct {

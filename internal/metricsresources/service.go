@@ -2,6 +2,7 @@ package metricsresources
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,8 +11,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"errors"
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
@@ -31,16 +30,16 @@ type Config struct {
 	LogLevel     string
 	Output       string
 	Sorting      string
-	Reverse      bool
-	KLogLevel    uint
 	Alert        string
-	WatchMetrics bool
+	KLogLevel    uint
 	WatchPeriod  uint
+	Reverse      bool
+	WatchMetrics bool
 }
 
 type WatchResponse struct {
-	data  PodMetricsResourceList
 	error error
+	data  PodMetricsResourceList
 }
 
 func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.MetricsV1beta1Interface, podsClient corev1.CoreV1Interface) (PodMetricsResourceList, error) {

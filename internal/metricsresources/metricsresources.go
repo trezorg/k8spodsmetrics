@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
 	"text/template"
 
 	escapes "github.com/snugfox/ansi-escapes"
@@ -47,11 +46,11 @@ type (
 	}
 
 	MetricsResource struct {
+		AlertColor    string `json:"-" yaml:"-"`
 		CPURequest    int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
 		MemoryRequest int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
 		CPUUsed       int64  `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
 		MemoryUsed    int64  `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
-		AlertColor    string `json:"-" yaml:"-"`
 	}
 
 	Resource struct {
@@ -223,6 +222,7 @@ func (c ContainerMetricsResources) toOutput() ContainerMetricsResourcesOutputs {
 func (m MetricsResource) CPUAlert() bool {
 	return m.CPURequest > 0 && m.CPURequest <= m.CPUUsed
 }
+
 func (m MetricsResource) MemoryAlert() bool {
 	return m.MemoryRequest > 0 && m.MemoryRequest <= m.MemoryUsed
 }

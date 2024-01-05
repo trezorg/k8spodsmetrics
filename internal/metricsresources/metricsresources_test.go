@@ -32,6 +32,7 @@ func posResourceList(name, namespace, container string) pods.PodResourceList {
 		},
 	}
 }
+
 func posMetricsList(name, namespace, container string) podmetrics.PodMetricList {
 	return []podmetrics.PodMetric{
 		{
