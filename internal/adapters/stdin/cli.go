@@ -39,6 +39,7 @@ type config struct {
 type podConfig struct {
 	Namespace string
 	Label     string
+	Nodes     []string
 	Sorting   string
 	config
 	Reverse bool
@@ -58,6 +59,7 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		KubeContext:  c.KubeContext,
 		Namespace:    c.Namespace,
 		Label:        c.Label,
+		Nodes:        c.Nodes,
 		LogLevel:     c.LogLevel,
 		Output:       c.Output,
 		Sorting:      c.Sorting,
@@ -224,6 +226,7 @@ func Start(version string) error {
 				podConfig.Label = c.String("label")
 				podConfig.Sorting = c.String("sorting")
 				podConfig.Reverse = c.Bool("reverse")
+				podConfig.Nodes = c.StringSlice("node")
 				config := metricsResourcesConfig(podConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podConfig.Output))
 				errorProcessor := outputProcessor.(metricsresources.ErrorProcessor)
@@ -244,6 +247,11 @@ func Start(version string) error {
 					Aliases: []string{"l"},
 					Value:   "",
 					Usage:   "K8S pod label",
+				},
+				&cli.StringSliceFlag{
+					Name:    "node",
+					Aliases: []string{"nd", "nodes"},
+					Usage:   "K8S node names",
 				},
 				&cli.StringFlag{
 					Name:    "sorting",
@@ -326,7 +334,7 @@ func Start(version string) error {
 		&cli.StringFlag{
 			Name:        "output",
 			Aliases:     []string{"o"},
-			Value:       string(output.String),
+			Value:       string(output.Table),
 			Usage:       fmt.Sprintf("Output format. [%s]", output.StringListDefault()),
 			Destination: &config.Output,
 			Action: func(_ *cli.Context, value string) error {

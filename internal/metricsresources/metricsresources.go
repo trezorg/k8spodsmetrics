@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"text/template"
 
 	escapes "github.com/snugfox/ansi-escapes"
@@ -85,7 +86,8 @@ type (
 	PodMetricsResourceOutputEnvelope struct {
 		Items PodMetricsResourceListOutput `json:"items,omitempty" yaml:"items,omitempty"`
 	}
-	containerMetricsPredicate func(c ContainerMetricsResources) bool
+	containerMetricsPredicate   func(c ContainerMetricsResources) bool
+	podResourceMetricsPredicate func(c PodMetricsResource) bool
 )
 
 func (c ContainerMetricsResource) IsMemoryAlerted() bool {
@@ -402,6 +404,25 @@ func (r PodMetricsResourceList) filterBy(predicate containerMetricsPredicate) Po
 		}
 	}
 	return result
+}
+
+func (r PodMetricsResourceList) filterByPodResource(predicate podResourceMetricsPredicate) PodMetricsResourceList {
+	var result PodMetricsResourceList
+	for _, pod := range r {
+		if predicate(pod) {
+			result = append(result, pod)
+		}
+	}
+	return result
+}
+
+func (r PodMetricsResourceList) filterNodes(nodes []string) PodMetricsResourceList {
+	if len(nodes) == 0 {
+		return r
+	}
+	return r.filterByPodResource(func(r PodMetricsResource) bool {
+		return slices.Contains(nodes, r.NodeName)
+	})
 }
 
 func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsResourceList {

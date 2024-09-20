@@ -27,8 +27,8 @@ type NamespaceName struct {
 
 type PodResource struct {
 	NamespaceName `json:"namespace_name,omitempty" yaml:"namespace_name,omitempty"`
-	Containers    []ContainerResource `json:"containers,omitempty" yaml:"containers,omitempty"`
 	NodeName      string              `json:"node_name,omitempty" yaml:"node_name,omitempty"`
+	Containers    []ContainerResource `json:"containers,omitempty" yaml:"containers,omitempty"`
 }
 
 type PodResourceList []PodResource

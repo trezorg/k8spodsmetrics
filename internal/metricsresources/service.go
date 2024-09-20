@@ -27,6 +27,7 @@ type Config struct {
 	KubeContext  string
 	Namespace    string
 	Label        string
+	Nodes        []string
 	LogLevel     string
 	Output       string
 	Sorting      string
@@ -84,6 +85,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 
 	podMetricsResourceList = merge(podsList, metricsList)
 	podMetricsResourceList = podMetricsResourceList.filterByAlert(alert.Alert(c.Alert))
+	podMetricsResourceList = podMetricsResourceList.filterNodes(c.Nodes)
 	podMetricsResourceList.sort(c.Sorting, c.Reverse)
 	return podMetricsResourceList, nil
 }
