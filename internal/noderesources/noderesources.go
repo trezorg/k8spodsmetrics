@@ -28,6 +28,10 @@ type (
 		MemoryRequest     int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
 		CPULimit          int64  `json:"cpu_limit,omitempty" yaml:"cpu_limit,omitempty"`
 		MemoryLimit       int64  `json:"memory_limit,omitempty" yaml:"memory_limit,omitempty"`
+		AvailableCPU      int64  `json:"available_cpu,omitempty" yaml:"available_cpu,omitempty"`
+		AvailableMemory   int64  `json:"available_memory,omitempty" yaml:"available_memory,omitempty"`
+		FreeCPU           int64  `json:"free_cpu,omitempty" yaml:"free_cpu,omitempty"`
+		FreeMemory        int64  `json:"free_memory,omitempty" yaml:"free_memory,omitempty"`
 	}
 	NodeResourceList        []NodeResource
 	NodeResourceListEnvelop struct {
@@ -99,6 +103,36 @@ func (n NodeResource) MemoryLimitString() string {
 		memoryLimitStartColor,
 		humanize.Bytes(n.MemoryLimit),
 		memoryLimitEndColor,
+	)
+}
+
+func (n NodeResource) MemoryAvailableString() string {
+	memoryAvailableStartColor := ""
+	memoryAvailableEndColor := ""
+	if n.AvailableMemory == 0 {
+		memoryAvailableStartColor = escapes.TextColorRed
+		memoryAvailableEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		memoryAvailableStartColor,
+		humanize.Bytes(n.AvailableMemory),
+		memoryAvailableEndColor,
+	)
+}
+
+func (n NodeResource) MemoryFreeString() string {
+	memoryFreeStartColor := ""
+	memoryFreeEndColor := ""
+	if n.FreeMemory == 0 {
+		memoryFreeStartColor = escapes.TextColorRed
+		memoryFreeEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		memoryFreeStartColor,
+		humanize.Bytes(n.FreeMemory),
+		memoryFreeEndColor,
 	)
 }
 
@@ -229,6 +263,36 @@ func (n NodeResource) CPULimitString() string {
 	)
 }
 
+func (n NodeResource) CPUAvailableString() string {
+	cpuAvailableStartColor := ""
+	cpuAvailableEndColor := ""
+	if n.AvailableCPU == 0 {
+		cpuAvailableStartColor = escapes.TextColorRed
+		cpuAvailableEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%d%s",
+		cpuAvailableStartColor,
+		n.AvailableCPU,
+		cpuAvailableEndColor,
+	)
+}
+
+func (n NodeResource) CPUFreeString() string {
+	cpuFreeStartColor := ""
+	cpuFreeEndColor := ""
+	if n.FreeCPU == 0 {
+		cpuFreeStartColor = escapes.TextColorRed
+		cpuFreeEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%d%s",
+		cpuFreeStartColor,
+		n.FreeCPU,
+		cpuFreeEndColor,
+	)
+}
+
 func (n NodeResource) String() string {
 	var buffer bytes.Buffer
 	if err := nodeTemplate.Execute(&buffer, n); err != nil {
@@ -268,6 +332,8 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 			nodeResource.MemoryLimit += container.Limits.Memory
 			nodeResource.MemoryRequest += container.Requests.Memory
 		}
+		nodeResource.AvailableCPU = nodeResource.AllocatableCPU - nodeResource.CPURequest
+		nodeResource.AvailableMemory = nodeResource.AllocatableMemory - nodeResource.MemoryRequest
 	}
 	for _, metric := range nodeMetricList {
 		nodeResource, ok := nodesMap[metric.Name]
@@ -277,6 +343,8 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 		}
 		nodeResource.UsedCPU = metric.CPU
 		nodeResource.UsedMemory = metric.Memory
+		nodeResource.FreeCPU = nodeResource.AllocatableCPU - metric.CPU
+		nodeResource.FreeMemory = nodeResource.AllocatableMemory - metric.Memory
 	}
 	nodeResourceList := make(NodeResourceList, 0, len(nodesMap))
 	for _, node := range nodesMap {
