@@ -52,6 +52,26 @@ func (n NodeResourceList) sortUsedCPU(reversed bool) {
 	sort.Slice(n, less)
 }
 
+func (n NodeResourceList) sortAvailableCPU(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].AvailableCPU < n[j].AvailableCPU
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortFreeCPU(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].FreeCPU < n[j].FreeCPU
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
 func (n NodeResourceList) sortCPU(reversed bool) {
 	less := func(i, j int) bool {
 		return n[i].CPU < n[j].CPU
@@ -92,6 +112,26 @@ func (n NodeResourceList) sortUsedMemory(reversed bool) {
 	sort.Slice(n, less)
 }
 
+func (n NodeResourceList) sortAvailableMemory(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].AvailableMemory < n[j].AvailableMemory
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortFreeMemory(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].FreeMemory < n[j].FreeMemory
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
 func (n NodeResourceList) sortMemory(reversed bool) {
 	less := func(i, j int) bool {
 		return n[i].Memory < n[j].Memory
@@ -114,6 +154,10 @@ func (n NodeResourceList) sort(by string, reversed bool) {
 		n.sortUsedCPU(reversed)
 	case noderesources.TotalCPU:
 		n.sortCPU(reversed)
+	case noderesources.AvailableCPU:
+		n.sortAvailableCPU(reversed)
+	case noderesources.FreeCPU:
+		n.sortFreeCPU(reversed)
 	case noderesources.LimitMemory:
 		n.sortLimitMemory(reversed)
 	case noderesources.RequestMemory:
@@ -122,5 +166,9 @@ func (n NodeResourceList) sort(by string, reversed bool) {
 		n.sortUsedMemory(reversed)
 	case noderesources.TotalMemory:
 		n.sortMemory(reversed)
+	case noderesources.AvailableMemory:
+		n.sortAvailableMemory(reversed)
+	case noderesources.FreeMemory:
+		n.sortFreeMemory(reversed)
 	}
 }

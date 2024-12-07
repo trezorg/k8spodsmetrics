@@ -14,10 +14,14 @@ const (
 	LimitCPU         Sorting = "limit_cpu"
 	UsedCPU          Sorting = "used_cpu"
 	TotalCPU         Sorting = "total_cpu"
+	AvailableCPU     Sorting = "available_cpu"
+	FreeCPU          Sorting = "free_cpu"
 	RequestMemory    Sorting = "request_memory"
 	LimitMemory      Sorting = "limit_memory"
 	UsedMemory       Sorting = "used_memory"
 	TotalMemory      Sorting = "total_memory"
+	AvailableMemory  Sorting = "available_memory"
+	FreeMemory       Sorting = "free_memory"
 	defaultSeparator string  = "|"
 )
 
@@ -27,10 +31,14 @@ var choices = []Sorting{
 	LimitCPU,
 	UsedCPU,
 	TotalCPU,
+	AvailableCPU,
+	FreeCPU,
 	RequestMemory,
 	LimitMemory,
 	UsedMemory,
 	TotalMemory,
+	AvailableMemory,
+	FreeMemory,
 }
 
 func Valid(o Sorting) error {
