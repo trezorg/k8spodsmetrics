@@ -15,23 +15,36 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+const (
+	storageUsedPercentAlert      = 95
+	storageEphemeralPercentAlert = 95
+)
+
 type (
 	NodeResource struct {
-		Name              string `json:"name,omitempty" yaml:"name,omitempty"`
-		CPU               int64  `json:"cpu,omitempty" yaml:"cpu,omitempty"`
-		Memory            int64  `json:"memory,omitempty" yaml:"memory,omitempty"`
-		UsedCPU           int64  `json:"used_cpu,omitempty" yaml:"used_cpu,omitempty"`
-		UsedMemory        int64  `json:"used_memory,omitempty" yaml:"used_memory,omitempty"`
-		AllocatableCPU    int64  `json:"allocatable_cpu,omitempty" yaml:"allocatable_cpu,omitempty"`
-		AllocatableMemory int64  `json:"allocatable_memory,omitempty" yaml:"allocatable_memory,omitempty"`
-		CPURequest        int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
-		MemoryRequest     int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
-		CPULimit          int64  `json:"cpu_limit,omitempty" yaml:"cpu_limit,omitempty"`
-		MemoryLimit       int64  `json:"memory_limit,omitempty" yaml:"memory_limit,omitempty"`
-		AvailableCPU      int64  `json:"available_cpu,omitempty" yaml:"available_cpu,omitempty"`
-		AvailableMemory   int64  `json:"available_memory,omitempty" yaml:"available_memory,omitempty"`
-		FreeCPU           int64  `json:"free_cpu,omitempty" yaml:"free_cpu,omitempty"`
-		FreeMemory        int64  `json:"free_memory,omitempty" yaml:"free_memory,omitempty"`
+		Name                        string `json:"name" yaml:"name"`
+		CPU                         int64  `json:"cpu" yaml:"cpu"`
+		Memory                      int64  `json:"memory" yaml:"memory"`
+		UsedCPU                     int64  `json:"used_cpu" yaml:"used_cpu"`
+		UsedMemory                  int64  `json:"used_memory" yaml:"used_memory"`
+		AllocatableCPU              int64  `json:"allocatable_cpu" yaml:"allocatable_cpu"`
+		AllocatableMemory           int64  `json:"allocatable_memory" yaml:"allocatable_memory"`
+		CPURequest                  int64  `json:"cpu_request" yaml:"cpu_request"`
+		MemoryRequest               int64  `json:"memory_request" yaml:"memory_request"`
+		CPULimit                    int64  `json:"cpu_limit" yaml:"cpu_limit"`
+		MemoryLimit                 int64  `json:"memory_limit" yaml:"memory_limit"`
+		AvailableCPU                int64  `json:"available_cpu" yaml:"available_cpu"`
+		AvailableMemory             int64  `json:"available_memory" yaml:"available_memory"`
+		FreeCPU                     int64  `json:"free_cpu" yaml:"free_cpu"`
+		FreeMemory                  int64  `json:"free_memory" yaml:"free_memory"`
+		Storage                     int64  `json:"storage" yaml:"storage"`
+		AllocatableStorage          int64  `json:"allocatable_storage" yaml:"allocatable_storage"`
+		UsedStorage                 int64  `json:"used_storage" yaml:"used_storage"`
+		FreeStorage                 int64  `json:"free_storage" yaml:"free_storage"`
+		StorageEphemeral            int64  `json:"storage_ephemeral" yaml:"storage_ephemeral"`
+		AllocatableStorageEphemeral int64  `json:"allocatable_storage_ephemeral" yaml:"allocatable_storage_ephemeral"`
+		UsedStorageEphemeral        int64  `json:"used_storage_ephemeral" yaml:"used_storage_ephemeral"`
+		FreeStorageEphemeral        int64  `json:"free_storage_ephemeral" yaml:"free_storage_ephemeral"`
 	}
 	NodeResourceList        []NodeResource
 	NodeResourceListEnvelop struct {
@@ -136,6 +149,16 @@ func (n NodeResource) MemoryFreeString() string {
 	)
 }
 
+func (n NodeResourceList) filterBy(predicate nodePredicate) NodeResourceList {
+	var result NodeResourceList
+	for _, node := range n {
+		if predicate(node) {
+			result = append(result, node)
+		}
+	}
+	return result
+}
+
 func (n NodeResource) MemoryNodeString() string {
 	return humanize.Bytes(n.Memory)
 }
@@ -176,14 +199,12 @@ func (n NodeResource) IsCPULimitAlerted() bool {
 	return n.CPU <= n.CPULimit
 }
 
-func (n NodeResourceList) filterBy(predicate nodePredicate) NodeResourceList {
-	var result NodeResourceList
-	for _, node := range n {
-		if predicate(node) {
-			result = append(result, node)
-		}
-	}
-	return result
+func (n NodeResource) IsStorageAlerted() bool {
+	return (float64(n.UsedStorage)/float64(n.Storage))*100 > storageUsedPercentAlert
+}
+
+func (n NodeResource) IsStorageEphemeralAlerted() bool {
+	return (float64(n.UsedStorageEphemeral)/float64(n.StorageEphemeral))*100 > storageEphemeralPercentAlert
 }
 
 func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
@@ -202,6 +223,10 @@ func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
 		return n.filterBy(func(n NodeResource) bool { return n.IsCPURequestAlerted() })
 	case alerts.CPULimit:
 		return n.filterBy(func(n NodeResource) bool { return n.IsCPULimitAlerted() })
+	case alerts.Storage:
+		return n.filterBy(func(n NodeResource) bool { return n.IsStorageAlerted() })
+	case alerts.StorageEphemeral:
+		return n.filterBy(func(n NodeResource) bool { return n.IsStorageEphemeralAlerted() })
 	default:
 		return n
 	}
@@ -293,6 +318,60 @@ func (n NodeResource) CPUFreeString() string {
 	)
 }
 
+func (n NodeResource) StorageString() string {
+	return humanize.Bytes(n.Storage)
+}
+
+func (n NodeResource) StorageAllocatableString() string {
+	return humanize.Bytes(n.AllocatableStorage)
+}
+
+func (n NodeResource) StorageFreeString() string {
+	return humanize.Bytes(n.FreeStorage)
+}
+
+func (n NodeResource) StorageUsedString() string {
+	usedStorageStartColor := ""
+	usedStorageEndColor := ""
+	if n.IsStorageAlerted() {
+		usedStorageStartColor = escapes.TextColorRed
+		usedStorageEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		usedStorageStartColor,
+		humanize.Bytes(n.UsedStorage),
+		usedStorageEndColor,
+	)
+}
+
+func (n NodeResource) StorageEphemeralString() string {
+	return humanize.Bytes(n.StorageEphemeral)
+}
+
+func (n NodeResource) StorageAllocatableEphemeralString() string {
+	return humanize.Bytes(n.AllocatableStorageEphemeral)
+}
+
+func (n NodeResource) StorageFreeEphemeralString() string {
+	return humanize.Bytes(n.FreeStorageEphemeral)
+}
+
+func (n NodeResource) StorageUsedEphemeralString() string {
+	usedStorageStartColor := ""
+	usedStorageEndColor := ""
+	if n.IsStorageEphemeralAlerted() {
+		usedStorageStartColor = escapes.TextColorRed
+		usedStorageEndColor = escapes.ColorReset
+	}
+	return fmt.Sprintf(
+		"%s%s%s",
+		usedStorageStartColor,
+		humanize.Bytes(n.UsedStorageEphemeral),
+		usedStorageEndColor,
+	)
+}
+
 func (n NodeResource) String() string {
 	var buffer bytes.Buffer
 	if err := nodeTemplate.Execute(&buffer, n); err != nil {
@@ -313,11 +392,17 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 	nodesMap := make(map[string]*NodeResource)
 	for _, node := range nodeList {
 		nodesMap[node.Name] = &NodeResource{
-			Name:              node.Name,
-			CPU:               node.CPU,
-			Memory:            node.Memory,
-			AllocatableCPU:    node.AllocatableCPU,
-			AllocatableMemory: node.AllocatableMemory,
+			Name:                        node.Name,
+			CPU:                         node.CPU,
+			Memory:                      node.Memory,
+			AllocatableCPU:              node.AllocatableCPU,
+			AllocatableMemory:           node.AllocatableMemory,
+			Storage:                     node.Storage,
+			AllocatableStorage:          node.AllocatableStorage,
+			UsedStorage:                 node.UsedStorage,
+			StorageEphemeral:            node.StorageEphemeral,
+			AllocatableStorageEphemeral: node.AllocatableStorageEphemeral,
+			UsedStorageEphemeral:        node.UsedStorageEphemeral,
 		}
 	}
 	for _, pod := range podResourceList {
@@ -345,6 +430,10 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 		nodeResource.UsedMemory = metric.Memory
 		nodeResource.FreeCPU = nodeResource.AllocatableCPU - metric.CPU
 		nodeResource.FreeMemory = nodeResource.AllocatableMemory - metric.Memory
+		nodeResource.FreeStorage = nodeResource.AllocatableStorage - metric.Storage
+		nodeResource.UsedStorage = metric.Storage
+		nodeResource.FreeStorageEphemeral = nodeResource.AllocatableStorageEphemeral - metric.StorageEphemeral
+		nodeResource.UsedStorageEphemeral = metric.StorageEphemeral
 	}
 	nodeResourceList := make(NodeResourceList, 0, len(nodesMap))
 	for _, node := range nodesMap {

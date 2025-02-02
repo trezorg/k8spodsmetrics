@@ -9,8 +9,10 @@ import (
 )
 
 type Metric struct {
-	CPU    int64
-	Memory int64
+	CPU              int64
+	Memory           int64
+	Storage          int64
+	StorageEphemeral int64
 }
 type ContainerMetric struct {
 	Name string
@@ -50,6 +52,14 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 			memory, ok := container.Usage.Memory().AsInt64()
 			if ok {
 				containerMetric.Memory = memory
+			}
+			storage, ok := container.Usage.Storage().AsInt64()
+			if ok {
+				containerMetric.Storage = storage
+			}
+			storage, ok = container.Usage.StorageEphemeral().AsInt64()
+			if ok {
+				containerMetric.StorageEphemeral = storage
 			}
 			metric.Containers = append(metric.Containers, containerMetric)
 		}

@@ -3,15 +3,18 @@ package nodemetrics
 import (
 	"context"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
 
 type NodeMetric struct {
-	Name   string
-	CPU    int64
-	Memory int64
+	Name             string
+	CPU              int64
+	Memory           int64
+	Storage          int64
+	StorageEphemeral int64
 }
 
 type NodeMetricsList []NodeMetric
@@ -44,13 +47,21 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 		resourceList := nodeMetric.Usage
 		metric := NodeMetric{Name: nodeMetric.Name}
 		for name, quantity := range resourceList {
-			if name == "memory" {
+			switch name {
+			case v1.ResourceMemory:
 				if memory, ok := quantity.AsInt64(); ok {
 					metric.Memory = memory
 				}
-			}
-			if name == "cpu" {
+			case v1.ResourceCPU:
 				metric.CPU = int64(quantity.ToDec().AsApproximateFloat64() * 1000)
+			case v1.ResourceStorage:
+				if storage, ok := quantity.AsInt64(); ok {
+					metric.Storage = storage
+				}
+			case v1.ResourceEphemeralStorage:
+				if storage, ok := quantity.AsInt64(); ok {
+					metric.StorageEphemeral = storage
+				}
 			}
 		}
 		result = append(result, metric)

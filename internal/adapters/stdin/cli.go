@@ -10,6 +10,7 @@ import (
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
+	"github.com/trezorg/k8spodsmetrics/internal/resources"
 
 	nodesjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/noderesources"
 	nodesscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/noderesources"
@@ -25,7 +26,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type config struct {
+type commonConfig struct {
 	KubeConfig   string
 	KubeContext  string
 	LogLevel     string
@@ -41,15 +42,16 @@ type podConfig struct {
 	Label     string
 	Nodes     []string
 	Sorting   string
-	config
+	commonConfig
 	Reverse bool
 }
 
 type summaryConfig struct {
-	Name    string
-	Label   string
-	Sorting string
-	config
+	Name      string
+	Label     string
+	Sorting   string
+	Resources []string
+	commonConfig
 	Reverse bool
 }
 
@@ -81,12 +83,18 @@ func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 		Output:       c.Output,
 		Sorting:      c.Sorting,
 		Reverse:      c.Reverse,
+		Resources:    c.Resources,
 		KLogLevel:    c.KLogLevel,
 		Alert:        c.Alert,
 		WatchMetrics: c.WatchMetrics,
 		WatchPeriod:  c.WatchPeriod,
 	}
 }
+
+const (
+	defaultKlogLevel          = 3
+	defaultWatchPeriodSeconds = 5
+)
 
 type SummaryProcessor interface {
 	Process(noderesources.SuccessProcessor) error
@@ -104,10 +112,10 @@ type PodsWatcher interface {
 	ProcessWatch(metricsresources.SuccessProcessor, metricsresources.ErrorProcessor) error
 }
 
-func summaryOutputProcessor(out output.Output) noderesources.SuccessProcessor {
+func summaryOutputProcessor(out output.Output, resources resources.Resources) noderesources.SuccessProcessor {
 	switch out {
 	case output.Table:
-		return nodestable.Table(nodestable.Print)
+		return nodestable.ToTable(resources)
 	case output.Json:
 		return nodesjson.Json(nodesjson.Print)
 	case output.Yaml:
@@ -115,7 +123,7 @@ func summaryOutputProcessor(out output.Output) noderesources.SuccessProcessor {
 	case output.String:
 		return nodesstring.String(nodesstring.Print)
 	default:
-		return nodestable.Table(nodestable.Print)
+		return nodestable.ToTable(resources)
 	}
 }
 
@@ -150,131 +158,96 @@ func podsWatch(processor PodsWatcher, successProcessor metricsresources.SuccessP
 	return processor.ProcessWatch(metricsscreen.NewScreenSuccessWriter(successProcessor), metricsscreen.NewScreenErrorWriter(errorProcessor))
 }
 
-func Start(version string) error {
-	config := config{}
-
-	app := cli.NewApp()
-	app.Version = version
-	app.Authors = []*cli.Author{{
-		Name:  "Igor Nemilentsev",
-		Email: "trezorg@gmail.com",
-	}}
-	app.Usage = "K8S pod and node metrics"
-	app.AllowExtFlags = true
-	app.EnableBashCompletion = true
-	app.Description = "The application shows pod and node metrics"
-	app.Action = func(c *cli.Context) error {
-		return nil
-	}
-	app.Commands = []*cli.Command{
-		{
-			Name:    "summary",
+func summaryFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "label",
+			Aliases: []string{"l"},
+			Value:   "",
+			Usage:   "K8S node label",
+		},
+		&cli.StringFlag{
+			Name:    "name",
+			Aliases: []string{"n"},
+			Value:   "",
+			Usage:   "K8S node name",
+		},
+		&cli.StringFlag{
+			Name:    "sorting",
 			Aliases: []string{"s"},
-			Action: func(c *cli.Context) error {
-				summaryConfig := summaryConfig{config: config}
-				summaryConfig.Name = c.String("name")
-				summaryConfig.Label = c.String("label")
-				summaryConfig.Sorting = c.String("sorting")
-				summaryConfig.Reverse = c.Bool("reverse")
-				config := nodeResourcesConfig(summaryConfig)
-				outputProcessor := summaryOutputProcessor(output.Output(summaryConfig.Output))
-				errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
-				if summaryConfig.WatchMetrics {
-					return summaryWatch(config, outputProcessor, errorProcessor)
+			Value:   "name",
+			Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
+			Action: func(_ *cli.Context, value string) error {
+				if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
+					return err
 				}
-				return summary(config, outputProcessor)
-			},
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "label",
-					Aliases: []string{"l"},
-					Value:   "",
-					Usage:   "K8S node label",
-				},
-				&cli.StringFlag{
-					Name:    "name",
-					Aliases: []string{"n"},
-					Value:   "",
-					Usage:   "K8S node name",
-				},
-				&cli.StringFlag{
-					Name:    "sorting",
-					Aliases: []string{"s"},
-					Value:   "name",
-					Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
-					Action: func(_ *cli.Context, value string) error {
-						if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
-							return err
-						}
-						return nil
-					},
-				},
-				&cli.BoolFlag{
-					Name:    "reverse",
-					Aliases: []string{"r"},
-					Value:   false,
-					Usage:   "Reverse sort",
-				},
+				return nil
 			},
 		},
-		{
-			Name:    "pods",
-			Aliases: []string{"p"},
-			Action: func(c *cli.Context) error {
-				podConfig := podConfig{config: config}
-				podConfig.Namespace = c.String("namespace")
-				podConfig.Label = c.String("label")
-				podConfig.Sorting = c.String("sorting")
-				podConfig.Reverse = c.Bool("reverse")
-				podConfig.Nodes = c.StringSlice("node")
-				config := metricsResourcesConfig(podConfig)
-				outputProcessor := podsOutputProcessor(output.Output(podConfig.Output))
-				errorProcessor := outputProcessor.(metricsresources.ErrorProcessor)
-				if podConfig.WatchMetrics {
-					return podsWatch(config, outputProcessor, errorProcessor)
+		&cli.BoolFlag{
+			Name:    "reverse",
+			Aliases: []string{"r"},
+			Value:   false,
+			Usage:   "Reverse sort",
+		},
+		&cli.StringSliceFlag{
+			Name:    "resource",
+			Aliases: []string{"o"},
+			Value:   cli.NewStringSlice(string(resources.All)),
+			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
+			Action: func(_ *cli.Context, value []string) error {
+				outputResources := resources.FromStrings(value...)
+				if err := resources.Valid(outputResources...); err != nil {
+					return err
 				}
-				return pods(config, outputProcessor)
-			},
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "namespace",
-					Aliases: []string{"n"},
-					Value:   "",
-					Usage:   "K8S namespace",
-				},
-				&cli.StringFlag{
-					Name:    "label",
-					Aliases: []string{"l"},
-					Value:   "",
-					Usage:   "K8S pod label",
-				},
-				&cli.StringSliceFlag{
-					Name:    "node",
-					Aliases: []string{"nd", "nodes"},
-					Usage:   "K8S node names",
-				},
-				&cli.StringFlag{
-					Name:    "sorting",
-					Aliases: []string{"s"},
-					Value:   "namespace",
-					Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
-					Action: func(_ *cli.Context, value string) error {
-						if err := metricssorting.Valid(metricssorting.Sorting(value)); err != nil {
-							return err
-						}
-						return nil
-					},
-				},
-				&cli.BoolFlag{
-					Name:    "reverse",
-					Aliases: []string{"r"},
-					Value:   false,
-					Usage:   "Reverse sort",
-				},
+				return nil
 			},
 		},
 	}
-	app.Flags = []cli.Flag{
+}
+
+func podsFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "namespace",
+			Aliases: []string{"n"},
+			Value:   "",
+			Usage:   "K8S namespace",
+		},
+		&cli.StringFlag{
+			Name:    "label",
+			Aliases: []string{"l"},
+			Value:   "",
+			Usage:   "K8S pod label",
+		},
+		&cli.StringSliceFlag{
+			Name:    "node",
+			Aliases: []string{"nd", "nodes"},
+			Usage:   "K8S node names",
+		},
+		&cli.StringFlag{
+			Name:    "sorting",
+			Aliases: []string{"s"},
+			Value:   "namespace",
+			Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
+			Action: func(_ *cli.Context, value string) error {
+				if err := metricssorting.Valid(metricssorting.Sorting(value)); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		&cli.BoolFlag{
+			Name:    "reverse",
+			Aliases: []string{"r"},
+			Value:   false,
+			Usage:   "Reverse sort",
+		},
+	}
+}
+
+func commonFlags(config *commonConfig) []cli.Flag { //nolint:funlen // required
+	return []cli.Flag{
 		&cli.StringFlag{
 			Name:        "kubeconfig",
 			Aliases:     []string{"k"},
@@ -299,7 +272,7 @@ func Start(version string) error {
 		&cli.UintFlag{
 			Name:        "kloglevel",
 			Aliases:     []string{"klevel"},
-			Value:       3,
+			Value:       defaultKlogLevel,
 			Usage:       "k8s client log level",
 			Destination: &config.KLogLevel,
 		},
@@ -327,7 +300,7 @@ func Start(version string) error {
 		&cli.UintFlag{
 			Name:        "watch-period",
 			Aliases:     []string{"p"},
-			Value:       5,
+			Value:       defaultWatchPeriodSeconds,
 			Usage:       "Watch period",
 			Destination: &config.WatchPeriod,
 		},
@@ -346,6 +319,72 @@ func Start(version string) error {
 			},
 		},
 	}
+}
+
+func Start(version string) error { //nolint:funlen // required
+	config := commonConfig{}
+
+	app := cli.NewApp()
+	app.Version = version
+	app.Authors = []*cli.Author{{
+		Name:  "Igor Nemilentsev",
+		Email: "trezorg@gmail.com",
+	}}
+	app.Usage = "K8S pod and node metrics"
+	app.AllowExtFlags = true
+	app.EnableBashCompletion = true
+	app.Description = "The application shows pod and node metrics"
+	app.Action = func(_ *cli.Context) error {
+		return nil
+	}
+	app.Commands = []*cli.Command{
+		{
+			Name:    "summary",
+			Aliases: []string{"s"},
+			Action: func(c *cli.Context) error {
+				summaryActionConfig := summaryConfig{commonConfig: config}
+				summaryActionConfig.Name = c.String("name")
+				summaryActionConfig.Label = c.String("label")
+				summaryActionConfig.Sorting = c.String("sorting")
+				summaryActionConfig.Reverse = c.Bool("reverse")
+				cmdResources := c.StringSlice("resource")
+				outputResources := resources.FromStrings(cmdResources...)
+				if err := resources.Valid(outputResources...); err != nil {
+					return err
+				}
+				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
+				config := nodeResourcesConfig(summaryActionConfig)
+				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
+				errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
+				if summaryActionConfig.WatchMetrics {
+					return summaryWatch(config, outputProcessor, errorProcessor)
+				}
+				return summary(config, outputProcessor)
+			},
+			Flags: summaryFlags(),
+		},
+		{
+			Name:    "pods",
+			Aliases: []string{"p"},
+			Action: func(c *cli.Context) error {
+				podActionConfig := podConfig{commonConfig: config}
+				podActionConfig.Namespace = c.String("namespace")
+				podActionConfig.Label = c.String("label")
+				podActionConfig.Sorting = c.String("sorting")
+				podActionConfig.Reverse = c.Bool("reverse")
+				podActionConfig.Nodes = c.StringSlice("node")
+				config := metricsResourcesConfig(podActionConfig)
+				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output))
+				errorProcessor := outputProcessor.(metricsresources.ErrorProcessor)
+				if podActionConfig.WatchMetrics {
+					return podsWatch(config, outputProcessor, errorProcessor)
+				}
+				return pods(config, outputProcessor)
+			},
+			Flags: podsFlags(),
+		},
+	}
+	app.Flags = commonFlags(&config)
 	if err := app.Run(os.Args); err != nil {
 		return err
 	}

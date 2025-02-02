@@ -16,11 +16,13 @@ const (
 	CPU              Alert  = "cpu"
 	CPURequest       Alert  = "cpu_request"
 	CPULimit         Alert  = "cpu_limit"
+	Storage          Alert  = "storage"
+	StorageEphemeral Alert  = "storage_ephemeral"
 	None             Alert  = "none"
 	defaultSeparator string = "|"
 )
 
-var choices = []Alert{Any, Memory, MemoryLimit, MemoryRequest, CPU, CPULimit, CPURequest, None}
+var choices = []Alert{Any, Memory, MemoryLimit, MemoryRequest, CPU, CPULimit, CPURequest, Storage, StorageEphemeral, None}
 
 func Valid(o Alert) error {
 	if !slices.Contains(choices, o) {

@@ -142,6 +142,86 @@ func (n NodeResourceList) sortMemory(reversed bool) {
 	sort.Slice(n, less)
 }
 
+func (n NodeResourceList) sortStorage(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].Storage < n[j].Storage
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortStorageEphemeral(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].StorageEphemeral < n[j].StorageEphemeral
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortAvailableStorage(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].AllocatableStorage < n[j].AllocatableStorage
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortAvailableStorageEphemeral(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].AllocatableStorageEphemeral < n[j].AllocatableStorageEphemeral
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortUsedStorageEphemeral(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].UsedStorageEphemeral < n[j].UsedStorageEphemeral
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortUsedStorage(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].UsedStorage < n[j].UsedStorage
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortFreeStorage(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].FreeStorage < n[j].FreeStorage
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
+func (n NodeResourceList) sortFreeStorageEphemeral(reversed bool) {
+	less := func(i, j int) bool {
+		return n[i].FreeStorageEphemeral < n[j].FreeStorageEphemeral
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.Slice(n, less)
+}
+
 func (n NodeResourceList) sort(by string, reversed bool) {
 	switch noderesources.Sorting(by) {
 	case noderesources.Name:
@@ -170,5 +250,21 @@ func (n NodeResourceList) sort(by string, reversed bool) {
 		n.sortAvailableMemory(reversed)
 	case noderesources.FreeMemory:
 		n.sortFreeMemory(reversed)
+	case noderesources.Storage:
+		n.sortStorage(reversed)
+	case noderesources.AllocatableStorage:
+		n.sortAvailableStorage(reversed)
+	case noderesources.UsedStorage:
+		n.sortUsedStorage(reversed)
+	case noderesources.StorageEphemeral:
+		n.sortStorageEphemeral(reversed)
+	case noderesources.AllocatableStorageEphemeral:
+		n.sortAvailableStorageEphemeral(reversed)
+	case noderesources.UsedStorageEphemeral:
+		n.sortUsedStorageEphemeral(reversed)
+	case noderesources.FreeStorage:
+		n.sortFreeStorage(reversed)
+	case noderesources.FreeStorageEphemeral:
+		n.sortFreeStorageEphemeral(reversed)
 	}
 }

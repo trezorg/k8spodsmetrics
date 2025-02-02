@@ -9,20 +9,28 @@ import (
 type Sorting string
 
 const (
-	Name             Sorting = "name"
-	RequestCPU       Sorting = "request_cpu"
-	LimitCPU         Sorting = "limit_cpu"
-	UsedCPU          Sorting = "used_cpu"
-	TotalCPU         Sorting = "total_cpu"
-	AvailableCPU     Sorting = "available_cpu"
-	FreeCPU          Sorting = "free_cpu"
-	RequestMemory    Sorting = "request_memory"
-	LimitMemory      Sorting = "limit_memory"
-	UsedMemory       Sorting = "used_memory"
-	TotalMemory      Sorting = "total_memory"
-	AvailableMemory  Sorting = "available_memory"
-	FreeMemory       Sorting = "free_memory"
-	defaultSeparator string  = "|"
+	Name                        Sorting = "name"
+	RequestCPU                  Sorting = "request_cpu"
+	LimitCPU                    Sorting = "limit_cpu"
+	UsedCPU                     Sorting = "used_cpu"
+	TotalCPU                    Sorting = "total_cpu"
+	AvailableCPU                Sorting = "available_cpu"
+	FreeCPU                     Sorting = "free_cpu"
+	RequestMemory               Sorting = "request_memory"
+	LimitMemory                 Sorting = "limit_memory"
+	UsedMemory                  Sorting = "used_memory"
+	TotalMemory                 Sorting = "total_memory"
+	AvailableMemory             Sorting = "available_memory"
+	FreeMemory                  Sorting = "free_memory"
+	Storage                     Sorting = "storage"
+	AllocatableStorage          Sorting = "allocatable_storage"
+	UsedStorage                 Sorting = "used_storage"
+	FreeStorage                 Sorting = "free_storage"
+	StorageEphemeral            Sorting = "storage_ephemeral"
+	AllocatableStorageEphemeral Sorting = "allocatable_storage_ephemeral"
+	UsedStorageEphemeral        Sorting = "used_storage_ephemeral"
+	FreeStorageEphemeral        Sorting = "free_storage_ephemeral"
+	defaultSeparator            string  = "|"
 )
 
 var choices = []Sorting{
@@ -39,6 +47,12 @@ var choices = []Sorting{
 	TotalMemory,
 	AvailableMemory,
 	FreeMemory,
+	Storage,
+	AllocatableStorage,
+	UsedStorage,
+	StorageEphemeral,
+	AllocatableStorageEphemeral,
+	UsedStorageEphemeral,
 }
 
 func Valid(o Sorting) error {

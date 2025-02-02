@@ -6,52 +6,110 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
+	"github.com/trezorg/k8spodsmetrics/internal/resources"
 )
 
-type Table func(list noderesources.NodeResourceList)
+type Table func(
+	list noderesources.NodeResourceList,
+)
 
-func Print(list noderesources.NodeResourceList) {
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t.AppendHeader(table.Row{
-		"Name",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-	}, rowConfigAutoMerge)
-	t.AppendHeader(table.Row{
-		"",
-		"Total",
-		"Allocatable",
-		"Used",
-		"Request",
-		"Limit",
-		"Available",
-		"Free",
-		"Total",
-		"Allocatable",
-		"Used",
-		"Request",
-		"Limit",
-		"Available",
-		"Free",
-	}, rowConfigAutoMerge)
-	total := noderesources.NodeResource{}
-	for _, resource := range list {
-		t.AppendRow(table.Row{
-			resource.Name,
+func ToTable(
+	outputResources resources.Resources,
+) Table {
+	return Table(func(list noderesources.NodeResourceList) {
+		Print(list, outputResources)
+	})
+}
+
+func headerFooter(outputResources resources.Resources, firstColumn string) table.Row {
+	result := table.Row{firstColumn}
+	if outputResources.IsCPU() {
+		result = append(
+			result,
+			"CPU",
+			"CPU",
+			"CPU",
+			"CPU",
+			"CPU",
+			"CPU",
+			"CPU",
+		)
+	}
+	if outputResources.IsMemory() {
+		result = append(
+			result,
+			"Memory",
+			"Memory",
+			"Memory",
+			"Memory",
+			"Memory",
+			"Memory",
+			"Memory",
+		)
+	}
+	if outputResources.IsStorage() {
+		result = append(
+			result,
+			"Storage",
+			"Storage",
+			"Storage",
+			"Storage",
+			"Storage Ephemeral",
+			"Storage Ephemeral",
+			"Storage Ephemeral",
+			"Storage Ephemeral",
+		)
+	}
+	return result
+}
+
+func secondaryHeader(outputResources resources.Resources) table.Row {
+	result := table.Row{""}
+	if outputResources.IsCPU() {
+		result = append(
+			result,
+			"Total",
+			"Allocatable",
+			"Used",
+			"Request",
+			"Limit",
+			"Available",
+			"Free",
+		)
+	}
+	if outputResources.IsMemory() {
+		result = append(
+			result,
+			"Total",
+			"Allocatable",
+			"Used",
+			"Request",
+			"Limit",
+			"Available",
+			"Free",
+		)
+	}
+	if outputResources.IsStorage() {
+		result = append(
+			result,
+			"Total",
+			"Allocatable",
+			"Used",
+			"Free",
+			"Total",
+			"Allocatable",
+			"Used",
+			"Free",
+		)
+	}
+	return result
+}
+
+func row(resource noderesources.NodeResource, outputResources resources.Resources) table.Row {
+	result := table.Row{resource.Name}
+	if outputResources.IsCPU() {
+		result = append(
+			result,
 			resource.CPU,
 			resource.AllocatableCPU,
 			resource.UsedCPU,
@@ -59,6 +117,11 @@ func Print(list noderesources.NodeResourceList) {
 			resource.CPULimitString(),
 			resource.CPUAvailableString(),
 			resource.CPUFreeString(),
+		)
+	}
+	if outputResources.IsMemory() {
+		result = append(
+			result,
 			resource.MemoryNodeString(),
 			resource.MemoryNodeAlocatableString(),
 			resource.MemoryNodeUsedString(),
@@ -66,7 +129,36 @@ func Print(list noderesources.NodeResourceList) {
 			resource.MemoryLimitString(),
 			resource.MemoryAvailableString(),
 			resource.MemoryFreeString(),
-		})
+		)
+	}
+	if outputResources.IsStorage() {
+		result = append(
+			result,
+			resource.StorageString(),
+			resource.StorageAllocatableString(),
+			resource.StorageUsedString(),
+			resource.StorageFreeString(),
+			resource.StorageEphemeralString(),
+			resource.StorageAllocatableEphemeralString(),
+			resource.StorageUsedEphemeralString(),
+			resource.StorageFreeEphemeralString(),
+		)
+	}
+	return result
+}
+
+func Print(
+	list noderesources.NodeResourceList,
+	outputResources resources.Resources,
+) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+	t.AppendHeader(headerFooter(outputResources, "Name"), rowConfigAutoMerge)
+	t.AppendHeader(secondaryHeader(outputResources))
+	total := noderesources.NodeResource{}
+	for _, resource := range list {
+		t.AppendRow(row(resource, outputResources))
 		t.AppendSeparator()
 		total.CPU += resource.CPU
 		total.AllocatableCPU += resource.AllocatableCPU
@@ -82,41 +174,17 @@ func Print(list noderesources.NodeResourceList) {
 		total.MemoryRequest += resource.MemoryRequest
 		total.AvailableMemory += resource.AvailableMemory
 		total.FreeMemory += resource.FreeMemory
+		total.Storage += resource.Storage
+		total.UsedStorage += resource.UsedStorage
+		total.AllocatableStorage += resource.AllocatableStorage
+		total.FreeStorage += resource.FreeStorage
+		total.StorageEphemeral += resource.StorageEphemeral
+		total.UsedStorageEphemeral += resource.UsedStorageEphemeral
+		total.AllocatableStorageEphemeral += resource.AllocatableStorageEphemeral
+		total.FreeStorageEphemeral += resource.FreeStorageEphemeral
 	}
-	t.AppendFooter(table.Row{
-		"Total",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"CPU",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-		"Memory",
-	}, rowConfigAutoMerge)
-	t.AppendFooter(table.Row{
-		"",
-		total.CPU,
-		total.AllocatableCPU,
-		total.UsedCPU,
-		total.CPURequestString(),
-		total.CPULimitString(),
-		total.CPUAvailableString(),
-		total.CPUFreeString(),
-		total.MemoryNodeString(),
-		total.MemoryNodeAlocatableString(),
-		total.MemoryNodeUsedString(),
-		total.MemoryRequestString(),
-		total.MemoryLimitString(),
-		total.MemoryAvailableString(),
-		total.MemoryFreeString(),
-	}, rowConfigAutoMerge)
+	t.AppendFooter(headerFooter(outputResources, "Total"), rowConfigAutoMerge)
+	t.AppendFooter(row(total, outputResources))
 	t.Render()
 }
 

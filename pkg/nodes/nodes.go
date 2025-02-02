@@ -14,13 +14,19 @@ type NodeFilter struct {
 }
 
 type Node struct {
-	CPU               int64
-	Memory            int64
-	AllocatableCPU    int64
-	AllocatableMemory int64
-	UsedCPU           int64
-	UsedMemory        int64
-	Name              string
+	Name                        string
+	CPU                         int64
+	Memory                      int64
+	AllocatableCPU              int64
+	AllocatableMemory           int64
+	UsedCPU                     int64
+	UsedMemory                  int64
+	Storage                     int64
+	AllocatableStorage          int64
+	UsedStorage                 int64
+	StorageEphemeral            int64
+	AllocatableStorageEphemeral int64
+	UsedStorageEphemeral        int64
 }
 
 type NodeList []Node
@@ -56,15 +62,37 @@ func Nodes(ctx context.Context, corev1 corev1.CoreV1Interface, filter NodeFilter
 		if !ok {
 			allocatableMemory = int64(node.Status.Allocatable.Memory().AsApproximateFloat64())
 		}
+		storage, ok := node.Status.Capacity.Storage().AsInt64()
+		if !ok {
+			storage = int64(node.Status.Capacity.Storage().AsApproximateFloat64())
+		}
+		storageEphemeral, ok := node.Status.Capacity.StorageEphemeral().AsInt64()
+		if !ok {
+			storageEphemeral = int64(node.Status.Capacity.StorageEphemeral().AsApproximateFloat64())
+		}
+		allocatableStorage, ok := node.Status.Allocatable.Storage().AsInt64()
+		if !ok {
+			allocatableStorage = int64(node.Status.Allocatable.Storage().AsApproximateFloat64())
+		}
+		allocatableStorageEphemeral, ok := node.Status.Allocatable.StorageEphemeral().AsInt64()
+		if !ok {
+			allocatableStorageEphemeral = int64(node.Status.Allocatable.StorageEphemeral().AsApproximateFloat64())
+		}
 		nodeResource := Node{
-			Name:              node.Name,
-			CPU:               node.Status.Capacity.Cpu().MilliValue(),
-			AllocatableCPU:    node.Status.Allocatable.Cpu().MilliValue(),
-			Memory:            memory,
-			AllocatableMemory: allocatableMemory,
+			Name:                        node.Name,
+			CPU:                         node.Status.Capacity.Cpu().MilliValue(),
+			AllocatableCPU:              node.Status.Allocatable.Cpu().MilliValue(),
+			Memory:                      memory,
+			AllocatableMemory:           allocatableMemory,
+			Storage:                     storage,
+			StorageEphemeral:            storageEphemeral,
+			AllocatableStorage:          allocatableStorage,
+			AllocatableStorageEphemeral: allocatableStorageEphemeral,
 		}
 		nodeResource.UsedCPU = nodeResource.CPU - nodeResource.AllocatableCPU
 		nodeResource.UsedMemory = nodeResource.Memory - nodeResource.AllocatableMemory
+		nodeResource.UsedStorage = nodeResource.Storage - nodeResource.AllocatableStorage
+		nodeResource.UsedStorageEphemeral = nodeResource.StorageEphemeral - nodeResource.AllocatableStorageEphemeral
 		result = append(result, nodeResource)
 	}
 	return result, err

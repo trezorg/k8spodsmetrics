@@ -32,6 +32,7 @@ type Config struct {
 	Output       string
 	Sorting      string
 	Alert        string
+	Resources    []string
 	KLogLevel    uint
 	WatchPeriod  uint
 	Reverse      bool
@@ -46,7 +47,7 @@ type WatchResponse struct {
 func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metricsClient metricsv1beta1.MetricsV1beta1Interface) (NodeResourceList, error) {
 	logger.Debug("Getting nodes info...")
 	var nodeResources NodeResourceList
-	c_errors := make([]error, 3)
+	cErrors := make([]error, 3)
 	var podsList pods.PodResourceList
 	var nodesList nodes.NodeList
 	var nodeMetricsList nodemetrics.NodeMetricsList
@@ -55,26 +56,26 @@ func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metr
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nodesList, c_errors[0] = nodes.Nodes(ctx, client, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
+		nodesList, cErrors[0] = nodes.Nodes(ctx, client, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		podsList, c_errors[1] = pods.Pods(ctx, client, pods.PodFilter{}, c.Name)
+		podsList, cErrors[1] = pods.Pods(ctx, client, pods.PodFilter{}, c.Name)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nodeMetricsList, c_errors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: c.Label}, c.Name)
+		nodeMetricsList, cErrors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: c.Label}, c.Name)
 	}()
 
 	wg.Wait()
 
 	var rErr error
 
-	for _, err := range c_errors {
+	for _, err := range cErrors {
 		if err != nil {
 			rErr = errors.Join(rErr, err)
 		}
@@ -112,9 +113,9 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 			return
 		}
 		p := func() {
-			data, err := c.request(ctx, podsClient, metricsClient)
-			if err != nil {
-				ch <- WatchResponse{error: err}
+			data, rErr := c.request(ctx, podsClient, metricsClient)
+			if rErr != nil {
+				ch <- WatchResponse{error: rErr}
 				return
 			}
 			ch <- WatchResponse{data: data}
