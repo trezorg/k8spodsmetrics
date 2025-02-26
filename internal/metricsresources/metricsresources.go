@@ -30,8 +30,8 @@ Node:		{{.NodeName}}
 Containers:
   {{ range $index, $container := .ContainersMetrics -}}
   Name:         {{ $container.Name }}
-  Requests: 	{{ index $container.Requests }}
-  Limits:    	{{ index $container.Limits }}
+  Requests: 	{{ (index $container.Requests).StringWithColor "yellow" }}
+  Limits:    	{{ (index $container.Limits).StringWithColor "red" }}
   {{ end -}}`))
 	metricsPodsTemplate = template.Must(template.New("metricPods").Parse(`{{ range $index, $pod := . -}}
 {{ $pod }}
@@ -47,11 +47,10 @@ type (
 	}
 
 	MetricsResource struct {
-		AlertColor    string `json:"-" yaml:"-"`
-		CPURequest    int64  `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
-		MemoryRequest int64  `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
-		CPUUsed       int64  `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
-		MemoryUsed    int64  `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
+		CPURequest    int64 `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
+		MemoryRequest int64 `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
+		CPUUsed       int64 `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
+		MemoryUsed    int64 `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
 	}
 
 	Resource struct {
@@ -120,16 +119,16 @@ func (c ContainerMetricsResource) IsAlerted() bool {
 
 func (c ContainerMetricsResource) MemoryUsed() string {
 	if c.Limits.MemoryAlert() {
-		return c.Limits.MemoryUsedString()
+		return c.Limits.MemoryUsedString(escapes.TextColorRed)
 	}
-	return c.Requests.MemoryUsedString()
+	return c.Requests.MemoryUsedString(escapes.TextColorYellow)
 }
 
 func (c ContainerMetricsResource) CPUUsed() string {
 	if c.Limits.CPUAlert() {
-		return c.Limits.CPUUsedString()
+		return c.Limits.CPUUsedString(escapes.TextColorRed)
 	}
-	return c.Requests.CPUUsedString()
+	return c.Requests.CPUUsedString(escapes.TextColorRed)
 }
 
 func (c ContainerMetricsResource) toOutput() ContainerMetricsResourceOutput {
@@ -229,128 +228,132 @@ func (m MetricsResource) MemoryAlert() bool {
 	return m.MemoryRequest > 0 && m.MemoryRequest <= m.MemoryUsed
 }
 
-func (metricResource MetricsResource) CPU() string {
-	if metricResource.CPUUsed == unset {
-		return fmt.Sprintf("%d", metricResource.CPURequest)
+func (m MetricsResource) CPU(alertColor string) string {
+	if m.CPUUsed == unset {
+		return fmt.Sprintf("%d", m.CPURequest)
 	}
 	cpuStartColor := ""
 	cpuEndColor := ""
-	if metricResource.CPUAlert() {
-		cpuStartColor = metricResource.AlertColor
+	if m.CPUAlert() {
+		cpuStartColor = alertColor
 		cpuEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%d/%s%d%s",
-		metricResource.CPURequest,
+		m.CPURequest,
 		cpuStartColor,
-		metricResource.CPUUsed,
+		m.CPUUsed,
 		cpuEndColor,
 	)
 }
 
-func (metricResource MetricsResource) CPURequestString() string {
-	return fmt.Sprintf("%d", metricResource.CPURequest)
+func (m MetricsResource) CPURequestString() string {
+	return fmt.Sprintf("%d", m.CPURequest)
 }
 
-func (metricResource MetricsResource) CPUUsedString() string {
-	if metricResource.CPUUsed == unset {
+func (m MetricsResource) CPUUsedString(alertColor string) string {
+	if m.CPUUsed == unset {
 		return ""
 	}
 	cpuStartColor := ""
 	cpuEndColor := ""
-	if metricResource.CPUAlert() {
-		cpuStartColor = metricResource.AlertColor
+	if m.CPUAlert() {
+		cpuStartColor = alertColor
 		cpuEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%d%s",
 		cpuStartColor,
-		metricResource.CPUUsed,
+		m.CPUUsed,
 		cpuEndColor,
 	)
 }
 
-func (metricResource MetricsResource) Memory() string {
-	if metricResource.MemoryUsed == unset {
-		return humanize.Bytes(metricResource.MemoryRequest)
+func (m MetricsResource) Memory(alertColor string) string {
+	if m.MemoryUsed == unset {
+		return humanize.Bytes(m.MemoryRequest)
 	}
 	memoryStartColor := ""
 	memoryEndColor := ""
-	if metricResource.MemoryAlert() {
-		memoryStartColor = metricResource.AlertColor
+	if m.MemoryAlert() {
+		memoryStartColor = alertColor
 		memoryEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s/%s%s%s",
-		humanize.Bytes(metricResource.MemoryRequest),
+		humanize.Bytes(m.MemoryRequest),
 		memoryStartColor,
-		humanize.Bytes(metricResource.MemoryUsed),
+		humanize.Bytes(m.MemoryUsed),
 		memoryEndColor,
 	)
 }
 
-func (metricResource MetricsResource) MemoryRequestString() string {
-	return humanize.Bytes(metricResource.MemoryRequest)
+func (m MetricsResource) MemoryRequestString() string {
+	return humanize.Bytes(m.MemoryRequest)
 }
 
-func (metricResource MetricsResource) MemoryUsedString() string {
-	if metricResource.MemoryUsed == unset {
+func (m MetricsResource) MemoryUsedString(alertColor string) string {
+	if m.MemoryUsed == unset {
 		return ""
 	}
 	memoryStartColor := ""
 	memoryEndColor := ""
-	if metricResource.MemoryAlert() {
-		memoryStartColor = metricResource.AlertColor
+	if m.MemoryAlert() {
+		memoryStartColor = alertColor
 		memoryEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		memoryStartColor,
-		humanize.Bytes(metricResource.MemoryUsed),
+		humanize.Bytes(m.MemoryUsed),
 		memoryEndColor,
 	)
 }
 
-func (metricResource MetricsResource) String() string {
+func (m MetricsResource) StringWithColor(alertColor string) string {
 	cpuStartColor := ""
 	cpuEndColor := ""
-	if metricResource.CPUAlert() {
-		cpuStartColor = metricResource.AlertColor
+	if m.CPUAlert() {
+		cpuStartColor = alertColor
 		cpuEndColor = escapes.ColorReset
 	}
 	memoryStartColor := ""
 	memoryEndColor := ""
-	if metricResource.MemoryAlert() {
-		memoryStartColor = metricResource.AlertColor
+	if m.MemoryAlert() {
+		memoryStartColor = alertColor
 		memoryEndColor = escapes.ColorReset
 	}
-	if metricResource.MemoryUsed == unset && metricResource.CPUUsed == unset {
+	if m.MemoryUsed == unset && m.CPUUsed == unset {
 		return fmt.Sprintf(
 			"CPU=%d, Memory=%s",
-			metricResource.CPURequest,
-			humanize.Bytes(metricResource.MemoryRequest),
+			m.CPURequest,
+			humanize.Bytes(m.MemoryRequest),
 		)
 	}
 	return fmt.Sprintf(
 		"CPU=%d/%s%d%s, Memory=%s/%s%s%s",
-		metricResource.CPURequest,
+		m.CPURequest,
 		cpuStartColor,
-		metricResource.CPUUsed,
+		m.CPUUsed,
 		cpuEndColor,
-		humanize.Bytes(metricResource.MemoryRequest),
+		humanize.Bytes(m.MemoryRequest),
 		memoryStartColor,
-		humanize.Bytes(metricResource.MemoryUsed),
+		humanize.Bytes(m.MemoryUsed),
 		memoryEndColor,
 	)
 }
 
+func (m MetricsResource) String() string {
+	return m.StringWithColor(escapes.TextColorRed)
+}
+
 func (r PodMetricsResource) ContainersMetrics() ContainerMetricsResources {
-	var containerMetricsResources ContainerMetricsResources
+	containerMetricsResources := make(ContainerMetricsResources, 0, len(r.PodMetric.Containers))
 	for i, container := range r.PodResource.Containers {
 		containerMetricsResource := ContainerMetricsResource{
 			Name: container.Name,
 		}
-		cpuMetric, memoryMetric := int64(0), int64(0)
+		var cpuMetric, memoryMetric int64
 		if i < len(r.PodMetric.Containers) {
 			metrics := r.PodMetric.Containers[i]
 			cpuMetric = metrics.CPU
@@ -364,14 +367,12 @@ func (r PodMetricsResource) ContainersMetrics() ContainerMetricsResources {
 			MemoryRequest: container.Requests.Memory,
 			CPUUsed:       cpuMetric,
 			MemoryUsed:    memoryMetric,
-			AlertColor:    escapes.TextColorYellow,
 		}
 		containerMetricsResource.Limits = MetricsResource{
 			CPURequest:    container.Limits.CPU,
 			MemoryRequest: container.Limits.Memory,
 			CPUUsed:       cpuMetric,
 			MemoryUsed:    memoryMetric,
-			AlertColor:    escapes.TextColorRed,
 		}
 		containerMetricsResources = append(containerMetricsResources, containerMetricsResource)
 	}
