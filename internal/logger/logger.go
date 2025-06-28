@@ -31,7 +31,7 @@ func LevelToSlogLevel(level string) (slog.Level, error) {
 	}
 }
 
-func initLogger(logLevel string) {
+func initLoggerWithLevel(logLevel string) {
 	level, err := LevelToSlogLevel(logLevel)
 	if err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ func initLogger(logLevel string) {
 // InitLogger initializes logger instance
 func InitLogger(logLevel string) {
 	onceLog.Do(func() {
-		initLogger(logLevel)
+		initLoggerWithLevel(logLevel)
 	})
 }
 

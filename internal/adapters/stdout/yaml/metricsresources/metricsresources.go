@@ -1,7 +1,8 @@
 package metricsresources
 
 import (
-	"fmt"
+	"os"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
@@ -16,13 +17,13 @@ func Print(list metricsresources.PodMetricsResourceList) {
 		logger.Error("", err)
 		return
 	}
-	fmt.Println(string(data))
+	_, _ = os.Stdout.WriteString(string(data) + "\n")
 }
 
 func (j Yaml) Success(list metricsresources.PodMetricsResourceList) {
 	j(list)
 }
 
-func (j Yaml) Error(err error) {
+func (Yaml) Error(err error) {
 	logger.Error("", err)
 }

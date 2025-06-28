@@ -1,6 +1,7 @@
 package stdin
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -112,18 +113,18 @@ type PodsWatcher interface {
 	ProcessWatch(metricsresources.SuccessProcessor, metricsresources.ErrorProcessor) error
 }
 
-func summaryOutputProcessor(out output.Output, resources resources.Resources) noderesources.SuccessProcessor {
+func summaryOutputProcessor(out output.Output, res resources.Resources) noderesources.SuccessProcessor {
 	switch out {
 	case output.Table:
-		return nodestable.ToTable(resources)
-	case output.Json:
-		return nodesjson.Json(nodesjson.Print)
+		return nodestable.ToTable(res)
+	case output.JSON:
+		return nodesjson.JSON(nodesjson.Print)
 	case output.Yaml:
 		return nodesyaml.Yaml(nodesyaml.Print)
 	case output.String:
 		return nodesstring.String(nodesstring.Print)
 	default:
-		return nodestable.ToTable(resources)
+		return nodestable.ToTable(res)
 	}
 }
 
@@ -131,8 +132,8 @@ func podsOutputProcessor(out output.Output) metricsresources.SuccessProcessor {
 	switch out {
 	case output.Table:
 		return metricstable.Table(metricstable.Print)
-	case output.Json:
-		return metricsjson.Json(metricsjson.Print)
+	case output.JSON:
+		return metricsjson.JSON(metricsjson.Print)
 	case output.Yaml:
 		return metricsyaml.Yaml(metricsyaml.Print)
 	case output.String:
@@ -178,10 +179,7 @@ func summaryFlags() []cli.Flag {
 			Value:   "name",
 			Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
 			Action: func(_ *cli.Context, value string) error {
-				if err := nodesorting.Valid(nodesorting.Sorting(value)); err != nil {
-					return err
-				}
-				return nil
+				return nodesorting.Valid(nodesorting.Sorting(value))
 			},
 		},
 		&cli.BoolFlag{
@@ -197,10 +195,7 @@ func summaryFlags() []cli.Flag {
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
 			Action: func(_ *cli.Context, value []string) error {
 				outputResources := resources.FromStrings(value...)
-				if err := resources.Valid(outputResources...); err != nil {
-					return err
-				}
-				return nil
+				return resources.Valid(outputResources...)
 			},
 		},
 	}
@@ -231,10 +226,7 @@ func podsFlags() []cli.Flag {
 			Value:   "namespace",
 			Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
 			Action: func(_ *cli.Context, value string) error {
-				if err := metricssorting.Valid(metricssorting.Sorting(value)); err != nil {
-					return err
-				}
-				return nil
+				return metricssorting.Valid(metricssorting.Sorting(value))
 			},
 		},
 		&cli.BoolFlag{
@@ -355,7 +347,10 @@ func Start(version string) error { //nolint:funlen // required
 				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
 				config := nodeResourcesConfig(summaryActionConfig)
 				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
-				errorProcessor := outputProcessor.(noderesources.ErrorProcessor)
+				errorProcessor, ok := outputProcessor.(noderesources.ErrorProcessor)
+				if !ok {
+					return errors.New("output processor is not a noderesources.ErrorProcessor")
+				}
 				if summaryActionConfig.WatchMetrics {
 					return summaryWatch(config, outputProcessor, errorProcessor)
 				}
@@ -375,7 +370,10 @@ func Start(version string) error { //nolint:funlen // required
 				podActionConfig.Nodes = c.StringSlice("node")
 				config := metricsResourcesConfig(podActionConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output))
-				errorProcessor := outputProcessor.(metricsresources.ErrorProcessor)
+				errorProcessor, ok := outputProcessor.(metricsresources.ErrorProcessor)
+				if !ok {
+					return errors.New("output processor is not a metricsresources.ErrorProcessor")
+				}
 				if podActionConfig.WatchMetrics {
 					return podsWatch(config, outputProcessor, errorProcessor)
 				}
@@ -385,8 +383,5 @@ func Start(version string) error { //nolint:funlen // required
 		},
 	}
 	app.Flags = commonFlags(&config)
-	if err := app.Run(os.Args); err != nil {
-		return err
-	}
-	return nil
+	return app.Run(os.Args)
 }

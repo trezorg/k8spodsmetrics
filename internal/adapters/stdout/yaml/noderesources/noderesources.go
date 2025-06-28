@@ -23,6 +23,6 @@ func (j Yaml) Success(list noderesources.NodeResourceList) {
 	j(list)
 }
 
-func (j Yaml) Error(err error) {
+func (Yaml) Error(err error) {
 	logger.Error("", err)
 }

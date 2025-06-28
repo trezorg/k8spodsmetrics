@@ -12,7 +12,7 @@ func TestHumanizeBytes(t *testing.T) {
 		val    T
 		result string
 	}
-	var checks = []check[int]{
+	checks := []check[int]{
 		{10, "10B"},
 		{1023, "1023B"},
 		{1025, "1KiB"},
@@ -25,5 +25,4 @@ func TestHumanizeBytes(t *testing.T) {
 			require.Equal(t, checks[i].result, Bytes(checks[i].val))
 		})
 	}
-
 }

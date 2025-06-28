@@ -44,25 +44,30 @@ type WatchResponse struct {
 	data  NodeResourceList
 }
 
-func (c Config) request(ctx context.Context, client corev1.CoreV1Interface, metricsClient metricsv1beta1.MetricsV1beta1Interface) (NodeResourceList, error) {
+func (c Config) apiRequest(
+	ctx context.Context,
+	coreClient corev1.CoreV1Interface,
+	metricsClient metricsv1beta1.MetricsV1beta1Interface,
+) (NodeResourceList, error) {
 	logger.Debug("Getting nodes info...")
 	var nodeResources NodeResourceList
-	cErrors := make([]error, 3)
+	numberOfRequests := 3
+	cErrors := make([]error, numberOfRequests)
 	var podsList pods.PodResourceList
 	var nodesList nodes.NodeList
-	var nodeMetricsList nodemetrics.NodeMetricsList
+	var nodeMetricsList nodemetrics.List
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nodesList, cErrors[0] = nodes.Nodes(ctx, client, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
+		nodesList, cErrors[0] = nodes.Nodes(ctx, coreClient, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		podsList, cErrors[1] = pods.Pods(ctx, client, pods.PodFilter{}, c.Name)
+		podsList, cErrors[1] = pods.Pods(ctx, coreClient, pods.PodFilter{}, c.Name)
 	}()
 
 	wg.Add(1)
@@ -98,7 +103,7 @@ func (c Config) Request(ctx context.Context) (NodeResourceList, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.request(ctx, podsClient, metricsClient)
+	return c.apiRequest(ctx, podsClient, metricsClient)
 }
 
 func (c Config) Watch(ctx context.Context) chan WatchResponse {
@@ -113,7 +118,7 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 			return
 		}
 		p := func() {
-			data, rErr := c.request(ctx, podsClient, metricsClient)
+			data, rErr := c.apiRequest(ctx, podsClient, metricsClient)
 			if rErr != nil {
 				ch <- WatchResponse{error: rErr}
 				return
@@ -123,7 +128,7 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 
 		p()
 
-		ticker := time.NewTicker(time.Duration(c.WatchPeriod) * time.Second)
+		ticker := time.NewTicker(time.Duration(c.WatchPeriod) * time.Second) //nolint:gosec // it is ok
 		defer ticker.Stop()
 
 		for {
@@ -149,10 +154,7 @@ func (c *Config) prepare() error {
 	}
 	klog.InitFlags(nil)
 	defer klog.Flush()
-	if err := flag.Set("v", strconv.Itoa(int(c.KLogLevel))); err != nil {
-		return err
-	}
-	return nil
+	return flag.Set("v", strconv.Itoa(int(c.KLogLevel))) //nolint:gosec // it is safe
 }
 
 func (c Config) Process(successProcessor SuccessProcessor) error {

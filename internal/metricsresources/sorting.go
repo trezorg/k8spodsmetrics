@@ -48,7 +48,7 @@ func memoryRequest(containers []pods.ContainerResource) int64 {
 
 func memoryLimit(containers []pods.ContainerResource) int64 {
 	result := int64(0)
-	for i := 0; i < len(containers); i++ {
+	for i := range containers {
 		result += containers[i].Limits.Memory
 	}
 	return result
@@ -56,7 +56,7 @@ func memoryLimit(containers []pods.ContainerResource) int64 {
 
 func memoryUsed(containers []podmetrics.ContainerMetric) int64 {
 	result := int64(0)
-	for i := 0; i < len(containers); i++ {
+	for i := range containers {
 		result += containers[i].Memory
 	}
 	return result

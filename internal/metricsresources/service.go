@@ -43,10 +43,14 @@ type WatchResponse struct {
 	data  PodMetricsResourceList
 }
 
-func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.MetricsV1beta1Interface, podsClient corev1.CoreV1Interface) (PodMetricsResourceList, error) {
+func (c Config) apiRequest(
+	ctx context.Context,
+	metricsClient metricsv1beta1.MetricsV1beta1Interface,
+	podsClient corev1.CoreV1Interface,
+) (PodMetricsResourceList, error) {
 	logger.Debug("Getting metrics...")
 	var podMetricsResourceList PodMetricsResourceList
-	c_errors := make([]error, 2)
+	cErrors := make([]error, 2)
 	var podsList pods.PodResourceList
 	var metricsList podmetrics.PodMetricList
 	wg := sync.WaitGroup{}
@@ -54,7 +58,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		metricsList, c_errors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
+		metricsList, cErrors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
 		})
@@ -63,7 +67,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		podsList, c_errors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
+		podsList, cErrors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
 		}, "")
@@ -73,7 +77,7 @@ func (c Config) request(ctx context.Context, metricsClient metricsv1beta1.Metric
 
 	var rErr error
 
-	for _, err := range c_errors {
+	for _, err := range cErrors {
 		if err != nil {
 			rErr = errors.Join(rErr, err)
 		}
@@ -97,7 +101,7 @@ func (c Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.request(ctx, metricsClient, podsClient)
+	return c.apiRequest(ctx, metricsClient, podsClient)
 }
 
 func (c Config) Watch(ctx context.Context) chan WatchResponse {
@@ -112,7 +116,7 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 			return
 		}
 		p := func() {
-			data, err := c.request(ctx, metricsClient, podsClient)
+			data, err := c.apiRequest(ctx, metricsClient, podsClient)
 			if err != nil {
 				ch <- WatchResponse{error: err}
 				return
@@ -122,7 +126,7 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 
 		p()
 
-		ticker := time.NewTicker(time.Duration(c.WatchPeriod) * time.Second)
+		ticker := time.NewTicker(time.Duration(c.WatchPeriod) * time.Second) //nolint:gosec // it is ok
 		defer ticker.Stop()
 
 		for {
@@ -148,10 +152,7 @@ func (c *Config) prepare() error {
 	}
 	klog.InitFlags(nil)
 	defer klog.Flush()
-	if err := flag.Set("v", strconv.Itoa(int(c.KLogLevel))); err != nil {
-		return err
-	}
-	return nil
+	return flag.Set("v", strconv.Itoa(int(c.KLogLevel))) //nolint:gosec // it is ok
 }
 
 func (c Config) Process(successProcessor SuccessProcessor) error {

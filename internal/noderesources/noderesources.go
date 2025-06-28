@@ -227,6 +227,8 @@ func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
 		return n.filterBy(func(n NodeResource) bool { return n.IsStorageAlerted() })
 	case alerts.StorageEphemeral:
 		return n.filterBy(func(n NodeResource) bool { return n.IsStorageEphemeralAlerted() })
+	case alerts.None:
+		return n
 	default:
 		return n
 	}
@@ -388,7 +390,7 @@ func (n NodeResourceList) String() string {
 	return buffer.String()
 }
 
-func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMetricList nodemetrics.NodeMetricsList) NodeResourceList {
+func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMetricList nodemetrics.List) NodeResourceList {
 	nodesMap := make(map[string]*NodeResource)
 	for _, node := range nodeList {
 		nodesMap[node.Name] = &NodeResource{

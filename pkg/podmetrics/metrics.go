@@ -34,14 +34,15 @@ type MetricFilter struct {
 
 // Metrics get pod metrics for MetricFilter
 func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricFilter) (PodMetricList, error) {
-	var result PodMetricList
 	podMetrics, err := api.PodMetricses(filter.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: filter.FieldSelector,
 	})
 	if err != nil {
-		return result, err
+		return nil, err
 	}
+
+	result := make(PodMetricList, 0, len(podMetrics.Items))
 	for _, podMetric := range podMetrics.Items {
 		metric := PodMetric{Name: podMetric.Name, Namespace: podMetric.Namespace}
 		for _, container := range podMetric.Containers {

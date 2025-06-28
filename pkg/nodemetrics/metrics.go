@@ -3,9 +3,9 @@ package nodemetrics
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1" //nolint:revive // it is ok
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1" //nolint:revive // it is ok
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
 
@@ -17,7 +17,7 @@ type NodeMetric struct {
 	StorageEphemeral int64
 }
 
-type NodeMetricsList []NodeMetric
+type List []NodeMetric
 
 type MetricsFilter struct {
 	LabelSelector string
@@ -25,8 +25,7 @@ type MetricsFilter struct {
 }
 
 // Metrics get pod metrics for MetricFilter
-func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricsFilter, nodeName string) (NodeMetricsList, error) {
-	var result NodeMetricsList
+func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricsFilter, nodeName string) (List, error) {
 	var nodeMetrics *v1beta1.NodeMetricsList
 	var err error
 	if nodeName == "" {
@@ -41,19 +40,21 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 		nodeMetrics = &allNodeMetrics
 	}
 	if err != nil {
-		return result, err
+		return nil, err
 	}
+
+	result := make(List, 0, len(nodeMetrics.Items))
 	for _, nodeMetric := range nodeMetrics.Items {
 		resourceList := nodeMetric.Usage
 		metric := NodeMetric{Name: nodeMetric.Name}
 		for name, quantity := range resourceList {
-			switch name {
+			switch name { //nolint:exhaustive // it is ok
 			case v1.ResourceMemory:
 				if memory, ok := quantity.AsInt64(); ok {
 					metric.Memory = memory
 				}
 			case v1.ResourceCPU:
-				metric.CPU = int64(quantity.ToDec().AsApproximateFloat64() * 1000)
+				metric.CPU = int64(quantity.ToDec().AsApproximateFloat64() * 1000) //nolint:mnd // it is ok
 			case v1.ResourceStorage:
 				if storage, ok := quantity.AsInt64(); ok {
 					metric.Storage = storage
@@ -62,6 +63,8 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 				if storage, ok := quantity.AsInt64(); ok {
 					metric.StorageEphemeral = storage
 				}
+			default:
+				// Ignore other resource types
 			}
 		}
 		result = append(result, metric)

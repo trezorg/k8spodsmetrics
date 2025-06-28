@@ -8,7 +8,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 )
 
-type Json func(list noderesources.NodeResourceList)
+type JSON func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
 	enc := json.NewEncoder(os.Stdout)
@@ -19,10 +19,10 @@ func Print(list noderesources.NodeResourceList) {
 	}
 }
 
-func (j Json) Success(list noderesources.NodeResourceList) {
+func (j JSON) Success(list noderesources.NodeResourceList) {
 	j(list)
 }
 
-func (j Json) Error(err error) {
+func (JSON) Error(err error) {
 	logger.Error("", err)
 }

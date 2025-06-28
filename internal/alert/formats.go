@@ -34,15 +34,15 @@ func Valid(o Alert) error {
 func StringList(separator string) string {
 	builder := strings.Builder{}
 	size := 0
-	for i := 0; i < len(choices); i++ {
+	for i := range choices {
 		size += len(choices[i])
 	}
 	size += (len(choices) - 1) * len(separator)
 	builder.Grow(size)
-	for i := 0; i < len(choices); i++ {
-		builder.WriteString(string(choices[i]))
+	for i := range choices {
+		_, _ = builder.WriteString(string(choices[i]))
 		if i < len(choices)-1 {
-			builder.WriteString(separator)
+			_, _ = builder.WriteString(separator)
 		}
 	}
 	return builder.String()

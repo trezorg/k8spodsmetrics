@@ -65,6 +65,6 @@ func (s Table) Success(list metricsresources.PodMetricsResourceList) {
 	s(list)
 }
 
-func (s Table) Error(err error) {
+func (Table) Error(err error) {
 	logger.Error("", err)
 }
