@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1" //nolint:revive // it is used
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -41,79 +41,98 @@ type PodFilter struct {
 	FieldSelector string `json:"field_selector,omitempty" yaml:"field_selector,omitempty"`
 }
 
-func pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeName string) (PodResourceList, error) {
-	var result PodResourceList
-	pods, err := corev1.Pods(filter.Namespace).List(ctx, metav1.ListOptions{
+func extractContainerResources(container v1.Container) ContainerResource {
+	limits := container.Resources.Limits
+	requests := container.Resources.Requests
+	containerResource := ContainerResource{
+		Name: container.Name,
+	}
+
+	// Extract limits
+	if cpuLimit, ok := limits[v1.ResourceCPU]; ok {
+		containerResource.Limits.CPU = cpuLimit.MilliValue()
+	}
+	if memoryLimit, ok := limits[v1.ResourceMemory]; ok {
+		if memory, ok := memoryLimit.AsInt64(); ok {
+			containerResource.Limits.Memory = memory
+		}
+	}
+	if storageLimit, ok := limits[v1.ResourceStorage]; ok {
+		if storage, ok := storageLimit.AsInt64(); ok {
+			containerResource.Limits.Storage = storage
+		}
+	}
+	if storageEphemeralLimit, ok := limits[v1.ResourceEphemeralStorage]; ok {
+		if storage, ok := storageEphemeralLimit.AsInt64(); ok {
+			containerResource.Limits.StorageEphemeral = storage
+		}
+	}
+
+	// Extract requests
+	if cpuRequest, ok := requests[v1.ResourceCPU]; ok {
+		containerResource.Requests.CPU = cpuRequest.MilliValue()
+	}
+	if memoryRequest, ok := requests[v1.ResourceMemory]; ok {
+		if memory, ok := memoryRequest.AsInt64(); ok {
+			containerResource.Requests.Memory = memory
+		}
+	}
+	if storageRequest, ok := requests[v1.ResourceStorage]; ok {
+		if storage, ok := storageRequest.AsInt64(); ok {
+			containerResource.Requests.Storage = storage
+		}
+	}
+	if storageEphemeralRequest, ok := requests[v1.ResourceEphemeralStorage]; ok {
+		if storage, ok := storageEphemeralRequest.AsInt64(); ok {
+			containerResource.Requests.StorageEphemeral = storage
+		}
+	}
+
+	return containerResource
+}
+
+func convertPodToResource(pod v1.Pod) PodResource {
+	podResource := PodResource{
+		NamespaceName: NamespaceName{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+		},
+		NodeName: pod.Spec.NodeName,
+	}
+
+	containers := make([]ContainerResource, 0, len(pod.Spec.Containers))
+	for _, container := range pod.Spec.Containers {
+		containers = append(containers, extractContainerResources(container))
+	}
+
+	sort.Slice(containers, func(i, j int) bool {
+		return containers[i].Name < containers[j].Name
+	})
+
+	podResource.Containers = containers
+	return podResource
+}
+
+func Pods(
+	ctx context.Context,
+	coreV1Ifc corev1.CoreV1Interface,
+	filter PodFilter,
+	nodeName string,
+) (PodResourceList, error) {
+	pods, err := coreV1Ifc.Pods(filter.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: filter.FieldSelector,
 	})
 	if err != nil {
-		return result, err
+		return nil, err
 	}
+
+	result := make(PodResourceList, 0, len(pods.Items))
 	for _, pod := range pods.Items {
 		if nodeName != "" && nodeName != pod.Spec.NodeName {
 			continue
 		}
-		podResource := PodResource{
-			NamespaceName: NamespaceName{
-				Name:      pod.Name,
-				Namespace: pod.Namespace,
-			},
-			NodeName: pod.Spec.NodeName,
-		}
-		for _, container := range pod.Spec.Containers {
-			limits := container.Resources.Limits
-			requests := container.Resources.Requests
-			containerResource := ContainerResource{
-				Name: container.Name,
-			}
-			if cpuLimit, ok := limits[v1.ResourceCPU]; ok {
-				containerResource.Limits.CPU = cpuLimit.MilliValue()
-			}
-			if memoryLimit, ok := limits[v1.ResourceMemory]; ok {
-				if memory, ok := memoryLimit.AsInt64(); ok {
-					containerResource.Limits.Memory = memory
-				}
-			}
-			if storageLimit, ok := limits[v1.ResourceStorage]; ok {
-				if storage, ok := storageLimit.AsInt64(); ok {
-					containerResource.Limits.Storage = storage
-				}
-			}
-			if storageEphemeralLimit, ok := limits[v1.ResourceEphemeralStorage]; ok {
-				if storage, ok := storageEphemeralLimit.AsInt64(); ok {
-					containerResource.Limits.StorageEphemeral = storage
-				}
-			}
-			if cpuRequest, ok := requests[v1.ResourceCPU]; ok {
-				containerResource.Requests.CPU = cpuRequest.MilliValue()
-			}
-			if memoryRequest, ok := requests[v1.ResourceMemory]; ok {
-				if memory, ok := memoryRequest.AsInt64(); ok {
-					containerResource.Requests.Memory = memory
-				}
-			}
-			if storageRequest, ok := limits[v1.ResourceStorage]; ok {
-				if storage, ok := storageRequest.AsInt64(); ok {
-					containerResource.Requests.Storage = storage
-				}
-			}
-			if storageEphemeralRequest, ok := limits[v1.ResourceEphemeralStorage]; ok {
-				if storage, ok := storageEphemeralRequest.AsInt64(); ok {
-					containerResource.Requests.StorageEphemeral = storage
-				}
-			}
-			podResource.Containers = append(podResource.Containers, containerResource)
-		}
-		sort.Slice(podResource.Containers, func(i, j int) bool {
-			return podResource.Containers[i].Name < podResource.Containers[j].Name
-		})
-		result = append(result, podResource)
+		result = append(result, convertPodToResource(pod))
 	}
 	return result, nil
-}
-
-// Pods get pods
-func Pods(ctx context.Context, corev1 corev1.CoreV1Interface, filter PodFilter, nodeName string) (PodResourceList, error) {
-	return pods(ctx, corev1, filter, nodeName)
 }

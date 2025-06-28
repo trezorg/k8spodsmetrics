@@ -79,15 +79,15 @@ func (r Resources) IsStorage() bool {
 func join(resources Resources, separator string) string {
 	builder := strings.Builder{}
 	size := 0
-	for i := 0; i < len(resources); i++ {
+	for i := range resources {
 		size += len(resources[i])
 	}
 	size += (len(resources) - 1) * len(separator)
 	builder.Grow(size)
-	for i := 0; i < len(resources); i++ {
-		builder.WriteString(string(resources[i]))
+	for i := range resources {
+		_, _ = builder.WriteString(string(resources[i]))
 		if i < len(resources)-1 {
-			builder.WriteString(separator)
+			_, _ = builder.WriteString(separator)
 		}
 	}
 	return builder.String()

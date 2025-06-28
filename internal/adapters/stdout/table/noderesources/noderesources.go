@@ -192,6 +192,6 @@ func (s Table) Success(list noderesources.NodeResourceList) {
 	s(list)
 }
 
-func (s Table) Error(err error) {
+func (Table) Error(err error) {
 	logger.Error("", err)
 }

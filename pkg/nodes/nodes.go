@@ -3,7 +3,7 @@ package nodes
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1" //nolint:revive // it is ok
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -31,28 +31,30 @@ type Node struct {
 
 type NodeList []Node
 
-func Nodes(ctx context.Context, corev1 corev1.CoreV1Interface, filter NodeFilter, name string) (NodeList, error) {
-	var result NodeList
+func Nodes(ctx context.Context, corev1Ifc corev1.CoreV1Interface, filter NodeFilter, name string) (NodeList, error) {
 	var nodes *v1.NodeList
 	var err error
-	client := corev1.Nodes()
+	client := corev1Ifc.Nodes()
 	if name == "" {
 		nodes, err = client.List(ctx, metav1.ListOptions{
 			LabelSelector: filter.LabelSelector,
 			FieldSelector: filter.FieldSelector,
 		})
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 	} else {
-		node, err := client.Get(ctx, name, metav1.GetOptions{})
+		var node *v1.Node
+		node, err = client.Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 		items := []v1.Node{*node}
 		allNodes := v1.NodeList{Items: items}
 		nodes = &allNodes
 	}
+
+	result := make(NodeList, 0, len(nodes.Items))
 	for _, node := range nodes.Items {
 		memory, ok := node.Status.Capacity.Memory().AsInt64()
 		if !ok {

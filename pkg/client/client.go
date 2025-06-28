@@ -74,7 +74,7 @@ func CoreV1Client(kubeconfigPath string, context string) (corev1.CoreV1Interface
 	return pc, nil
 }
 
-func MetricsClient(kubeconfigPath string, context string) (metricsv1beta1.MetricsV1beta1Interface, error) {
+func ForMetrics(kubeconfigPath string, context string) (metricsv1beta1.MetricsV1beta1Interface, error) {
 	config, err := restConfig(kubeconfigPath, context)
 	if err != nil {
 		return nil, err

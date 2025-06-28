@@ -1,7 +1,7 @@
 package metricsresources
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
@@ -10,13 +10,13 @@ import (
 type String func(list metricsresources.PodMetricsResourceList)
 
 func Print(list metricsresources.PodMetricsResourceList) {
-	fmt.Println(list)
+	_, _ = os.Stdout.WriteString(list.String() + "\n")
 }
 
 func (j String) Success(list metricsresources.PodMetricsResourceList) {
 	j(list)
 }
 
-func (j String) Error(err error) {
+func (String) Error(err error) {
 	logger.Error("", err)
 }

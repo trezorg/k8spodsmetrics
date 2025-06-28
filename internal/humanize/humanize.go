@@ -10,6 +10,10 @@ type Number interface {
 	constraints.Integer | constraints.Float
 }
 
+const (
+	epsilon = 0.001
+)
+
 var (
 	sizes = [...]string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
 )
@@ -27,7 +31,7 @@ func Bytes[V Number](s V) string {
 		}
 		sf = t
 	}
-	if sf-float64(int(sf)) < 0.001 {
+	if sf-float64(int(sf)) < epsilon {
 		return fmt.Sprintf("%d%s", int(sf), sizes[i])
 	}
 	return fmt.Sprintf("%0.1f%s", sf, sizes[i])

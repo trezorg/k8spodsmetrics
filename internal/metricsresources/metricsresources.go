@@ -442,6 +442,8 @@ func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsReso
 		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPURequestAlerted() })
 	case alerts.CPULimit:
 		return r.filterBy(func(c ContainerMetricsResources) bool { return c.IsCPULimitAlerted() })
+	case alerts.None, alerts.Storage, alerts.StorageEphemeral:
+		return r
 	default:
 		return r
 	}

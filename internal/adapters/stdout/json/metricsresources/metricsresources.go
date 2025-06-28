@@ -8,7 +8,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 )
 
-type Json func(list metricsresources.PodMetricsResourceList)
+type JSON func(list metricsresources.PodMetricsResourceList)
 
 func Print(list metricsresources.PodMetricsResourceList) {
 	enc := json.NewEncoder(os.Stdout)
@@ -18,10 +18,10 @@ func Print(list metricsresources.PodMetricsResourceList) {
 	}
 }
 
-func (j Json) Success(list metricsresources.PodMetricsResourceList) {
+func (j JSON) Success(list metricsresources.PodMetricsResourceList) {
 	j(list)
 }
 
-func (j Json) Error(err error) {
+func (JSON) Error(err error) {
 	logger.Error("", err)
 }

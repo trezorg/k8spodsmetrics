@@ -222,7 +222,7 @@ func (n NodeResourceList) sortFreeStorageEphemeral(reversed bool) {
 	sort.Slice(n, less)
 }
 
-func (n NodeResourceList) sort(by string, reversed bool) {
+func (n NodeResourceList) sort(by string, reversed bool) { //nolint:revive // it is ok
 	switch noderesources.Sorting(by) {
 	case noderesources.Name:
 		n.sortByName(reversed)
