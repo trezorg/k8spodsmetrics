@@ -31,6 +31,7 @@ type Config struct {
 	LogLevel     string
 	Output       string
 	Sorting      string
+	Resources    []string
 	Alert        string
 	KLogLevel    uint
 	WatchPeriod  uint

@@ -47,10 +47,14 @@ type (
 	}
 
 	MetricsResource struct {
-		CPURequest    int64 `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
-		MemoryRequest int64 `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
-		CPUUsed       int64 `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
-		MemoryUsed    int64 `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
+		CPURequest              int64 `json:"cpu_request,omitempty" yaml:"cpu_request,omitempty"`
+		MemoryRequest           int64 `json:"memory_request,omitempty" yaml:"memory_request,omitempty"`
+		CPUUsed                 int64 `json:"cpu_used,omitempty" yaml:"cpu_used,omitempty"`
+		MemoryUsed              int64 `json:"memory_used,omitempty" yaml:"memory_used,omitempty"`
+		StorageRequest          int64 `json:"storage_request,omitempty" yaml:"storage_request,omitempty"`
+		StorageEphemeralRequest int64 `json:"storage_ephemeral_request,omitempty" yaml:"storage_ephemeral_request,omitempty"`
+		StorageUsed             int64 `json:"storage_used,omitempty" yaml:"storage_used,omitempty"`
+		StorageEphemeralUsed    int64 `json:"storage_ephemeral_used,omitempty" yaml:"storage_ephemeral_used,omitempty"`
 	}
 
 	Resource struct {
@@ -129,6 +133,14 @@ func (c ContainerMetricsResource) CPUUsed() string {
 		return c.Limits.CPUUsedString(escapes.TextColorRed)
 	}
 	return c.Requests.CPUUsedString(escapes.TextColorRed)
+}
+
+func (c ContainerMetricsResource) StorageUsed() string {
+	return c.Requests.StorageString()
+}
+
+func (c ContainerMetricsResource) StorageEphemeralUsed() string {
+	return c.Requests.StorageEphemeralString()
 }
 
 func (c ContainerMetricsResource) toOutput() ContainerMetricsResourceOutput {
@@ -353,26 +365,38 @@ func (r PodMetricsResource) ContainersMetrics() ContainerMetricsResources {
 		containerMetricsResource := ContainerMetricsResource{
 			Name: container.Name,
 		}
-		var cpuMetric, memoryMetric int64
+		var cpuMetric, memoryMetric, storageMetric, storageEphemeralMetric int64
 		if i < len(r.PodMetric.Containers) {
 			metrics := r.PodMetric.Containers[i]
 			cpuMetric = metrics.CPU
 			memoryMetric = metrics.Memory
+			storageMetric = metrics.Storage
+			storageEphemeralMetric = metrics.StorageEphemeral
 		} else {
 			cpuMetric = unset
 			memoryMetric = unset
+			storageMetric = unset
+			storageEphemeralMetric = unset
 		}
 		containerMetricsResource.Requests = MetricsResource{
-			CPURequest:    container.Requests.CPU,
-			MemoryRequest: container.Requests.Memory,
-			CPUUsed:       cpuMetric,
-			MemoryUsed:    memoryMetric,
+			CPURequest:              container.Requests.CPU,
+			MemoryRequest:           container.Requests.Memory,
+			CPUUsed:                 cpuMetric,
+			MemoryUsed:              memoryMetric,
+			StorageRequest:          container.Requests.Storage,
+			StorageEphemeralRequest: container.Requests.StorageEphemeral,
+			StorageUsed:             storageMetric,
+			StorageEphemeralUsed:    storageEphemeralMetric,
 		}
 		containerMetricsResource.Limits = MetricsResource{
-			CPURequest:    container.Limits.CPU,
-			MemoryRequest: container.Limits.Memory,
-			CPUUsed:       cpuMetric,
-			MemoryUsed:    memoryMetric,
+			CPURequest:              container.Limits.CPU,
+			MemoryRequest:           container.Limits.Memory,
+			CPUUsed:                 cpuMetric,
+			MemoryUsed:              memoryMetric,
+			StorageRequest:          container.Limits.Storage,
+			StorageEphemeralRequest: container.Limits.StorageEphemeral,
+			StorageUsed:             storageMetric,
+			StorageEphemeralUsed:    storageEphemeralMetric,
 		}
 		containerMetricsResources = append(containerMetricsResources, containerMetricsResource)
 	}
@@ -424,6 +448,22 @@ func (r PodMetricsResourceList) filterNodes(nodes []string) PodMetricsResourceLi
 	return r.filterByPodResource(func(r PodMetricsResource) bool {
 		return slices.Contains(nodes, r.NodeName)
 	})
+}
+
+func (m MetricsResource) StorageString() string {
+	return humanize.Bytes(m.StorageUsed)
+}
+
+func (m MetricsResource) StorageEphemeralString() string {
+	return humanize.Bytes(m.StorageEphemeralUsed)
+}
+
+func (m MetricsResource) StorageRequestString() string {
+	return humanize.Bytes(m.StorageRequest)
+}
+
+func (m MetricsResource) StorageEphemeralRequestString() string {
+	return humanize.Bytes(m.StorageEphemeralRequest)
 }
 
 func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsResourceList {

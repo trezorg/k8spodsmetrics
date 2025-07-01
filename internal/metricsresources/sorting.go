@@ -62,6 +62,22 @@ func memoryUsed(containers []podmetrics.ContainerMetric) int64 {
 	return result
 }
 
+func storageUsed(containers []podmetrics.ContainerMetric) int64 {
+	result := int64(0)
+	for i := range containers {
+		result += containers[i].Storage
+	}
+	return result
+}
+
+func storageEphemeralUsed(containers []podmetrics.ContainerMetric) int64 {
+	result := int64(0)
+	for i := range containers {
+		result += containers[i].StorageEphemeral
+	}
+	return result
+}
+
 func (r PodMetricsResourceList) sortByNamespace(reversed bool) {
 	less := func(i, j int) bool {
 		if r[i].Namespace < r[j].Namespace {
@@ -136,6 +152,14 @@ func (r PodMetricsResourceList) sortByUsedMemory(reversed bool) {
 	r.sortPodMetric(reversed, memoryUsed)
 }
 
+func (r PodMetricsResourceList) sortByUsedStorage(reversed bool) {
+	r.sortPodMetric(reversed, storageUsed)
+}
+
+func (r PodMetricsResourceList) sortByUsedStorageEphemeral(reversed bool) {
+	r.sortPodMetric(reversed, storageEphemeralUsed)
+}
+
 func (r PodMetricsResourceList) sort(by string, reverse bool) {
 	switch metricsresources.Sorting(by) {
 	case metricsresources.Name:
@@ -154,5 +178,9 @@ func (r PodMetricsResourceList) sort(by string, reverse bool) {
 		r.sortByRequestMemory(reverse)
 	case metricsresources.UsedMemory:
 		r.sortByUsedMemory(reverse)
+	case metricsresources.UsedStorage:
+		r.sortByUsedStorage(reverse)
+	case metricsresources.UsedStorageEphemeral:
+		r.sortByUsedStorageEphemeral(reverse)
 	}
 }

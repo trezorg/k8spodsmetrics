@@ -109,6 +109,10 @@ linters:
             - 15
         - name: flag-parameter
           disabled: true
+        - name: function-length
+          arguments:
+            - 80
+            - 0
     staticcheck:
       checks:
         - -ST1000

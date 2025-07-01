@@ -9,15 +9,17 @@ import (
 type Sorting string
 
 const (
-	Name             Sorting = "name"
-	Namespace        Sorting = "namespace"
-	RequestCPU       Sorting = "request_cpu"
-	LimitCPU         Sorting = "limit_cpu"
-	UsedCPU          Sorting = "used_cpu"
-	RequestMemory    Sorting = "request_memory"
-	LimitMemory      Sorting = "limit_memory"
-	UsedMemory       Sorting = "used_memory"
-	defaultSeparator string  = "|"
+	Name                 Sorting = "name"
+	Namespace            Sorting = "namespace"
+	RequestCPU           Sorting = "request_cpu"
+	LimitCPU             Sorting = "limit_cpu"
+	UsedCPU              Sorting = "used_cpu"
+	RequestMemory        Sorting = "request_memory"
+	LimitMemory          Sorting = "limit_memory"
+	UsedMemory           Sorting = "used_memory"
+	UsedStorage          Sorting = "used_storage"
+	UsedStorageEphemeral Sorting = "used_storage_ephemeral"
+	defaultSeparator     string  = "|"
 )
 
 var choices = []Sorting{
@@ -29,6 +31,8 @@ var choices = []Sorting{
 	RequestMemory,
 	LimitMemory,
 	UsedMemory,
+	UsedStorage,
+	UsedStorageEphemeral,
 }
 
 func Valid(o Sorting) error {

@@ -43,6 +43,7 @@ type podConfig struct {
 	Label     string
 	Nodes     []string
 	Sorting   string
+	Resources []string
 	commonConfig
 	Reverse bool
 }
@@ -67,6 +68,7 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Output:       c.Output,
 		Sorting:      c.Sorting,
 		Reverse:      c.Reverse,
+		Resources:    c.Resources,
 		KLogLevel:    c.KLogLevel,
 		Alert:        c.Alert,
 		WatchMetrics: c.WatchMetrics,
@@ -128,10 +130,10 @@ func summaryOutputProcessor(out output.Output, res resources.Resources) nodereso
 	}
 }
 
-func podsOutputProcessor(out output.Output) metricsresources.SuccessProcessor {
+func podsOutputProcessor(out output.Output, res resources.Resources) metricsresources.SuccessProcessor {
 	switch out {
 	case output.Table:
-		return metricstable.Table(metricstable.Print)
+		return metricstable.ToTable(res)
 	case output.JSON:
 		return metricsjson.JSON(metricsjson.Print)
 	case output.Yaml:
@@ -139,7 +141,7 @@ func podsOutputProcessor(out output.Output) metricsresources.SuccessProcessor {
 	case output.String:
 		return metricsstring.String(metricsstring.Print)
 	default:
-		return metricstable.Table(metricstable.Print)
+		return metricstable.ToTable(res)
 	}
 }
 
@@ -234,6 +236,16 @@ func podsFlags() []cli.Flag {
 			Aliases: []string{"r"},
 			Value:   false,
 			Usage:   "Reverse sort",
+		},
+		&cli.StringSliceFlag{
+			Name:    "resource",
+			Aliases: []string{"o"},
+			Value:   cli.NewStringSlice(string(resources.All)),
+			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
+			Action: func(_ *cli.Context, value []string) error {
+				outputResources := resources.FromStrings(value...)
+				return resources.Valid(outputResources...)
+			},
 		},
 	}
 }
@@ -368,8 +380,14 @@ func Start(version string) error { //nolint:funlen // required
 				podActionConfig.Sorting = c.String("sorting")
 				podActionConfig.Reverse = c.Bool("reverse")
 				podActionConfig.Nodes = c.StringSlice("node")
+				cmdResources := c.StringSlice("resource")
+				outputResources := resources.FromStrings(cmdResources...)
+				if err := resources.Valid(outputResources...); err != nil {
+					return err
+				}
+				podActionConfig.Resources = resources.ToStrings(outputResources...)
 				config := metricsResourcesConfig(podActionConfig)
-				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output))
+				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources)
 				errorProcessor, ok := outputProcessor.(metricsresources.ErrorProcessor)
 				if !ok {
 					return errors.New("output processor is not a metricsresources.ErrorProcessor")
