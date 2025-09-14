@@ -2,6 +2,7 @@ package humanize
 
 import (
 	"fmt"
+	"math"
 
 	"golang.org/x/exp/constraints"
 )
@@ -10,29 +11,38 @@ type Number interface {
 	constraints.Integer | constraints.Float
 }
 
+var sizes = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
+
 const (
-	epsilon = 0.001
+	roundFactor       = 10.0
+	intRoundThreshold = 10.0
 )
 
-var (
-	sizes = [...]string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
-)
-
+// Bytes formats a byte size using IEC (base-1024) units.
+// Examples: 0 -> "0B", 1024 -> "1KiB", 1536 -> "1.5KiB", -1024 -> "-1KiB".
 func Bytes[V Number](s V) string {
-	div := 1024
-
 	sf := float64(s)
 
-	var i int
-	for i = range sizes {
-		t := sf / float64(div)
-		if t < 1 {
-			break
-		}
-		sf = t
+	if sf == 0 || math.IsNaN(sf) {
+		return "0B"
 	}
-	if sf-float64(int(sf)) < epsilon {
-		return fmt.Sprintf("%d%s", int(sf), sizes[i])
+
+	sign := ""
+	if sf < 0 {
+		sign = "-"
+		sf = -sf
 	}
-	return fmt.Sprintf("%0.1f%s", sf, sizes[i])
+
+	i := 0
+	for sf >= 1024 && i < len(sizes)-1 {
+		sf /= 1024
+		i++
+	}
+
+	// Round to one decimal, then suppress trailing .0
+	rounded := math.Round(sf*roundFactor) / roundFactor
+	if math.Abs(rounded-math.Round(rounded)) < 1e-9 || rounded >= intRoundThreshold {
+		return fmt.Sprintf("%s%d%s", sign, int(math.Round(rounded)), sizes[i])
+	}
+	return fmt.Sprintf("%s%0.1f%s", sign, rounded, sizes[i])
 }
