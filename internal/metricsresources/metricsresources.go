@@ -10,11 +10,10 @@ import (
 	escapes "github.com/snugfox/ansi-escapes"
 	alerts "github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
-	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
+	"log/slog"
 )
 
 const (
@@ -543,7 +542,7 @@ func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMet
 	for _, pm := range podMetricList {
 		podMetricsResource, ok := podsMap[pods.NamespaceName{Namespace: pm.Namespace, Name: pm.Name}]
 		if !ok {
-			logger.Warn("Cannot substitute namespace and name", slog.String("namespace", pm.Namespace), slog.String("name", pm.Name))
+			slog.Warn("Cannot substitute namespace and name", slog.String("namespace", pm.Namespace), slog.String("name", pm.Name))
 			continue
 		}
 		podMetricsResource.PodMetric = pm

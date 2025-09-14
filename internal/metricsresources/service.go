@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
+	"log/slog"
 )
 
 type Config struct {
@@ -49,7 +49,7 @@ func (c Config) apiRequest(
 	metricsClient metricsv1beta1.MetricsV1beta1Interface,
 	podsClient corev1.CoreV1Interface,
 ) (PodMetricsResourceList, error) {
-	logger.Debug("Getting metrics...")
+	slog.Debug("Getting metrics...")
 	var podMetricsResourceList PodMetricsResourceList
 	cErrors := make([]error, 2)
 	var podsList pods.PodResourceList
@@ -97,7 +97,7 @@ func (c Config) apiRequest(
 
 func (c Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 	var err error
-	logger.Debug("Preparing client...")
+	slog.Debug("Preparing client...")
 	metricsClient, podsClient, err := client.Clients(c.KubeConfig, c.KubeContext)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (c Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 
 func (c Config) Watch(ctx context.Context) chan WatchResponse {
 	ch := make(chan WatchResponse, 1)
-	logger.Debug("Preparing client...")
+	slog.Debug("Preparing client...")
 
 	go func() {
 		defer close(ch)
@@ -143,7 +143,6 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 }
 
 func (c *Config) prepare() error {
-	logger.InitLogger(c.LogLevel)
 	if c.KubeConfig == "" {
 		var err error
 		c.KubeConfig, err = client.FindKubeConfig()

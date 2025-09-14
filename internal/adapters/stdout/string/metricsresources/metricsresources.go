@@ -3,8 +3,8 @@ package metricsresources
 import (
 	"os"
 
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
+	"log/slog"
 )
 
 type String func(list metricsresources.PodMetricsResourceList)
@@ -18,5 +18,5 @@ func (j String) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (String) Error(err error) {
-	logger.Error("", err)
+	slog.Error("", slog.Any("error", err))
 }

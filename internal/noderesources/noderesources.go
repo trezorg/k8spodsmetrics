@@ -8,11 +8,10 @@ import (
 	escapes "github.com/snugfox/ansi-escapes"
 	alerts "github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/nodemetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/nodes"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 const (
@@ -410,7 +409,7 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 	for _, pod := range podResourceList {
 		nodeResource, ok := nodesMap[pod.NodeName]
 		if !ok {
-			logger.Debug("Cannot find node", slog.String("node", pod.NodeName))
+			slog.Debug("Cannot find node", slog.String("node", pod.NodeName))
 			continue
 		}
 		for _, container := range pod.Containers {
@@ -425,7 +424,7 @@ func merge(podResourceList pods.PodResourceList, nodeList nodes.NodeList, nodeMe
 	for _, metric := range nodeMetricList {
 		nodeResource, ok := nodesMap[metric.Name]
 		if !ok {
-			logger.Warn("Cannot find node", slog.String("node", metric.Name))
+			slog.Warn("Cannot find node", slog.String("node", metric.Name))
 			continue
 		}
 		nodeResource.UsedCPU = metric.CPU

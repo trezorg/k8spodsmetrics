@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
+	"log/slog"
 )
 
 type JSON func(list noderesources.NodeResourceList)
@@ -15,7 +15,7 @@ func Print(list noderesources.NodeResourceList) {
 	enc.SetIndent("", "    ")
 	envelop := noderesources.NodeResourceListEnvelop{Items: list}
 	if err := enc.Encode(envelop); err != nil {
-		logger.Error("", err)
+		slog.Error("", slog.Any("error", err))
 	}
 }
 
@@ -24,5 +24,5 @@ func (j JSON) Success(list noderesources.NodeResourceList) {
 }
 
 func (JSON) Error(err error) {
-	logger.Error("", err)
+	slog.Error("", slog.Any("error", err))
 }

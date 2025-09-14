@@ -3,8 +3,8 @@ package noderesources
 import (
 	"os"
 
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
+	"log/slog"
 )
 
 type String func(list noderesources.NodeResourceList)
@@ -18,5 +18,5 @@ func (j String) Success(list noderesources.NodeResourceList) {
 }
 
 func (String) Error(err error) {
-	logger.Error("", err)
+	slog.Error("", slog.Any("error", err))
 }

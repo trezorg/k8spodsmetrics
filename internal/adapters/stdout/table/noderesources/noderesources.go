@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
+	"log/slog"
 )
 
 type Table func(
@@ -193,5 +193,5 @@ func (s Table) Success(list noderesources.NodeResourceList) {
 }
 
 func (Table) Error(err error) {
-	logger.Error("", err)
+	slog.Error("", slog.Any("error", err))
 }

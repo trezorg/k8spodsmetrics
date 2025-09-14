@@ -1,10 +1,11 @@
 package noderesources
 
 import (
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 )
 
 func nodeResourceList(name string) NodeResourceList {
@@ -22,7 +23,7 @@ func nodeResourceList(name string) NodeResourceList {
 }
 
 func TestStringify(t *testing.T) {
-	logger.InitDefaultLogger()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	nodeResourceList := nodeResourceList("foo")
 	text := nodeResourceList.String()
 	require.Greater(t, len(text), 0)

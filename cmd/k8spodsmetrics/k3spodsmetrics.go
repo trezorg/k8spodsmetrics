@@ -2,14 +2,22 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/trezorg/k8spodsmetrics/internal/adapters/stdin"
+	"github.com/urfave/cli/v2"
 )
 
 var version = "0.0.1"
 
 func main() {
-	if err := stdin.Start(version); err != nil {
+	app := stdin.NewApp(version)
+	// Initialize logging once using global flags via Before hook
+	app.Before = func(c *cli.Context) error {
+		initLogger(c.String("loglevel"))
+		return nil
+	}
+	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

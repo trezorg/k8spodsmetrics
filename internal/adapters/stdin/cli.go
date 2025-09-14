@@ -3,7 +3,6 @@ package stdin
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
 	metricsscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/metricsresources"
@@ -325,7 +324,7 @@ func commonFlags(config *commonConfig) []cli.Flag { //nolint:funlen // required
 	}
 }
 
-func Start(version string) error { //nolint:funlen // required
+func NewApp(version string) *cli.App { //nolint:funlen // required
 	config := commonConfig{}
 
 	app := cli.NewApp()
@@ -401,5 +400,5 @@ func Start(version string) error { //nolint:funlen // required
 		},
 	}
 	app.Flags = commonFlags(&config)
-	return app.Run(os.Args)
+	return app
 }

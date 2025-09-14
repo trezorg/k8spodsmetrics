@@ -1,10 +1,11 @@
 package metricsresources
 
 import (
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 )
@@ -52,7 +53,7 @@ func posMetricsList(name, namespace, container string) podmetrics.PodMetricList 
 }
 
 func TestMergeSameNamespaceAndName(t *testing.T) {
-	logger.InitDefaultLogger()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := posMetricsList("foo", "bar", "foo-container")
 	pods := merge(podResourceList, podMetricList)
@@ -65,7 +66,7 @@ func TestMergeSameNamespaceAndName(t *testing.T) {
 }
 
 func TestMergeDifferentNamespaceAndName(t *testing.T) {
-	logger.InitDefaultLogger()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := posMetricsList("foo1", "bar", "foo-container")
 	pods := merge(podResourceList, podMetricList)
@@ -77,7 +78,7 @@ func TestMergeDifferentNamespaceAndName(t *testing.T) {
 }
 
 func TestStringify(t *testing.T) {
-	logger.InitDefaultLogger()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := []podmetrics.PodMetric{}
 	pods := merge(podResourceList, podMetricList)

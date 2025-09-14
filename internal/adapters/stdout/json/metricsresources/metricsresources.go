@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/trezorg/k8spodsmetrics/internal/logger"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
+	"log/slog"
 )
 
 type JSON func(list metricsresources.PodMetricsResourceList)
@@ -14,7 +14,7 @@ func Print(list metricsresources.PodMetricsResourceList) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
 	if err := enc.Encode(list); err != nil {
-		logger.Error("", err)
+		slog.Error("", slog.Any("error", err))
 	}
 }
 
@@ -23,5 +23,5 @@ func (j JSON) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (JSON) Error(err error) {
-	logger.Error("", err)
+	slog.Error("", slog.Any("error", err))
 }
