@@ -266,5 +266,8 @@ func (n NodeResourceList) sort(by string, reversed bool) { //nolint:revive // it
 		n.sortFreeStorage(reversed)
 	case noderesources.FreeStorageEphemeral:
 		n.sortFreeStorageEphemeral(reversed)
+	default:
+		// keep current order on unknown sorting
+		return
 	}
 }

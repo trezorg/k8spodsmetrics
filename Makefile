@@ -20,4 +20,7 @@ build:
 lint: golangci
 	go vet ./...
 
-.PHONY: test list build
+format:
+	go fmt ./...
+
+.PHONY: test list build format

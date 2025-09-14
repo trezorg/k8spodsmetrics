@@ -182,5 +182,8 @@ func (r PodMetricsResourceList) sort(by string, reverse bool) {
 		r.sortByUsedStorage(reverse)
 	case metricsresources.UsedStorageEphemeral:
 		r.sortByUsedStorageEphemeral(reverse)
+	default:
+		// keep current order on unknown sorting
+		return
 	}
 }
