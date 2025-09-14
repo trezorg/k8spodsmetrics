@@ -329,6 +329,8 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 
 	app := cli.NewApp()
 	app.Version = version
+	// Run "summary" (alias: "s") when no subcommand is provided
+	app.DefaultCommand = "summary"
 	app.Authors = []*cli.Author{{
 		Name:  "Igor Nemilentsev",
 		Email: "trezorg@gmail.com",

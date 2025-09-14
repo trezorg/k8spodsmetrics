@@ -63,15 +63,15 @@ type (
 
 	ContainerMetricsResource struct {
 		Name     string          `json:"name,omitempty" yaml:"name,omitempty"`
-		Limits   MetricsResource `json:"limits,omitempty" yaml:"limits,omitempty"`
-		Requests MetricsResource `json:"requests,omitempty" yaml:"requests,omitempty"`
+		Limits   MetricsResource `json:"limits" yaml:"limits"`
+		Requests MetricsResource `json:"requests" yaml:"requests"`
 	}
 
 	ContainerMetricsResourceOutput struct {
-		Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
-		Limits   Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
-		Requests Resource `json:"requests,omitempty" yaml:"requests,omitempty"`
-		Used     Resource `json:"used,omitempty" yaml:"used,omitempty"`
+		Name     string   `json:"name,omitempty" yaml:"name"`
+		Limits   Resource `json:"limits" yaml:"limits"`
+		Requests Resource `json:"requests" yaml:"requests"`
+		Used     Resource `json:"used" yaml:"used"`
 	}
 
 	ContainerMetricsResources        []ContainerMetricsResource
