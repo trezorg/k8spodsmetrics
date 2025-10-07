@@ -56,23 +56,19 @@ func (c Config) apiRequest(
 	var metricsList podmetrics.PodMetricList
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		metricsList, cErrors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
 		})
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		podsList, cErrors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
 		}, "")
-	}()
+	})
 
 	wg.Wait()
 

@@ -52,29 +52,24 @@ func (c Config) apiRequest(
 	slog.Debug("Getting nodes info...")
 	var nodeResources NodeResourceList
 	numberOfRequests := 3
-	cErrors := make([]error, numberOfRequests)
 	var podsList pods.PodResourceList
 	var nodesList nodes.NodeList
 	var nodeMetricsList nodemetrics.List
+	cErrors := make([]error, numberOfRequests)
+
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		nodesList, cErrors[0] = nodes.Nodes(ctx, coreClient, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		podsList, cErrors[1] = pods.Pods(ctx, coreClient, pods.PodFilter{}, c.Name)
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		nodeMetricsList, cErrors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: c.Label}, c.Name)
-	}()
+	})
 
 	wg.Wait()
 
