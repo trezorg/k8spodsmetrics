@@ -4,3 +4,5 @@
 .envrc
 /plan*.md
 /.go*
+/.cache
+/.serena
