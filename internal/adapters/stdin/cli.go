@@ -124,9 +124,8 @@ func summaryOutputProcessor(out output.Output, res resources.Resources) nodereso
 		return nodesyaml.Yaml(nodesyaml.Print)
 	case output.String:
 		return nodesstring.String(nodesstring.Print)
-	default:
-		return nodestable.ToTable(res)
 	}
+	return nodestable.ToTable(res)
 }
 
 func podsOutputProcessor(out output.Output, res resources.Resources) metricsresources.SuccessProcessor {
@@ -139,9 +138,8 @@ func podsOutputProcessor(out output.Output, res resources.Resources) metricsreso
 		return metricsyaml.Yaml(metricsyaml.Print)
 	case output.String:
 		return metricsstring.String(metricsstring.Print)
-	default:
-		return metricstable.ToTable(res)
 	}
+	return metricstable.ToTable(res)
 }
 
 func summary(processor SummaryProcessor, successProcessor noderesources.SuccessProcessor) error {

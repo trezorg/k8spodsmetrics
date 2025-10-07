@@ -228,9 +228,8 @@ func (n NodeResourceList) filterByAlert(alert alerts.Alert) NodeResourceList {
 		return n.filterBy(func(n NodeResource) bool { return n.IsStorageEphemeralAlerted() })
 	case alerts.None:
 		return n
-	default:
-		return n
 	}
+	return n
 }
 
 func (n NodeResource) CPUTemplate() string {
