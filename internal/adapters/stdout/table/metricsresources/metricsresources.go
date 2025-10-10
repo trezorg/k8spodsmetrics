@@ -3,10 +3,11 @@ package metricsresources
 import (
 	"os"
 
+	"log/slog"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
-	"log/slog"
 )
 
 type Table func(list metricsresources.PodMetricsResourceList)
@@ -20,7 +21,7 @@ func ToTable(
 }
 
 func headerFooter(outputResources resources.Resources, firstColumn string) table.Row {
-	result := table.Row{firstColumn, "Namespace", "Node Name"}
+	result := table.Row{firstColumn, "", ""}
 	if outputResources.IsCPU() {
 		result = append(
 			result,
@@ -89,11 +90,15 @@ func row(resource metricsresources.PodMetricsResource, outputResources resources
 	if len(containers) == 0 {
 		return result
 	}
-
-	// Use first container for pod-level metrics
 	container := containers[0]
 
 	if outputResources.IsCPU() {
+		for _, cn := range containers[1:] {
+			container.Requests.CPURequest += cn.Requests.CPURequest
+			container.Limits.CPURequest += cn.Limits.CPURequest
+			container.Requests.CPUUsed += cn.Requests.CPUUsed
+			container.Limits.CPUUsed += cn.Limits.CPUUsed
+		}
 		result = append(
 			result,
 			container.Requests.CPURequestString(),
@@ -102,6 +107,12 @@ func row(resource metricsresources.PodMetricsResource, outputResources resources
 		)
 	}
 	if outputResources.IsMemory() {
+		for _, cn := range containers[1:] {
+			container.Requests.MemoryRequest += cn.Requests.MemoryRequest
+			container.Limits.MemoryRequest += cn.Limits.MemoryRequest
+			container.Requests.MemoryUsed += cn.Requests.MemoryUsed
+			container.Limits.MemoryUsed += cn.Limits.MemoryUsed
+		}
 		result = append(
 			result,
 			container.Requests.MemoryRequestString(),
@@ -110,6 +121,18 @@ func row(resource metricsresources.PodMetricsResource, outputResources resources
 		)
 	}
 	if outputResources.IsStorage() {
+		for _, cn := range containers[1:] {
+			container.Requests.StorageRequest += cn.Requests.StorageRequest
+			container.Limits.StorageRequest += cn.Limits.StorageRequest
+			container.Requests.StorageUsed += cn.Requests.StorageUsed
+			container.Limits.StorageUsed += cn.Limits.StorageUsed
+		}
+		for _, cn := range containers[1:] {
+			container.Requests.StorageEphemeralRequest += cn.Requests.StorageEphemeralRequest
+			container.Limits.StorageEphemeralRequest += cn.Limits.StorageEphemeralRequest
+			container.Requests.StorageEphemeralUsed += cn.Requests.StorageEphemeralUsed
+			container.Limits.StorageEphemeralUsed += cn.Limits.StorageEphemeralUsed
+		}
 		result = append(
 			result,
 			container.Requests.StorageRequestString(),
@@ -124,7 +147,7 @@ func row(resource metricsresources.PodMetricsResource, outputResources resources
 }
 
 func containerRow(container metricsresources.ContainerMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{"", "", container.Name}
+	result := table.Row{container.Name, "", ""}
 
 	if outputResources.IsCPU() {
 		result = append(
@@ -163,7 +186,7 @@ func Print(
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t.AppendHeader(headerFooter(outputResources, "Pod Name"), rowConfigAutoMerge)
+	t.AppendHeader(headerFooter(outputResources, "Pod Name / Container Names"), rowConfigAutoMerge)
 	t.AppendHeader(secondaryHeader(outputResources))
 
 	total := metricsresources.ContainerMetricsResource{}
@@ -178,7 +201,7 @@ func Print(
 		t.AppendRow(row(resource, outputResources))
 
 		// Add additional container rows
-		for _, container := range containers[1:] {
+		for _, container := range containers {
 			t.AppendRow(containerRow(container, outputResources))
 		}
 
@@ -205,7 +228,8 @@ func Print(
 
 	// Add footer with totals
 	t.AppendFooter(headerFooter(outputResources, "Total"), rowConfigAutoMerge)
-	totalRow := table.Row{"Total", "", ""}
+	t.AppendFooter(secondaryHeader(outputResources))
+	totalRow := table.Row{"", "", ""}
 	if outputResources.IsCPU() {
 		totalRow = append(
 			totalRow,
