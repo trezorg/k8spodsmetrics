@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"log/slog"
+
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
@@ -19,7 +21,6 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
-	"log/slog"
 )
 
 type Config struct {
@@ -51,6 +52,7 @@ func (c Config) apiRequest(
 ) (PodMetricsResourceList, error) {
 	slog.Debug("Getting metrics...")
 	var podMetricsResourceList PodMetricsResourceList
+
 	cErrors := make([]error, 2)
 	var podsList pods.PodResourceList
 	var metricsList podmetrics.PodMetricList
@@ -60,6 +62,7 @@ func (c Config) apiRequest(
 		metricsList, cErrors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
+			FieldSelector: "",
 		})
 	})
 
@@ -67,7 +70,7 @@ func (c Config) apiRequest(
 		podsList, cErrors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
-		}, "")
+		}, c.Nodes...)
 	})
 
 	wg.Wait()

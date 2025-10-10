@@ -2,7 +2,11 @@ package pods
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"slices"
 	"sort"
+	"sync"
 
 	v1 "k8s.io/api/core/v1" //nolint:revive // it is used
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,8 +22,8 @@ type Resource struct {
 
 type ContainerResource struct {
 	Name     string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Limits   Resource `json:"limits,omitempty" yaml:"limits,omitempty"`
-	Requests Resource `json:"requests,omitempty" yaml:"requests,omitempty"`
+	Limits   Resource `json:"limits" yaml:"limits"`
+	Requests Resource `json:"requests" yaml:"requests"`
 }
 
 type NamespaceName struct {
@@ -28,7 +32,7 @@ type NamespaceName struct {
 }
 
 type PodResource struct {
-	NamespaceName `json:"namespace_name,omitempty" yaml:"namespace_name,omitempty"`
+	NamespaceName `json:"namespace_name" yaml:"namespace_name"`
 	NodeName      string              `json:"node_name,omitempty" yaml:"node_name,omitempty"`
 	Containers    []ContainerResource `json:"containers,omitempty" yaml:"containers,omitempty"`
 }
@@ -39,6 +43,7 @@ type PodFilter struct {
 	Namespace     string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
 	LabelSelector string `json:"label_selector,omitempty" yaml:"label_selector,omitempty"`
 	FieldSelector string `json:"field_selector,omitempty" yaml:"field_selector,omitempty"`
+	NodeName      string `json:"node,omitempty" yaml:"node,omitempty"`
 }
 
 func extractContainerResources(container v1.Container) ContainerResource {
@@ -117,22 +122,82 @@ func Pods(
 	ctx context.Context,
 	coreV1Ifc corev1.CoreV1Interface,
 	filter PodFilter,
-	nodeName string,
+	nodeNames ...string,
 ) (PodResourceList, error) {
-	pods, err := coreV1Ifc.Pods(filter.Namespace).List(ctx, metav1.ListOptions{
+	nodeNames = slices.DeleteFunc(nodeNames, func(n string) bool { return n == "" })
+
+	if len(nodeNames) == 0 {
+		return listPods(ctx, coreV1Ifc, filter)
+	}
+
+	var wg sync.WaitGroup
+
+	var errs error
+	rErrors := make([]error, len(nodeNames))
+	pods := make([]PodResourceList, len(nodeNames))
+
+	for idx, nodeName := range nodeNames {
+		wg.Go(func() {
+			nodeFilter := filter
+			nodeFilter.NodeName = nodeName
+			pods[idx], rErrors[idx] = listPods(ctx, coreV1Ifc, nodeFilter)
+		})
+	}
+
+	wg.Wait()
+
+	for _, err := range rErrors {
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	resultLen := 0
+	for _, p := range pods {
+		resultLen += len(p)
+	}
+	result := make(PodResourceList, 0, resultLen)
+	for _, p := range pods {
+		result = append(result, p...)
+	}
+	return result, nil
+}
+
+func listPods(
+	ctx context.Context,
+	coreV1Ifc corev1.CoreV1Interface,
+	filter PodFilter,
+) (PodResourceList, error) {
+	opts := metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
-		FieldSelector: filter.FieldSelector,
-	})
+		FieldSelector: buildFieldSelector(filter),
+	}
+	pods, err := coreV1Ifc.Pods(filter.Namespace).List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make(PodResourceList, 0, len(pods.Items))
 	for _, pod := range pods.Items {
-		if nodeName != "" && nodeName != pod.Spec.NodeName {
-			continue
-		}
 		result = append(result, convertPodToResource(pod))
 	}
 	return result, nil
+}
+
+func buildFieldSelector(filter PodFilter) string {
+	fieldSelector := filter.FieldSelector
+	if filter.NodeName == "" {
+		return fieldSelector
+	}
+
+	nodeSelector := fmt.Sprintf("spec.nodeName=%s", filter.NodeName)
+	if fieldSelector == "" {
+		return nodeSelector
+	}
+
+	return fieldSelector + "," + nodeSelector
 }
