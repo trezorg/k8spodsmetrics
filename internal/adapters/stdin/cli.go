@@ -38,11 +38,12 @@ type commonConfig struct {
 }
 
 type podConfig struct {
-	Namespace string
-	Label     string
-	Nodes     []string
-	Sorting   string
-	Resources []string
+	Namespace     string
+	Label         string
+	FieldSelector string
+	Nodes         []string
+	Sorting       string
+	Resources     []string
 	commonConfig
 	Reverse bool
 }
@@ -58,20 +59,21 @@ type summaryConfig struct {
 
 func metricsResourcesConfig(c podConfig) metricsresources.Config {
 	return metricsresources.Config{
-		KubeConfig:   c.KubeConfig,
-		KubeContext:  c.KubeContext,
-		Namespace:    c.Namespace,
-		Label:        c.Label,
-		Nodes:        c.Nodes,
-		LogLevel:     c.LogLevel,
-		Output:       c.Output,
-		Sorting:      c.Sorting,
-		Reverse:      c.Reverse,
-		Resources:    c.Resources,
-		KLogLevel:    c.KLogLevel,
-		Alert:        c.Alert,
-		WatchMetrics: c.WatchMetrics,
-		WatchPeriod:  c.WatchPeriod,
+		KubeConfig:    c.KubeConfig,
+		KubeContext:   c.KubeContext,
+		Namespace:     c.Namespace,
+		Label:         c.Label,
+		FieldSelector: c.FieldSelector,
+		Nodes:         c.Nodes,
+		LogLevel:      c.LogLevel,
+		Output:        c.Output,
+		Sorting:       c.Sorting,
+		Reverse:       c.Reverse,
+		Resources:     c.Resources,
+		KLogLevel:     c.KLogLevel,
+		Alert:         c.Alert,
+		WatchMetrics:  c.WatchMetrics,
+		WatchPeriod:   c.WatchPeriod,
 	}
 }
 
@@ -213,6 +215,12 @@ func podsFlags() []cli.Flag {
 			Aliases: []string{"l"},
 			Value:   "",
 			Usage:   "K8S pod label",
+		},
+		&cli.StringFlag{
+			Name:    "field-selector",
+			Aliases: []string{"f"},
+			Value:   "",
+			Usage:   "K8S field selector",
 		},
 		&cli.StringSliceFlag{
 			Name:    "node",
@@ -376,6 +384,7 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 				podActionConfig := podConfig{commonConfig: config}
 				podActionConfig.Namespace = c.String("namespace")
 				podActionConfig.Label = c.String("label")
+				podActionConfig.FieldSelector = c.String("field-selector")
 				podActionConfig.Sorting = c.String("sorting")
 				podActionConfig.Reverse = c.Bool("reverse")
 				podActionConfig.Nodes = c.StringSlice("node")

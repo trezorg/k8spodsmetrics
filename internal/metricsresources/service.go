@@ -24,20 +24,21 @@ import (
 )
 
 type Config struct {
-	KubeConfig   string
-	KubeContext  string
-	Namespace    string
-	Label        string
-	Nodes        []string
-	LogLevel     string
-	Output       string
-	Sorting      string
-	Resources    []string
-	Alert        string
-	KLogLevel    uint
-	WatchPeriod  uint
-	Reverse      bool
-	WatchMetrics bool
+	KubeConfig    string
+	KubeContext   string
+	Namespace     string
+	Label         string
+	FieldSelector string
+	Nodes         []string
+	LogLevel      string
+	Output        string
+	Sorting       string
+	Resources     []string
+	Alert         string
+	KLogLevel     uint
+	WatchPeriod   uint
+	Reverse       bool
+	WatchMetrics  bool
 }
 
 type WatchResponse struct {
@@ -62,7 +63,7 @@ func (c Config) apiRequest(
 		metricsList, cErrors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
-			FieldSelector: "",
+			FieldSelector: c.FieldSelector,
 		})
 	})
 
@@ -70,6 +71,7 @@ func (c Config) apiRequest(
 		podsList, cErrors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
 			Namespace:     c.Namespace,
 			LabelSelector: c.Label,
+			FieldSelector: c.FieldSelector,
 		}, c.Nodes...)
 	})
 
