@@ -4,6 +4,7 @@ VERSION      	?= $(shell git describe --tags 2> /dev/null || \
 LDFLAGS			:= "-w -s -X 'main.version=${VERSION}'"
 GOOS			?=linux
 GOARCH			?=amd64
+CGO_ENABLED     ?=0
 
 golangci:
 ifndef HAS_GOLANGCI
@@ -15,7 +16,10 @@ test:
 	go test -v -race -count 1 ./...
 
 build:
-	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags $(LDFLAGS) -o build/k8spodsmetrics-$(GOOS)-$(GOARCH) ./cmd/k8spodsmetrics
+	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build \
+		 -ldflags $(LDFLAGS) \
+		 -o build/k8spodsmetrics-$(GOOS)-$(GOARCH) \
+		 ./cmd/k8spodsmetrics
 
 lint: golangci
 	go vet ./...
