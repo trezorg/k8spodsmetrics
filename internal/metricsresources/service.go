@@ -2,13 +2,11 @@ package metricsresources
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
-	"sync"
 	"syscall"
 	"time"
 
@@ -16,8 +14,6 @@ import (
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
-	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
-	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
@@ -47,48 +43,20 @@ type WatchResponse struct {
 
 func (c Config) apiRequest(
 	ctx context.Context,
+	repo PodRepository,
 	metricsClient metricsv1beta1.MetricsV1beta1Interface,
 	podsClient corev1.CoreV1Interface,
 ) (PodMetricsResourceList, error) {
-	slog.Debug("Getting metrics...")
-	var podMetricsResourceList PodMetricsResourceList
-
-	cErrors := make([]error, 2)
-	var podsList pods.PodResourceList
-	var metricsList podmetrics.PodMetricList
-	wg := sync.WaitGroup{}
-
-	wg.Go(func() {
-		metricsList, cErrors[0] = podmetrics.Metrics(ctx, metricsClient, podmetrics.MetricFilter{
-			Namespace:     c.Namespace,
-			LabelSelector: c.Label,
-			FieldSelector: c.FieldSelector,
-		})
-	})
-
-	wg.Go(func() {
-		podsList, cErrors[1] = pods.Pods(ctx, podsClient, pods.PodFilter{
-			Namespace:     c.Namespace,
-			LabelSelector: c.Label,
-			FieldSelector: c.FieldSelector,
-		}, c.Nodes...)
-	})
-
-	wg.Wait()
-
-	var rErr error
-
-	for _, err := range cErrors {
-		if err != nil {
-			rErr = errors.Join(rErr, err)
-		}
+	fetchConfig := FetchConfig{
+		Namespace:     c.Namespace,
+		Label:         c.Label,
+		FieldSelector: c.FieldSelector,
+		Nodes:         c.Nodes,
 	}
-
-	if rErr != nil {
-		return podMetricsResourceList, rErr
+	podMetricsResourceList, err := FetchPodMetrics(ctx, repo, metricsClient, podsClient, fetchConfig)
+	if err != nil {
+		return nil, err
 	}
-
-	podMetricsResourceList = merge(podsList, metricsList)
 	podMetricsResourceList = podMetricsResourceList.filterByAlert(alert.Alert(c.Alert))
 	podMetricsResourceList = podMetricsResourceList.filterNodes(c.Nodes)
 	podMetricsResourceList.sort(c.Sorting, c.Reverse)
@@ -102,7 +70,8 @@ func (c Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.apiRequest(ctx, metricsClient, podsClient)
+	repo := NewPodRepository()
+	return c.apiRequest(ctx, repo, metricsClient, podsClient)
 }
 
 func (c Config) Watch(ctx context.Context) chan WatchResponse {
@@ -116,8 +85,9 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 			ch <- WatchResponse{error: err}
 			return
 		}
+		repo := NewPodRepository()
 		p := func() {
-			data, err := c.apiRequest(ctx, metricsClient, podsClient)
+			data, err := c.apiRequest(ctx, repo, metricsClient, podsClient)
 			if err != nil {
 				ch <- WatchResponse{error: err}
 				return
@@ -152,7 +122,7 @@ func (c *Config) prepare() error {
 	}
 	klog.InitFlags(nil)
 	defer klog.Flush()
-	return flag.Set("v", strconv.Itoa(int(c.KLogLevel))) //nolint:gosec // it is ok
+	return flag.Set("v", strconv.Itoa(int(c.KLogLevel))) //nolint:gosec // it is safe
 }
 
 func (c Config) Process(successProcessor SuccessProcessor) error {

@@ -1,14 +1,11 @@
 package stdin
 
 import (
-	"fmt"
-
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
 	metricsscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/metricsresources"
 	metricsstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
-	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
 
 	nodesjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/noderesources"
@@ -20,8 +17,6 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
-	metricssorting "github.com/trezorg/k8spodsmetrics/internal/sorting/metricsresources"
-	nodesorting "github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
 	"github.com/urfave/cli/v2"
 )
 
@@ -54,47 +49,6 @@ type summaryConfig struct {
 	commonConfig
 	Reverse bool
 }
-
-func metricsResourcesConfig(c podConfig) metricsresources.Config {
-	return metricsresources.Config{
-		KubeConfig:    c.KubeConfig,
-		KubeContext:   c.KubeContext,
-		Namespace:     c.Namespace,
-		Label:         c.Label,
-		FieldSelector: c.FieldSelector,
-		Nodes:         c.Nodes,
-		Output:        c.Output,
-		Sorting:       c.Sorting,
-		Reverse:       c.Reverse,
-		Resources:     c.Resources,
-		KLogLevel:     c.KLogLevel,
-		Alert:         c.Alert,
-		WatchMetrics:  c.WatchMetrics,
-		WatchPeriod:   c.WatchPeriod,
-	}
-}
-
-func nodeResourcesConfig(c summaryConfig) noderesources.Config {
-	return noderesources.Config{
-		KubeConfig:   c.KubeConfig,
-		KubeContext:  c.KubeContext,
-		Label:        c.Label,
-		Name:         c.Name,
-		Output:       c.Output,
-		Sorting:      c.Sorting,
-		Reverse:      c.Reverse,
-		Resources:    c.Resources,
-		KLogLevel:    c.KLogLevel,
-		Alert:        c.Alert,
-		WatchMetrics: c.WatchMetrics,
-		WatchPeriod:  c.WatchPeriod,
-	}
-}
-
-const (
-	defaultKlogLevel          = 3
-	defaultWatchPeriodSeconds = 5
-)
 
 type SummaryProcessor interface {
 	Process(noderesources.SuccessProcessor) error
@@ -166,181 +120,11 @@ func podsWatch(processor PodsWatcher, successProcessor metricsresources.SuccessP
 	return processor.ProcessWatch(metricsscreen.NewScreenSuccessWriter(successProcessor), metricsscreen.NewScreenErrorWriter(errorProcessor))
 }
 
-func summaryFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:    "label",
-			Aliases: []string{"l"},
-			Value:   "",
-			Usage:   "K8S node label",
-		},
-		&cli.StringFlag{
-			Name:    "name",
-			Aliases: []string{"n"},
-			Value:   "",
-			Usage:   "K8S node name",
-		},
-		&cli.StringFlag{
-			Name:    "sorting",
-			Aliases: []string{"s"},
-			Value:   "name",
-			Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
-			Action: func(_ *cli.Context, value string) error {
-				return nodesorting.Valid(nodesorting.Sorting(value))
-			},
-		},
-		&cli.BoolFlag{
-			Name:    "reverse",
-			Aliases: []string{"r"},
-			Value:   false,
-			Usage:   "Reverse sort",
-		},
-		&cli.StringSliceFlag{
-			Name:    "resource",
-			Aliases: []string{"res"},
-			Value:   cli.NewStringSlice(string(resources.All)),
-			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
-			Action: func(_ *cli.Context, value []string) error {
-				outputResources := resources.FromStrings(value...)
-				return resources.Valid(outputResources...)
-			},
-		},
-	}
-}
-
-func podsFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:    "namespace",
-			Aliases: []string{"n"},
-			Value:   "",
-			Usage:   "K8S namespace",
-		},
-		&cli.StringFlag{
-			Name:    "label",
-			Aliases: []string{"l"},
-			Value:   "",
-			Usage:   "K8S pod label",
-		},
-		&cli.StringFlag{
-			Name:    "field-selector",
-			Aliases: []string{"f"},
-			Value:   "",
-			Usage:   "K8S field selector",
-		},
-		&cli.StringSliceFlag{
-			Name:    "node",
-			Aliases: []string{"nd", "nodes"},
-			Usage:   "K8S node names",
-		},
-		&cli.StringFlag{
-			Name:    "sorting",
-			Aliases: []string{"s"},
-			Value:   "namespace",
-			Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
-			Action: func(_ *cli.Context, value string) error {
-				return metricssorting.Valid(metricssorting.Sorting(value))
-			},
-		},
-		&cli.BoolFlag{
-			Name:    "reverse",
-			Aliases: []string{"r"},
-			Value:   false,
-			Usage:   "Reverse sort",
-		},
-		&cli.StringSliceFlag{
-			Name:    "resource",
-			Aliases: []string{"res"},
-			Value:   cli.NewStringSlice(string(resources.All)),
-			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
-			Action: func(_ *cli.Context, value []string) error {
-				outputResources := resources.FromStrings(value...)
-				return resources.Valid(outputResources...)
-			},
-		},
-	}
-}
-
-func commonFlags(config *commonConfig) []cli.Flag { //nolint:funlen // required
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:        "kubeconfig",
-			Aliases:     []string{"k"},
-			Value:       "",
-			Usage:       "K8S config",
-			Destination: &config.KubeConfig,
-		},
-		&cli.StringFlag{
-			Name:        "context",
-			Aliases:     []string{"c"},
-			Value:       "",
-			Usage:       "K8S config context",
-			Destination: &config.KubeContext,
-		},
-		&cli.StringFlag{
-			Name:    "loglevel",
-			Aliases: []string{"level"},
-			Value:   "INFO",
-			Usage:   "Log level",
-		},
-		&cli.UintFlag{
-			Name:        "kloglevel",
-			Aliases:     []string{"klevel"},
-			Value:       defaultKlogLevel,
-			Usage:       "k8s client log level",
-			Destination: &config.KLogLevel,
-		},
-		&cli.StringFlag{
-			Name:        "alerts",
-			Aliases:     []string{"a"},
-			Value:       string(alert.None),
-			Usage:       fmt.Sprintf("Alert format. [%s]", alert.StringListDefault()),
-			Destination: &config.Alert,
-			Action: func(_ *cli.Context, value string) error {
-				if err := alert.Valid(alert.Alert(value)); err != nil {
-					return err
-				}
-				config.Alert = value
-				return nil
-			},
-		},
-		&cli.BoolFlag{
-			Name:        "watch",
-			Aliases:     []string{"w"},
-			Value:       false,
-			Usage:       "Watch for metrics for some period",
-			Destination: &config.WatchMetrics,
-		},
-		&cli.UintFlag{
-			Name:        "watch-period",
-			Aliases:     []string{"p"},
-			Value:       defaultWatchPeriodSeconds,
-			Usage:       "Watch period",
-			Destination: &config.WatchPeriod,
-		},
-		&cli.StringFlag{
-			Name:        "output",
-			Aliases:     []string{"o"},
-			Value:       string(output.Table),
-			Usage:       fmt.Sprintf("Output format. [%s]", output.StringListDefault()),
-			Destination: &config.Output,
-			Action: func(_ *cli.Context, value string) error {
-				if err := output.Valid(output.Output(value)); err != nil {
-					return err
-				}
-				config.Output = value
-				return nil
-			},
-		},
-	}
-}
-
-func NewApp(version string) *cli.App { //nolint:funlen // required
+func NewApp(version string) *cli.App {
 	config := commonConfig{}
 
 	app := cli.NewApp()
 	app.Version = version
-	// Run "summary" (alias: "s") when no subcommand is provided
 	app.DefaultCommand = "summary"
 	app.Authors = []*cli.Author{{
 		Name:  "Igor Nemilentsev",
@@ -369,12 +153,12 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 					return err
 				}
 				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
-				config := nodeResourcesConfig(summaryActionConfig)
+				summaryConfig := nodeResourcesConfig(summaryActionConfig)
 				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
 				if summaryActionConfig.WatchMetrics {
-					return summaryWatch(config, outputProcessor, outputProcessor)
+					return summaryWatch(summaryConfig, outputProcessor, outputProcessor)
 				}
-				return summary(config, outputProcessor)
+				return summary(summaryConfig, outputProcessor)
 			},
 			Flags: summaryFlags(),
 		},
@@ -395,12 +179,12 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 					return err
 				}
 				podActionConfig.Resources = resources.ToStrings(outputResources...)
-				config := metricsResourcesConfig(podActionConfig)
+				podConfig := metricsResourcesConfig(podActionConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources)
 				if podActionConfig.WatchMetrics {
-					return podsWatch(config, outputProcessor, outputProcessor)
+					return podsWatch(podConfig, outputProcessor, outputProcessor)
 				}
-				return pods(config, outputProcessor)
+				return pods(podConfig, outputProcessor)
 			},
 			Flags: podsFlags(),
 		},

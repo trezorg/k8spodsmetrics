@@ -2,25 +2,21 @@ package noderesources
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
-	"sync"
 	"syscall"
 	"time"
 
+	"log/slog"
+
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
-	"github.com/trezorg/k8spodsmetrics/pkg/nodemetrics"
-	"github.com/trezorg/k8spodsmetrics/pkg/nodes"
-	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
-	"log/slog"
 )
 
 type Config struct {
@@ -45,46 +41,18 @@ type WatchResponse struct {
 
 func (c Config) apiRequest(
 	ctx context.Context,
+	repo NodeRepository,
 	coreClient corev1.CoreV1Interface,
 	metricsClient metricsv1beta1.MetricsV1beta1Interface,
 ) (NodeResourceList, error) {
-	slog.Debug("Getting nodes info...")
-	var nodeResources NodeResourceList
-	numberOfRequests := 3
-	var podsList pods.PodResourceList
-	var nodesList nodes.NodeList
-	var nodeMetricsList nodemetrics.List
-	cErrors := make([]error, numberOfRequests)
-
-	wg := sync.WaitGroup{}
-
-	wg.Go(func() {
-		nodesList, cErrors[0] = nodes.Nodes(ctx, coreClient, nodes.NodeFilter{LabelSelector: c.Label}, c.Name)
-	})
-
-	wg.Go(func() {
-		podsList, cErrors[1] = pods.Pods(ctx, coreClient, pods.PodFilter{}, c.Name)
-	})
-
-	wg.Go(func() {
-		nodeMetricsList, cErrors[2] = nodemetrics.Metrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: c.Label}, c.Name)
-	})
-
-	wg.Wait()
-
-	var rErr error
-
-	for _, err := range cErrors {
-		if err != nil {
-			rErr = errors.Join(rErr, err)
-		}
+	fetchConfig := FetchConfig{
+		Label: c.Label,
+		Name:  c.Name,
 	}
-
-	if rErr != nil {
-		return nodeResources, rErr
+	nodeResources, err := FetchNodeMetrics(ctx, repo, coreClient, metricsClient, fetchConfig)
+	if err != nil {
+		return nil, err
 	}
-
-	nodeResources = merge(podsList, nodesList, nodeMetricsList)
 	nodeResources = nodeResources.filterByAlert(alert.Alert(c.Alert))
 	nodeResources.sort(c.Sorting, c.Reverse)
 	return nodeResources, nil
@@ -97,7 +65,8 @@ func (c Config) Request(ctx context.Context) (NodeResourceList, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.apiRequest(ctx, podsClient, metricsClient)
+	repo := NewNodeRepository()
+	return c.apiRequest(ctx, repo, podsClient, metricsClient)
 }
 
 func (c Config) Watch(ctx context.Context) chan WatchResponse {
@@ -111,8 +80,9 @@ func (c Config) Watch(ctx context.Context) chan WatchResponse {
 			ch <- WatchResponse{error: err}
 			return
 		}
+		repo := NewNodeRepository()
 		p := func() {
-			data, rErr := c.apiRequest(ctx, podsClient, metricsClient)
+			data, rErr := c.apiRequest(ctx, repo, podsClient, metricsClient)
 			if rErr != nil {
 				ch <- WatchResponse{error: rErr}
 				return
