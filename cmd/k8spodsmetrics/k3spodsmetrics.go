@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/trezorg/k8spodsmetrics/internal/adapters/stdin"
-	"github.com/trezorg/k8spodsmetrics/internal/logging"
 	"github.com/urfave/cli/v2"
 )
 
@@ -15,7 +14,7 @@ func main() {
 	app := stdin.NewApp(version)
 	// Initialize logging once using global flags via Before hook
 	app.Before = func(c *cli.Context) error {
-		return logging.Init(c.String("loglevel"))
+		return initLogger(c.String("loglevel"))
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

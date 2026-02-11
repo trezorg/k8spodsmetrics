@@ -31,3 +31,9 @@ Using
 ------------------------------------
 
     k8spodsmetrics --help
+
+Logging
+------------------------------------
+
+    --loglevel controls verbosity (DEBUG|INFO|WARN|WARNING|ERROR)
+    Logging uses the Go slog JSON handler
