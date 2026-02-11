@@ -1,7 +1,6 @@
 package stdin
 
 import (
-	"errors"
 	"fmt"
 
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
@@ -101,8 +100,18 @@ type SummaryProcessor interface {
 	Process(noderesources.SuccessProcessor) error
 }
 
+type SummaryOutputProcessor interface {
+	noderesources.SuccessProcessor
+	noderesources.ErrorProcessor
+}
+
 type PodsProcessor interface {
 	Process(metricsresources.SuccessProcessor) error
+}
+
+type PodsOutputProcessor interface {
+	metricsresources.SuccessProcessor
+	metricsresources.ErrorProcessor
 }
 
 type SummaryWatcher interface {
@@ -113,7 +122,7 @@ type PodsWatcher interface {
 	ProcessWatch(metricsresources.SuccessProcessor, metricsresources.ErrorProcessor) error
 }
 
-func summaryOutputProcessor(out output.Output, res resources.Resources) noderesources.SuccessProcessor {
+func summaryOutputProcessor(out output.Output, res resources.Resources) SummaryOutputProcessor {
 	switch out {
 	case output.Table:
 		return nodestable.ToTable(res)
@@ -127,7 +136,7 @@ func summaryOutputProcessor(out output.Output, res resources.Resources) nodereso
 	return nodestable.ToTable(res)
 }
 
-func podsOutputProcessor(out output.Output, res resources.Resources) metricsresources.SuccessProcessor {
+func podsOutputProcessor(out output.Output, res resources.Resources) PodsOutputProcessor {
 	switch out {
 	case output.Table:
 		return metricstable.ToTable(res)
@@ -362,12 +371,8 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
 				config := nodeResourcesConfig(summaryActionConfig)
 				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
-				errorProcessor, ok := outputProcessor.(noderesources.ErrorProcessor)
-				if !ok {
-					return errors.New("output processor is not a noderesources.ErrorProcessor")
-				}
 				if summaryActionConfig.WatchMetrics {
-					return summaryWatch(config, outputProcessor, errorProcessor)
+					return summaryWatch(config, outputProcessor, outputProcessor)
 				}
 				return summary(config, outputProcessor)
 			},
@@ -392,12 +397,8 @@ func NewApp(version string) *cli.App { //nolint:funlen // required
 				podActionConfig.Resources = resources.ToStrings(outputResources...)
 				config := metricsResourcesConfig(podActionConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources)
-				errorProcessor, ok := outputProcessor.(metricsresources.ErrorProcessor)
-				if !ok {
-					return errors.New("output processor is not a metricsresources.ErrorProcessor")
-				}
 				if podActionConfig.WatchMetrics {
-					return podsWatch(config, outputProcessor, errorProcessor)
+					return podsWatch(config, outputProcessor, outputProcessor)
 				}
 				return pods(config, outputProcessor)
 			},
