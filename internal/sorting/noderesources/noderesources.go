@@ -53,6 +53,8 @@ var choices = []Sorting{
 	StorageEphemeral,
 	AllocatableStorageEphemeral,
 	UsedStorageEphemeral,
+	FreeStorage,
+	FreeStorageEphemeral,
 }
 
 func Valid(o Sorting) error {

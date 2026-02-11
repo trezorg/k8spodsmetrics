@@ -191,7 +191,7 @@ func summaryFlags() []cli.Flag {
 		},
 		&cli.StringSliceFlag{
 			Name:    "resource",
-			Aliases: []string{"o"},
+			Aliases: []string{"res"},
 			Value:   cli.NewStringSlice(string(resources.All)),
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
 			Action: func(_ *cli.Context, value []string) error {
@@ -244,7 +244,7 @@ func podsFlags() []cli.Flag {
 		},
 		&cli.StringSliceFlag{
 			Name:    "resource",
-			Aliases: []string{"o"},
+			Aliases: []string{"res"},
 			Value:   cli.NewStringSlice(string(resources.All)),
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
 			Action: func(_ *cli.Context, value []string) error {
