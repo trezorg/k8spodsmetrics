@@ -26,7 +26,6 @@ import (
 type Config struct {
 	KubeConfig   string
 	KubeContext  string
-	LogLevel     string
 	Label        string
 	Name         string
 	Output       string

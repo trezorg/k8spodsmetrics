@@ -2,10 +2,19 @@ package resources
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func joinResources(resources Resources, separator string) string {
+	parts := make([]string, 0, len(resources))
+	for _, r := range resources {
+		parts = append(parts, string(r))
+	}
+	return strings.Join(parts, separator)
+}
 
 func TestCompact(t *testing.T) {
 	testData := []struct {
@@ -23,7 +32,7 @@ func TestCompact(t *testing.T) {
 	}
 
 	for _, data := range testData {
-		testName := fmt.Sprintf("%s => %s", join(data.in, ","), join(data.out, ","))
+		testName := fmt.Sprintf("%s => %s", joinResources(data.in, ","), joinResources(data.out, ","))
 		t.Run(testName, func(t *testing.T) {
 			require.Equal(t, data.out, Compact(data.in...))
 		})
@@ -46,7 +55,7 @@ func TestIsValid(t *testing.T) {
 	}
 
 	for _, data := range testData {
-		testName := join(data.in, ",")
+		testName := joinResources(data.in, ",")
 		t.Run(testName, func(t *testing.T) {
 			require.Equal(t, data.err, Valid(data.in...))
 		})

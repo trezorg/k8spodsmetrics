@@ -29,7 +29,6 @@ import (
 type commonConfig struct {
 	KubeConfig   string
 	KubeContext  string
-	LogLevel     string
 	Output       string
 	Alert        string
 	KLogLevel    uint
@@ -65,7 +64,6 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Label:         c.Label,
 		FieldSelector: c.FieldSelector,
 		Nodes:         c.Nodes,
-		LogLevel:      c.LogLevel,
 		Output:        c.Output,
 		Sorting:       c.Sorting,
 		Reverse:       c.Reverse,
@@ -81,7 +79,6 @@ func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 	return noderesources.Config{
 		KubeConfig:   c.KubeConfig,
 		KubeContext:  c.KubeContext,
-		LogLevel:     c.LogLevel,
 		Label:        c.Label,
 		Name:         c.Name,
 		Output:       c.Output,
@@ -272,11 +269,10 @@ func commonFlags(config *commonConfig) []cli.Flag { //nolint:funlen // required
 			Destination: &config.KubeContext,
 		},
 		&cli.StringFlag{
-			Name:        "loglevel",
-			Aliases:     []string{"level"},
-			Value:       "INFO",
-			Usage:       "Log level",
-			Destination: &config.LogLevel,
+			Name:    "loglevel",
+			Aliases: []string{"level"},
+			Value:   "INFO",
+			Usage:   "Log level",
 		},
 		&cli.UintFlag{
 			Name:        "kloglevel",

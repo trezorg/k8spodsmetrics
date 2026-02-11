@@ -3,7 +3,8 @@ package resources
 import (
 	"fmt"
 	"slices"
-	"strings"
+
+	choiceutil "github.com/trezorg/k8spodsmetrics/internal/choices"
 )
 
 type (
@@ -76,25 +77,8 @@ func (r Resources) IsStorage() bool {
 	return slices.Contains(r, All) || slices.Contains(r, Storage)
 }
 
-func join(resources Resources, separator string) string {
-	builder := strings.Builder{}
-	size := 0
-	for i := range resources {
-		size += len(resources[i])
-	}
-	size += (len(resources) - 1) * len(separator)
-	builder.Grow(size)
-	for i := range resources {
-		_, _ = builder.WriteString(string(resources[i]))
-		if i < len(resources)-1 {
-			_, _ = builder.WriteString(separator)
-		}
-	}
-	return builder.String()
-}
-
 func StringList(separator string) string {
-	return join(choices, separator)
+	return choiceutil.StringList(choices, separator)
 }
 
 func StringListDefault() string {

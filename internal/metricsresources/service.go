@@ -30,7 +30,6 @@ type Config struct {
 	Label         string
 	FieldSelector string
 	Nodes         []string
-	LogLevel      string
 	Output        string
 	Sorting       string
 	Resources     []string
