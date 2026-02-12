@@ -17,16 +17,20 @@
 - Flow: CLI → Config → Service → `pkg/client` → Formatter → stdout; watch mode uses screen wrappers for live updates.
 
 ## Build, Test, and Development Commands
-- `make build` — builds CLI to `build/k8spodsmetrics-${GOOS}-${GOARCH}`. Env vars default to `linux/amd64` (override with `GOOS=darwin GOARCH=arm64`).
-- `make test` — runs `go test -v -race -count 1 ./...`.
-- `make lint` — runs `golangci-lint` and `go vet` (config: `.golangci.yaml`).
-- `make format` — runs `go fmt ./...`.
+- `task build` — builds CLI to `build/k8spodsmetrics-${GOOS}-${GOARCH}`. Env vars default to `linux/amd64` (override with `GOOS=darwin GOARCH=arm64 task build`).
+- `task test` — runs `go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...`.
+- `task test:coverage` — runs tests and prints coverage report.
+- `task lint` — runs `golangci-lint` and `go vet` (config: `.golangci.yaml`).
+- `task format` — runs `go fmt ./...`.
+- `task check` — runs format, lint and test (recommended before committing).
+- `task clean` — removes build artifacts and coverage files.
 - Run locally: `go run ./cmd/k8spodsmetrics --help`.
 - Cross-compile matrix: `bash build.sh`.
 - Install a release binary: `bash install.sh [-d ~/bin] [-v vX.Y.Z]`.
+- Install task: `task install:task` or `cd tools && go install github.com/go-task/task/v3/cmd/task@latest`.
 
 ## Coding Style & Naming Conventions
-- Go formatting is mandatory: `gofmt`/`goimports` and `golangci-lint` must pass (`make lint`).
+- Go formatting is mandatory: `gofmt`/`goimports` and `golangci-lint` must pass (`task lint`).
 - Idiomatic Go naming: exported `CamelCase`, unexported `lowerCamelCase`; package names short, lowercase.
 - Keep packages cohesive; prefer `internal/` for non-public code, `pkg/` for reusable APIs.
 - Avoid breaking public `pkg/` APIs without a semver bump.
@@ -35,12 +39,12 @@
 - Frameworks: `testing` + `github.com/stretchr/testify/require`.
 - Use table-driven tests; name as `TestXxx` and colocate with code.
 - Cover sorting, resource parsing, and formatters; include edge cases.
-- Run `make test` locally; race detector must be clean.
+- Run `task test` locally; race detector must be clean.
 
 ## Commit & Pull Request Guidelines
 - Commits: concise, imperative style (e.g., "Refactor metricsresources", "Add pods resource filter").
 - PRs: clear description, rationale, and linked issue; include sample CLI output/screenshot for UX changes.
-- CI readiness: `make test lint` must pass; update `README.md` when flags or behavior change.
+- CI readiness: `task test lint` must pass; update `README.md` when flags or behavior change.
 
 ## Security & Configuration Tips
 - Never commit kubeconfigs or secrets. Use `KUBECONFIG` or `--kubeconfig`/`--context` flags.

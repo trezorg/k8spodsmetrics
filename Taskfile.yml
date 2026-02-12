@@ -1,0 +1,81 @@
+version: "3"
+
+vars:
+  VERSION:
+    sh: git describe --tags 2>/dev/null || git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8
+  LDFLAGS: -w -s -X 'main.version={{.VERSION}}'
+  GOOS: linux
+  GOARCH: amd64
+  CGO_ENABLED: "0"
+  GOLANGCI_VERSION: v2.9.0
+
+env:
+  CGO_ENABLED: "{{.CGO_ENABLED}}"
+
+tasks:
+  install:golangci:
+    status:
+      - command -v golangci-lint
+    cmds:
+      - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin {{.GOLANGCI_VERSION}}
+
+  install:task:
+    desc: Install task binary
+    cmds:
+      - go install github.com/go-task/task/v3/cmd/task@latest
+
+  golangci:
+    deps:
+      - install:golangci
+    cmds:
+      - golangci-lint run --timeout 10m0s
+
+  test:
+    desc: Run tests with race detector and coverage
+    env:
+      CGO_ENABLED: "1"
+    cmds:
+      - go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...
+
+  test:coverage:
+    desc: Run tests and generate coverage report
+    env:
+      CGO_ENABLED: "1"
+    cmds:
+      - go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...
+      - go tool cover -func=coverage.out
+
+  build:
+    desc: Build binary for target GOOS/GOARCH
+    cmds:
+      - GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -ldflags "{{.LDFLAGS}}" -o build/k8spodsmetrics-{{.GOOS}}-{{.GOARCH}} ./cmd/k8spodsmetrics
+
+  lint:
+    desc: Run all linters
+    deps:
+      - golangci
+    cmds:
+      - go vet ./...
+
+  format:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  check:
+    desc: Run format, lint and test
+    deps:
+      - format
+    cmds:
+      - task: lint
+      - task: test
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf build/
+      - rm -f coverage.out
+
+  default:
+    deps:
+      - build

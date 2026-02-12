@@ -1,4 +1,4 @@
-name: Go
+name: Release
 
 on:
   push:
@@ -6,21 +6,29 @@ on:
       - "v*"
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.26
+          go-version: "1.26"
           cache: true
 
-      - name: Test
-        run: make lint test
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
 
-      - name: Build
+      - name: Lint
+        run: task lint
+
+      - name: Test with coverage
+        run: task test:coverage
+
+      - name: Build all platforms
         run: bash ./build.sh
 
       - name: Create Release
@@ -33,6 +41,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+
       - name: Upload Release Asset Linux AMD64
         uses: actions/upload-release-asset@latest
         env:
@@ -42,6 +51,7 @@ jobs:
           asset_path: ./build/k8spodsmetrics-linux-amd64
           asset_name: k8spodsmetrics-linux-amd64
           asset_content_type: application/octet-stream
+
       - name: Upload Release Asset Linux ARM64
         uses: actions/upload-release-asset@latest
         env:
@@ -51,6 +61,7 @@ jobs:
           asset_path: ./build/k8spodsmetrics-linux-arm64
           asset_name: k8spodsmetrics-linux-arm64
           asset_content_type: application/octet-stream
+
       - name: Upload Release Asset Darwin AMD64
         uses: actions/upload-release-asset@latest
         env:
@@ -60,6 +71,7 @@ jobs:
           asset_path: ./build/k8spodsmetrics-darwin-amd64
           asset_name: k8spodsmetrics-darwin-amd64
           asset_content_type: application/octet-stream
+
       - name: Upload Release Asset Darwin ARM64
         uses: actions/upload-release-asset@latest
         env:
@@ -69,6 +81,7 @@ jobs:
           asset_path: ./build/k8spodsmetrics-darwin-arm64
           asset_name: k8spodsmetrics-darwin-arm64
           asset_content_type: application/octet-stream
+
       - name: Upload Release Asset Windows AMD64
         uses: actions/upload-release-asset@latest
         env:
@@ -78,6 +91,7 @@ jobs:
           asset_path: ./build/k8spodsmetrics-windows-amd64
           asset_name: k8spodsmetrics-windows-amd64
           asset_content_type: application/octet-stream
+
       - name: Upload Release Asset Windows ARM64
         uses: actions/upload-release-asset@latest
         env:

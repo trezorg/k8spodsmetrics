@@ -2,7 +2,7 @@ k8spodsmetrics
 ====================================
 
 Pods metrics
-[![Actions Status]( https://github.com/trezorg/k8spodsmetrics/actions/workflows/go.yml/badge.svg)](https://github.com/trezorg/k8spodsmetrics/actions)
+[![Actions Status]( https://github.com/trezorg/k8spodsmetrics/actions/workflows/ci.yml/badge.svg)](https://github.com/trezorg/k8spodsmetrics/actions)
 
 About
 ------------------------------------
