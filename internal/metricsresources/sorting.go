@@ -10,70 +10,70 @@ import (
 
 func reverse(less func(i, j int) bool) func(i, j int) bool {
 	return func(i, j int) bool {
-		return !less(i, j)
+		return less(j, i)
 	}
 }
 
 func cpuRequest(containers []pods.ContainerResource) int64 {
-	result := int64(0)
-	for i := 0; i < len(containers); i++ {
-		result += containers[i].Requests.CPU
+	var result int64
+	for _, c := range containers {
+		result += c.Requests.CPU
 	}
 	return result
 }
 
 func cpuLimit(containers []pods.ContainerResource) int64 {
-	result := int64(0)
-	for i := 0; i < len(containers); i++ {
-		result += containers[i].Limits.CPU
+	var result int64
+	for _, c := range containers {
+		result += c.Limits.CPU
 	}
 	return result
 }
 
 func cpuUsed(containers []podmetrics.ContainerMetric) int64 {
-	result := int64(0)
-	for i := 0; i < len(containers); i++ {
-		result += containers[i].CPU
+	var result int64
+	for _, c := range containers {
+		result += c.CPU
 	}
 	return result
 }
 
 func memoryRequest(containers []pods.ContainerResource) int64 {
-	result := int64(0)
-	for i := 0; i < len(containers); i++ {
-		result += containers[i].Requests.Memory
+	var result int64
+	for _, c := range containers {
+		result += c.Requests.Memory
 	}
 	return result
 }
 
 func memoryLimit(containers []pods.ContainerResource) int64 {
-	result := int64(0)
-	for i := range containers {
-		result += containers[i].Limits.Memory
+	var result int64
+	for _, c := range containers {
+		result += c.Limits.Memory
 	}
 	return result
 }
 
 func memoryUsed(containers []podmetrics.ContainerMetric) int64 {
-	result := int64(0)
-	for i := range containers {
-		result += containers[i].Memory
+	var result int64
+	for _, c := range containers {
+		result += c.Memory
 	}
 	return result
 }
 
 func storageUsed(containers []podmetrics.ContainerMetric) int64 {
-	result := int64(0)
-	for i := range containers {
-		result += containers[i].Storage
+	var result int64
+	for _, c := range containers {
+		result += c.Storage
 	}
 	return result
 }
 
 func storageEphemeralUsed(containers []podmetrics.ContainerMetric) int64 {
-	result := int64(0)
-	for i := range containers {
-		result += containers[i].StorageEphemeral
+	var result int64
+	for _, c := range containers {
+		result += c.StorageEphemeral
 	}
 	return result
 }
@@ -91,7 +91,7 @@ func (r PodMetricsResourceList) sortByNamespace(reversed bool) {
 	if reversed {
 		less = reverse(less)
 	}
-	sort.Slice(r, less)
+	sort.SliceStable(r, less)
 }
 
 func (r PodMetricsResourceList) sortByName(reversed bool) {
@@ -101,7 +101,7 @@ func (r PodMetricsResourceList) sortByName(reversed bool) {
 	if reversed {
 		less = reverse(less)
 	}
-	sort.Slice(r, less)
+	sort.SliceStable(r, less)
 }
 
 func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.ContainerResource) int64) {
@@ -113,7 +113,7 @@ func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.Con
 	if reversed {
 		less = reverse(less)
 	}
-	sort.Slice(r, less)
+	sort.SliceStable(r, less)
 }
 
 func (r PodMetricsResourceList) sortPodMetric(reversed bool, f func([]podmetrics.ContainerMetric) int64) {
@@ -125,7 +125,7 @@ func (r PodMetricsResourceList) sortPodMetric(reversed bool, f func([]podmetrics
 	if reversed {
 		less = reverse(less)
 	}
-	sort.Slice(r, less)
+	sort.SliceStable(r, less)
 }
 
 func (r PodMetricsResourceList) sortByRequestCPU(reversed bool) {
