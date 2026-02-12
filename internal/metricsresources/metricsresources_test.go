@@ -88,3 +88,59 @@ func TestStringify(t *testing.T) {
 	require.NotContains(t, text, "/", text)
 	require.NotContains(t, pods.String(), "/", pods.String())
 }
+
+func TestConfigBuilder(t *testing.T) {
+	t.Run("default values", func(t *testing.T) {
+		builder := NewConfigBuilder()
+		config := builder.Build()
+		require.Equal(t, uint(5), config.WatchPeriod)
+		require.Equal(t, uint(3), config.KLogLevel)
+	})
+
+	t.Run("with all options", func(t *testing.T) {
+		config := NewConfigBuilder().
+			WithKubeConfig("/custom/kubeconfig").
+			WithKubeContext("custom-context").
+			WithNamespace("production").
+			WithLabel("app=web").
+			WithFieldSelector("status.phase=Running").
+			WithNodes([]string{"node1", "node2"}).
+			WithOutput("json").
+			WithSorting("cpu").
+			WithResources([]string{"cpu", "memory"}).
+			WithAlert("memory").
+			WithKLogLevel(5).
+			WithWatchPeriod(10).
+			WithReverse(true).
+			WithWatchMetrics(true).
+			Build()
+
+		require.Equal(t, "/custom/kubeconfig", config.KubeConfig)
+		require.Equal(t, "custom-context", config.KubeContext)
+		require.Equal(t, "production", config.Namespace)
+		require.Equal(t, "app=web", config.Label)
+		require.Equal(t, "status.phase=Running", config.FieldSelector)
+		require.Equal(t, []string{"node1", "node2"}, config.Nodes)
+		require.Equal(t, "json", config.Output)
+		require.Equal(t, "cpu", config.Sorting)
+		require.Equal(t, []string{"cpu", "memory"}, config.Resources)
+		require.Equal(t, "memory", config.Alert)
+		require.Equal(t, uint(5), config.KLogLevel)
+		require.Equal(t, uint(10), config.WatchPeriod)
+		require.True(t, config.Reverse)
+		require.True(t, config.WatchMetrics)
+	})
+
+	t.Run("chained calls", func(t *testing.T) {
+		builder := NewConfigBuilder()
+		require.NotNil(t, builder)
+
+		result := builder.WithNamespace("ns1").WithOutput("yaml")
+		require.Equal(t, builder, result)
+	})
+}
+
+func TestNewPodRepository(t *testing.T) {
+	repo := NewPodRepository()
+	require.NotNil(t, repo)
+}
