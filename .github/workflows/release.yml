@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -31,73 +34,8 @@ jobs:
       - name: Build all platforms
         run: bash ./build.sh
 
-      - name: Create Release
-        id: release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset Linux AMD64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-linux-amd64
-          asset_name: k8spodsmetrics-linux-amd64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset Linux ARM64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-linux-arm64
-          asset_name: k8spodsmetrics-linux-arm64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset Darwin AMD64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-darwin-amd64
-          asset_name: k8spodsmetrics-darwin-amd64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset Darwin ARM64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-darwin-arm64
-          asset_name: k8spodsmetrics-darwin-arm64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset Windows AMD64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-windows-amd64
-          asset_name: k8spodsmetrics-windows-amd64
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset Windows ARM64
-        uses: actions/upload-release-asset@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./build/k8spodsmetrics-windows-arm64
-          asset_name: k8spodsmetrics-windows-arm64
-          asset_content_type: application/octet-stream
+          files: build/*
+          generate_release_notes: true

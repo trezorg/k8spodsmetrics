@@ -33,8 +33,16 @@ jobs:
       - name: Test with coverage
         run: task test:coverage
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false
+          verbose: true
+
   build:
     runs-on: ubuntu-latest
+    needs: lint-and-test
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
@@ -52,3 +60,25 @@ jobs:
 
       - name: Build
         run: task build
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+
+      - name: Run Govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: "1.26"
+          check-package: ./...
