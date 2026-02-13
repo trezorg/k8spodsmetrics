@@ -32,13 +32,14 @@ func TestPrint(t *testing.T) {
 			},
 		}
 
+		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
 		Print(list)
 
 		w.Close()
-		os.Stdout = os.NewFile(uintptr(1), "/dev/stdout")
+		os.Stdout = old
 
 		var buf bytes.Buffer
 		buf.ReadFrom(r)
@@ -54,13 +55,14 @@ func TestPrint(t *testing.T) {
 	t.Run("prints empty list", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{}
 
+		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
 		Print(list)
 
 		w.Close()
-		os.Stdout = os.NewFile(uintptr(1), "/dev/stdout")
+		os.Stdout = old
 
 		var buf bytes.Buffer
 		buf.ReadFrom(r)
@@ -88,6 +90,7 @@ func TestString_Success(t *testing.T) {
 			},
 		}
 
+		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
@@ -95,7 +98,7 @@ func TestString_Success(t *testing.T) {
 		formatter.Success(list)
 
 		w.Close()
-		os.Stdout = os.NewFile(uintptr(1), "/dev/stdout")
+		os.Stdout = old
 
 		var buf bytes.Buffer
 		buf.ReadFrom(r)
