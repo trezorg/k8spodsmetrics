@@ -40,10 +40,10 @@ type PodResource struct {
 type PodResourceList []PodResource
 
 type PodFilter struct {
-	Namespace     string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
-	LabelSelector string `json:"label_selector,omitempty" yaml:"label_selector,omitempty"`
-	FieldSelector string `json:"field_selector,omitempty" yaml:"field_selector,omitempty"`
-	NodeName      string `json:"node,omitempty" yaml:"node,omitempty"`
+	Namespaces    []string `json:"namespaces,omitempty" yaml:"namespaces,omitempty"`
+	LabelSelector string   `json:"label_selector,omitempty" yaml:"label_selector,omitempty"`
+	FieldSelector string   `json:"field_selector,omitempty" yaml:"field_selector,omitempty"`
+	NodeName      string   `json:"node,omitempty" yaml:"node,omitempty"`
 }
 
 func extractContainerResources(container v1.Container) ContainerResource {
@@ -125,9 +125,63 @@ func Pods(
 	nodeNames ...string,
 ) (PodResourceList, error) {
 	nodeNames = slices.DeleteFunc(nodeNames, func(n string) bool { return n == "" })
+	filter.Namespaces = slices.DeleteFunc(filter.Namespaces, func(n string) bool { return n == "" })
 
+	// If no namespaces specified, query all namespaces (empty string)
+	if len(filter.Namespaces) == 0 {
+		return podsForNamespace(ctx, coreV1Ifc, filter, nodeNames, "")
+	}
+
+	// Single namespace
+	if len(filter.Namespaces) == 1 {
+		return podsForNamespace(ctx, coreV1Ifc, filter, nodeNames, filter.Namespaces[0])
+	}
+
+	// Multiple namespaces: query each in parallel
+	var wg sync.WaitGroup
+
+	var errs error
+	rErrors := make([]error, len(filter.Namespaces))
+	pods := make([]PodResourceList, len(filter.Namespaces))
+
+	for idx, ns := range filter.Namespaces {
+		wg.Go(func() {
+			pods[idx], rErrors[idx] = podsForNamespace(ctx, coreV1Ifc, filter, nodeNames, ns)
+		})
+	}
+
+	wg.Wait()
+
+	for _, err := range rErrors {
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	resultLen := 0
+	for _, p := range pods {
+		resultLen += len(p)
+	}
+	result := make(PodResourceList, 0, resultLen)
+	for _, p := range pods {
+		result = append(result, p...)
+	}
+	return result, nil
+}
+
+func podsForNamespace(
+	ctx context.Context,
+	coreV1Ifc corev1.CoreV1Interface,
+	filter PodFilter,
+	nodeNames []string,
+	namespace string,
+) (PodResourceList, error) {
 	if len(nodeNames) == 0 {
-		return listPods(ctx, coreV1Ifc, filter)
+		return listPods(ctx, coreV1Ifc, filter, namespace)
 	}
 
 	var wg sync.WaitGroup
@@ -140,7 +194,7 @@ func Pods(
 		wg.Go(func() {
 			nodeFilter := filter
 			nodeFilter.NodeName = nodeName
-			pods[idx], rErrors[idx] = listPods(ctx, coreV1Ifc, nodeFilter)
+			pods[idx], rErrors[idx] = listPods(ctx, coreV1Ifc, nodeFilter, namespace)
 		})
 	}
 
@@ -171,12 +225,13 @@ func listPods(
 	ctx context.Context,
 	coreV1Ifc corev1.CoreV1Interface,
 	filter PodFilter,
+	namespace string,
 ) (PodResourceList, error) {
 	opts := metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: buildFieldSelector(filter),
 	}
-	pods, err := coreV1Ifc.Pods(filter.Namespace).List(ctx, opts)
+	pods, err := coreV1Ifc.Pods(namespace).List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

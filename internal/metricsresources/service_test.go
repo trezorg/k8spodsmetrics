@@ -13,7 +13,7 @@ func TestConfig(t *testing.T) {
 	t.Run("default config", func(t *testing.T) {
 		config := Config{}
 		require.Empty(t, config.KubeConfig)
-		require.Empty(t, config.Namespace)
+		require.Empty(t, config.Namespaces)
 		require.False(t, config.WatchMetrics)
 	})
 
@@ -21,7 +21,7 @@ func TestConfig(t *testing.T) {
 		config := Config{
 			KubeConfig:    "/path/to/config",
 			KubeContext:   "test-context",
-			Namespace:     "test-ns",
+			Namespaces:    []string{"test-ns"},
 			Label:         "app=test",
 			FieldSelector: "spec.nodeName=node1",
 			Nodes:         []string{"node1", "node2"},
@@ -36,7 +36,7 @@ func TestConfig(t *testing.T) {
 		}
 		require.Equal(t, "/path/to/config", config.KubeConfig)
 		require.Equal(t, "test-context", config.KubeContext)
-		require.Equal(t, "test-ns", config.Namespace)
+		require.Equal(t, []string{"test-ns"}, config.Namespaces)
 		require.True(t, config.WatchMetrics)
 	})
 }

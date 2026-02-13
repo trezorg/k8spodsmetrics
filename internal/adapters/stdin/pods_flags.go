@@ -10,11 +10,10 @@ import (
 
 func podsFlags() []cli.Flag {
 	return []cli.Flag{
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "namespace",
 			Aliases: []string{"n"},
-			Value:   "",
-			Usage:   "K8S namespace",
+			Usage:   "K8S namespace(s)",
 		},
 		&cli.StringFlag{
 			Name:    "label",

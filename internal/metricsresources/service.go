@@ -22,7 +22,7 @@ import (
 type Config struct {
 	KubeConfig    string
 	KubeContext   string
-	Namespace     string
+	Namespaces    []string
 	Label         string
 	FieldSelector string
 	Nodes         []string
@@ -48,7 +48,7 @@ func (c Config) apiRequest(
 	podsClient corev1.CoreV1Interface,
 ) (PodMetricsResourceList, error) {
 	fetchConfig := FetchConfig{
-		Namespace:     c.Namespace,
+		Namespaces:    c.Namespaces,
 		Label:         c.Label,
 		FieldSelector: c.FieldSelector,
 		Nodes:         c.Nodes,

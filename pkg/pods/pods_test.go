@@ -158,7 +158,7 @@ func TestResourceStructs(t *testing.T) {
 
 	t.Run("PodFilter defaults", func(t *testing.T) {
 		var pf PodFilter
-		require.Empty(t, pf.Namespace)
+		require.Empty(t, pf.Namespaces)
 		require.Empty(t, pf.LabelSelector)
 		require.Empty(t, pf.FieldSelector)
 		require.Empty(t, pf.NodeName)

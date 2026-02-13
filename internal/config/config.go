@@ -11,7 +11,12 @@
 //	  watch-period: 10
 //	  watch: true
 //	pods:
-//	  namespace: default
+//	  namespace: default          # Single namespace (string)
+//	  # OR
+//	  namespace:                  # Multiple namespaces (list)
+//	    - ns1
+//	    - ns2
+//	    - ns3
 //	  label: app=nginx
 //	  field-selector: status.phase=Running
 //	  nodes:
@@ -55,15 +60,34 @@ type Common struct {
 	WatchMetrics bool   `yaml:"watch"`
 }
 
+// StringOrSlice is a custom type that can unmarshal from either a string or a slice of strings in YAML.
+type StringOrSlice []string
+
+// UnmarshalYAML implements yaml.Unmarshaler to accept either a string or a slice.
+func (s *StringOrSlice) UnmarshalYAML(node *yaml.Node) error {
+	var single string
+	if err := node.Decode(&single); err == nil {
+		*s = []string{single}
+		return nil
+	}
+
+	var multi []string
+	if err := node.Decode(&multi); err != nil {
+		return fmt.Errorf("expected string or array of strings, got: %s", node.ShortTag())
+	}
+	*s = multi
+	return nil
+}
+
 // Pods holds configuration specific to the pods command.
 type Pods struct {
-	Namespace     string   `yaml:"namespace"`
-	Label         string   `yaml:"label"`
-	FieldSelector string   `yaml:"field-selector"`
-	Nodes         []string `yaml:"nodes"`
-	Sorting       string   `yaml:"sorting"`
-	Reverse       bool     `yaml:"reverse"`
-	Resources     []string `yaml:"resources"`
+	Namespaces    StringOrSlice `yaml:"namespace"`
+	Label         string        `yaml:"label"`
+	FieldSelector string        `yaml:"field-selector"`
+	Nodes         []string      `yaml:"nodes"`
+	Sorting       string        `yaml:"sorting"`
+	Reverse       bool          `yaml:"reverse"`
+	Resources     []string      `yaml:"resources"`
 }
 
 // Summary holds configuration specific to the summary command.
@@ -128,8 +152,8 @@ func (c *Config) MergeCommon(common *Common) {
 // Only empty/zero values in the target are replaced with file config values.
 // Note: For boolean Reverse, file's true will override target's false.
 func (c *Config) MergePods(pods *Pods) {
-	if pods.Namespace == "" && c.Pods.Namespace != "" {
-		pods.Namespace = c.Pods.Namespace
+	if len(pods.Namespaces) == 0 && len(c.Pods.Namespaces) > 0 {
+		pods.Namespaces = c.Pods.Namespaces
 	}
 	if pods.Label == "" && c.Pods.Label != "" {
 		pods.Label = c.Pods.Label

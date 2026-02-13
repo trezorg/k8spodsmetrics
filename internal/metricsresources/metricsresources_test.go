@@ -101,7 +101,7 @@ func TestConfigBuilder(t *testing.T) {
 		config := NewConfigBuilder().
 			WithKubeConfig("/custom/kubeconfig").
 			WithKubeContext("custom-context").
-			WithNamespace("production").
+			WithNamespaces([]string{"production"}).
 			WithLabel("app=web").
 			WithFieldSelector("status.phase=Running").
 			WithNodes([]string{"node1", "node2"}).
@@ -117,7 +117,7 @@ func TestConfigBuilder(t *testing.T) {
 
 		require.Equal(t, "/custom/kubeconfig", config.KubeConfig)
 		require.Equal(t, "custom-context", config.KubeContext)
-		require.Equal(t, "production", config.Namespace)
+		require.Equal(t, []string{"production"}, config.Namespaces)
 		require.Equal(t, "app=web", config.Label)
 		require.Equal(t, "status.phase=Running", config.FieldSelector)
 		require.Equal(t, []string{"node1", "node2"}, config.Nodes)
@@ -135,7 +135,7 @@ func TestConfigBuilder(t *testing.T) {
 		builder := NewConfigBuilder()
 		require.NotNil(t, builder)
 
-		result := builder.WithNamespace("ns1").WithOutput("yaml")
+		result := builder.WithNamespaces([]string{"ns1"}).WithOutput("yaml")
 		require.Equal(t, builder, result)
 	})
 }

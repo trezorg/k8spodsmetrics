@@ -9,7 +9,7 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 	return metricsresources.Config{
 		KubeConfig:    c.KubeConfig,
 		KubeContext:   c.KubeContext,
-		Namespace:     c.Namespace,
+		Namespaces:    c.Namespaces,
 		Label:         c.Label,
 		FieldSelector: c.FieldSelector,
 		Nodes:         c.Nodes,

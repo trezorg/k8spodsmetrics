@@ -34,7 +34,7 @@ type commonConfig struct {
 }
 
 type podConfig struct {
-	Namespace     string
+	Namespaces    []string
 	Label         string
 	FieldSelector string
 	Nodes         []string
@@ -152,7 +152,7 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Comm
 // CLI values take precedence over file config for string and slice types.
 func applyPodsConfig(podCfg *podConfig, fileConfig *config.Config) config.Pods {
 	merged := config.Pods{
-		Namespace:     podCfg.Namespace,
+		Namespaces:    podCfg.Namespaces,
 		Label:         podCfg.Label,
 		FieldSelector: podCfg.FieldSelector,
 		Nodes:         podCfg.Nodes,
@@ -260,7 +260,7 @@ func NewApp(version string) *cli.App {
 			},
 			Action: func(c *cli.Context) error {
 				podActionConfig := podConfig{commonConfig: cfg}
-				podActionConfig.Namespace = c.String("namespace")
+				podActionConfig.Namespaces = c.StringSlice("namespace")
 				podActionConfig.Label = c.String("label")
 				podActionConfig.FieldSelector = c.String("field-selector")
 				podActionConfig.Sorting = c.String("sorting")
@@ -269,7 +269,7 @@ func NewApp(version string) *cli.App {
 				cmdResources := c.StringSlice("resource")
 
 				mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig)
-				podActionConfig.Namespace = mergedPods.Namespace
+				podActionConfig.Namespaces = mergedPods.Namespaces
 				podActionConfig.Label = mergedPods.Label
 				podActionConfig.FieldSelector = mergedPods.FieldSelector
 				podActionConfig.Nodes = mergedPods.Nodes

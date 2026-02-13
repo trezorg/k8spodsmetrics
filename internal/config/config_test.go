@@ -54,7 +54,7 @@ summary:
 		require.Equal(t, uint(10), cfg.Common.WatchPeriod)
 		require.True(t, cfg.Common.WatchMetrics)
 
-		require.Equal(t, "default", cfg.Pods.Namespace)
+		require.Equal(t, StringOrSlice{"default"}, cfg.Pods.Namespaces)
 		require.Equal(t, "app=nginx", cfg.Pods.Label)
 		require.Equal(t, "status.phase=Running", cfg.Pods.FieldSelector)
 		require.Equal(t, []string{"node1", "node2"}, cfg.Pods.Nodes)
@@ -67,6 +67,24 @@ summary:
 		require.Equal(t, "used_cpu", cfg.Summary.Sorting)
 		require.False(t, cfg.Summary.Reverse)
 		require.Equal(t, []string{"all"}, cfg.Summary.Resources)
+	})
+
+	t.Run("loads config with multiple namespaces", func(t *testing.T) {
+		yamlContent := `
+pods:
+  namespace:
+    - ns1
+    - ns2
+    - ns3
+`
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+		require.NoError(t, err)
+
+		cfg, err := Load(configPath)
+		require.NoError(t, err)
+		require.Equal(t, StringOrSlice{"ns1", "ns2", "ns3"}, cfg.Pods.Namespaces)
 	})
 
 	t.Run("file not found", func(t *testing.T) {
@@ -95,7 +113,7 @@ summary:
 		cfg, err := Load(configPath)
 		require.NoError(t, err)
 		require.Equal(t, "", cfg.Common.KubeConfig)
-		require.Equal(t, "", cfg.Pods.Namespace)
+		require.Empty(t, cfg.Pods.Namespaces)
 	})
 }
 
@@ -195,7 +213,7 @@ func TestMergePods(t *testing.T) {
 	t.Run("merges empty values from file", func(t *testing.T) {
 		fileConfig := &Config{
 			Pods: Pods{
-				Namespace:     "default",
+				Namespaces:    StringOrSlice{"default"},
 				Label:         "app=nginx",
 				FieldSelector: "status.phase=Running",
 				Nodes:         []string{"node1", "node2"},
@@ -207,7 +225,7 @@ func TestMergePods(t *testing.T) {
 		pods := &Pods{}
 
 		fileConfig.MergePods(pods)
-		require.Equal(t, "default", pods.Namespace)
+		require.Equal(t, StringOrSlice{"default"}, pods.Namespaces)
 		require.Equal(t, "app=nginx", pods.Label)
 		require.Equal(t, "status.phase=Running", pods.FieldSelector)
 		require.Equal(t, []string{"node1", "node2"}, pods.Nodes)
@@ -219,7 +237,7 @@ func TestMergePods(t *testing.T) {
 	t.Run("cli string and slice values take precedence", func(t *testing.T) {
 		fileConfig := &Config{
 			Pods: Pods{
-				Namespace:     "file-ns",
+				Namespaces:    StringOrSlice{"file-ns"},
 				Label:         "file=label",
 				FieldSelector: "file=selector",
 				Nodes:         []string{"file-node"},
@@ -228,7 +246,7 @@ func TestMergePods(t *testing.T) {
 			},
 		}
 		pods := &Pods{
-			Namespace:     "cli-ns",
+			Namespaces:    StringOrSlice{"cli-ns"},
 			Label:         "cli=label",
 			FieldSelector: "cli=selector",
 			Nodes:         []string{"cli-node"},
@@ -237,7 +255,7 @@ func TestMergePods(t *testing.T) {
 		}
 
 		fileConfig.MergePods(pods)
-		require.Equal(t, "cli-ns", pods.Namespace)
+		require.Equal(t, StringOrSlice{"cli-ns"}, pods.Namespaces)
 		require.Equal(t, "cli=label", pods.Label)
 		require.Equal(t, "cli=selector", pods.FieldSelector)
 		require.Equal(t, []string{"cli-node"}, pods.Nodes)

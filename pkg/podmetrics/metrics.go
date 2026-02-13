@@ -2,7 +2,10 @@ package podmetrics
 
 import (
 	"context"
+	"errors"
+	"slices"
 	"sort"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
@@ -27,14 +30,63 @@ type PodMetric struct {
 type PodMetricList []PodMetric
 
 type MetricFilter struct {
-	Namespace     string
+	Namespaces    []string
 	LabelSelector string
 	FieldSelector string
 }
 
 // Metrics get pod metrics for MetricFilter
 func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricFilter) (PodMetricList, error) {
-	podMetrics, err := api.PodMetricses(filter.Namespace).List(ctx, metav1.ListOptions{
+	filter.Namespaces = slices.DeleteFunc(filter.Namespaces, func(n string) bool { return n == "" })
+
+	// If no namespaces specified, query all namespaces (empty string)
+	if len(filter.Namespaces) == 0 {
+		return listMetrics(ctx, api, filter, "")
+	}
+
+	// Single namespace
+	if len(filter.Namespaces) == 1 {
+		return listMetrics(ctx, api, filter, filter.Namespaces[0])
+	}
+
+	// Multiple namespaces: query each in parallel
+	var wg sync.WaitGroup
+
+	var errs error
+	rErrors := make([]error, len(filter.Namespaces))
+	metrics := make([]PodMetricList, len(filter.Namespaces))
+
+	for idx, ns := range filter.Namespaces {
+		wg.Go(func() {
+			metrics[idx], rErrors[idx] = listMetrics(ctx, api, filter, ns)
+		})
+	}
+
+	wg.Wait()
+
+	for _, err := range rErrors {
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	resultLen := 0
+	for _, m := range metrics {
+		resultLen += len(m)
+	}
+	result := make(PodMetricList, 0, resultLen)
+	for _, m := range metrics {
+		result = append(result, m...)
+	}
+	return result, nil
+}
+
+func listMetrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricFilter, namespace string) (PodMetricList, error) {
+	podMetrics, err := api.PodMetricses(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: filter.FieldSelector,
 	})

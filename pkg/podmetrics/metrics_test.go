@@ -9,14 +9,19 @@ import (
 func TestMetricFilter(t *testing.T) {
 	t.Run("default filter", func(t *testing.T) {
 		filter := MetricFilter{}
-		require.Empty(t, filter.Namespace)
+		require.Empty(t, filter.Namespaces)
 		require.Empty(t, filter.LabelSelector)
 		require.Empty(t, filter.FieldSelector)
 	})
 
-	t.Run("with namespace", func(t *testing.T) {
-		filter := MetricFilter{Namespace: "test-ns"}
-		require.Equal(t, "test-ns", filter.Namespace)
+	t.Run("with namespaces", func(t *testing.T) {
+		filter := MetricFilter{Namespaces: []string{"test-ns"}}
+		require.Equal(t, []string{"test-ns"}, filter.Namespaces)
+	})
+
+	t.Run("with multiple namespaces", func(t *testing.T) {
+		filter := MetricFilter{Namespaces: []string{"ns1", "ns2", "ns3"}}
+		require.Equal(t, []string{"ns1", "ns2", "ns3"}, filter.Namespaces)
 	})
 
 	t.Run("with label selector", func(t *testing.T) {

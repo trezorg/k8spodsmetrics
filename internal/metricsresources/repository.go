@@ -3,6 +3,7 @@ package metricsresources
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 
 	"log/slog"
@@ -51,7 +52,7 @@ func (podRepository) FetchMetrics(
 }
 
 type FetchConfig struct {
-	Namespace     string
+	Namespaces    []string
 	Label         string
 	FieldSelector string
 	Nodes         []string
@@ -65,6 +66,63 @@ func FetchPodMetrics(
 	config FetchConfig,
 ) (PodMetricsResourceList, error) {
 	slog.Debug("Getting metrics...")
+
+	// Filter out empty namespace strings
+	config.Namespaces = slices.DeleteFunc(config.Namespaces, func(n string) bool { return n == "" })
+
+	// If no namespaces specified or single namespace, use existing logic
+	if len(config.Namespaces) <= 1 {
+		var ns string
+		if len(config.Namespaces) == 1 {
+			ns = config.Namespaces[0]
+		}
+		return fetchPodMetricsForNamespace(ctx, repo, metricsClient, podsClient, config, ns)
+	}
+
+	// Multiple namespaces: query each in parallel
+	var wg sync.WaitGroup
+	results := make([]PodMetricsResourceList, len(config.Namespaces))
+	rErrors := make([]error, len(config.Namespaces))
+
+	for idx, ns := range config.Namespaces {
+		wg.Go(func() {
+			results[idx], rErrors[idx] = fetchPodMetricsForNamespace(ctx, repo, metricsClient, podsClient, config, ns)
+		})
+	}
+
+	wg.Wait()
+
+	var rErr error
+	for _, err := range rErrors {
+		if err != nil {
+			rErr = errors.Join(rErr, err)
+		}
+	}
+
+	if rErr != nil {
+		return nil, rErr
+	}
+
+	// Merge results from all namespaces
+	resultLen := 0
+	for _, r := range results {
+		resultLen += len(r)
+	}
+	merged := make(PodMetricsResourceList, 0, resultLen)
+	for _, r := range results {
+		merged = append(merged, r...)
+	}
+	return merged, nil
+}
+
+func fetchPodMetricsForNamespace(
+	ctx context.Context,
+	repo PodRepository,
+	metricsClient metricsv1beta1.MetricsV1beta1Interface,
+	podsClient corev1.CoreV1Interface,
+	config FetchConfig,
+	namespace string,
+) (PodMetricsResourceList, error) {
 	var podMetricsResourceList PodMetricsResourceList
 
 	cErrors := make([]error, 2)
@@ -74,7 +132,7 @@ func FetchPodMetrics(
 
 	wg.Go(func() {
 		metricsList, cErrors[0] = repo.FetchMetrics(ctx, metricsClient, podmetrics.MetricFilter{
-			Namespace:     config.Namespace,
+			Namespaces:    []string{namespace},
 			LabelSelector: config.Label,
 			FieldSelector: config.FieldSelector,
 		})
@@ -82,7 +140,7 @@ func FetchPodMetrics(
 
 	wg.Go(func() {
 		podsList, cErrors[1] = repo.FetchPods(ctx, podsClient, pods.PodFilter{
-			Namespace:     config.Namespace,
+			Namespaces:    []string{namespace},
 			LabelSelector: config.Label,
 			FieldSelector: config.FieldSelector,
 		}, config.Nodes...)

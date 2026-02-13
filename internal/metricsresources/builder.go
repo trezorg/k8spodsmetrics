@@ -28,8 +28,8 @@ func (b *ConfigBuilder) WithKubeContext(context string) *ConfigBuilder {
 	return b
 }
 
-func (b *ConfigBuilder) WithNamespace(namespace string) *ConfigBuilder {
-	b.config.Namespace = namespace
+func (b *ConfigBuilder) WithNamespaces(namespaces []string) *ConfigBuilder {
+	b.config.Namespaces = namespaces
 	return b
 }
 
