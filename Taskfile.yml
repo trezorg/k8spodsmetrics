@@ -37,6 +37,11 @@ tasks:
     cmds:
       - go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...
 
+  benchmark:
+    desc: Run benchmarks
+    cmds:
+      - go test -bench=. -benchmem ./...
+
   test:coverage:
     desc: Run tests and generate coverage report
     env:

@@ -105,27 +105,49 @@ func (r PodMetricsResourceList) sortByName(reversed bool) {
 }
 
 func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.ContainerResource) int64) {
-	less := func(i, j int) bool {
-		iCon := r[i].PodResource.Containers
-		jCon := r[j].PodResource.Containers
-		return f(iCon) < f(jCon)
+	type sortItem struct {
+		resource PodMetricsResource
+		key      int64
 	}
-	if reversed {
-		less = reverse(less)
+	items := make([]sortItem, len(r))
+	for i := range r {
+		items[i] = sortItem{
+			resource: r[i],
+			key:      f(r[i].PodResource.Containers),
+		}
 	}
-	sort.SliceStable(r, less)
+	sort.SliceStable(items, func(i, j int) bool {
+		if reversed {
+			return items[j].key < items[i].key
+		}
+		return items[i].key < items[j].key
+	})
+	for i := range items {
+		r[i] = items[i].resource
+	}
 }
 
 func (r PodMetricsResourceList) sortPodMetric(reversed bool, f func([]podmetrics.ContainerMetric) int64) {
-	less := func(i, j int) bool {
-		iCon := r[i].PodMetric.Containers
-		jCon := r[j].PodMetric.Containers
-		return f(iCon) < f(jCon)
+	type sortItem struct {
+		resource PodMetricsResource
+		key      int64
 	}
-	if reversed {
-		less = reverse(less)
+	items := make([]sortItem, len(r))
+	for i := range r {
+		items[i] = sortItem{
+			resource: r[i],
+			key:      f(r[i].PodMetric.Containers),
+		}
 	}
-	sort.SliceStable(r, less)
+	sort.SliceStable(items, func(i, j int) bool {
+		if reversed {
+			return items[j].key < items[i].key
+		}
+		return items[i].key < items[j].key
+	})
+	for i := range items {
+		r[i] = items[i].resource
+	}
 }
 
 func (r PodMetricsResourceList) sortByRequestCPU(reversed bool) {
