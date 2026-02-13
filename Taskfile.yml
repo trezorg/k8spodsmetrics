@@ -57,14 +57,20 @@ tasks:
     cmds:
       - go vet ./...
 
+  fix:
+    desc: Run go fix to apply Go fixes
+    cmds:
+      - go fix ./...
+
   format:
     desc: Format Go code
     cmds:
       - go fmt ./...
 
   check:
-    desc: Run format, lint and test
+    desc: Run fix, format, lint and test
     deps:
+      - fix
       - format
     cmds:
       - task: lint
