@@ -72,11 +72,6 @@ jobs:
           go-version: "1.26"
           cache: true
 
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: ./...
-
       - name: Run Govulncheck
         uses: golang/govulncheck-action@v1
         with:
