@@ -6,6 +6,7 @@ import (
 	metricsstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
+	"github.com/trezorg/k8spodsmetrics/internal/config"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
 
 	nodesjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/noderesources"
@@ -21,6 +22,7 @@ import (
 )
 
 type commonConfig struct {
+	ConfigFile   string
 	KubeConfig   string
 	KubeContext  string
 	Output       string
@@ -28,6 +30,7 @@ type commonConfig struct {
 	KLogLevel    uint
 	WatchPeriod  uint
 	WatchMetrics bool
+	fileConfig   *config.Config
 }
 
 type podConfig struct {
@@ -120,8 +123,67 @@ func podsWatch(processor PodsWatcher, successProcessor metricsresources.SuccessP
 	return processor.ProcessWatch(metricsscreen.NewScreenSuccessWriter(successProcessor), metricsscreen.NewScreenErrorWriter(errorProcessor))
 }
 
+func loadFileConfig(configFile string) (*config.Config, error) {
+	if configFile == "" {
+		return nil, nil
+	}
+	return config.Load(configFile)
+}
+
+// applyCommonConfig merges file config with CLI common config values.
+// CLI values take precedence over file config for string and numeric types.
+func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Common {
+	merged := config.Common{
+		KubeConfig:   cfg.KubeConfig,
+		KubeContext:  cfg.KubeContext,
+		Output:       cfg.Output,
+		Alert:        cfg.Alert,
+		KLogLevel:    cfg.KLogLevel,
+		WatchPeriod:  cfg.WatchPeriod,
+		WatchMetrics: cfg.WatchMetrics,
+	}
+	if fileConfig != nil {
+		fileConfig.MergeCommon(&merged)
+	}
+	return merged
+}
+
+// applyPodsConfig merges file config with CLI pods command config values.
+// CLI values take precedence over file config for string and slice types.
+func applyPodsConfig(podCfg *podConfig, fileConfig *config.Config) config.Pods {
+	merged := config.Pods{
+		Namespace:     podCfg.Namespace,
+		Label:         podCfg.Label,
+		FieldSelector: podCfg.FieldSelector,
+		Nodes:         podCfg.Nodes,
+		Sorting:       podCfg.Sorting,
+		Reverse:       podCfg.Reverse,
+		Resources:     podCfg.Resources,
+	}
+	if fileConfig != nil {
+		fileConfig.MergePods(&merged)
+	}
+	return merged
+}
+
+// applySummaryConfig merges file config with CLI summary command config values.
+// CLI values take precedence over file config for string and slice types.
+func applySummaryConfig(summaryCfg *summaryConfig, fileConfig *config.Config) config.Summary {
+	merged := config.Summary{
+		Name:      summaryCfg.Name,
+		Label:     summaryCfg.Label,
+		Sorting:   summaryCfg.Sorting,
+		Reverse:   summaryCfg.Reverse,
+		Resources: summaryCfg.Resources,
+	}
+	if fileConfig != nil {
+		fileConfig.MergeSummary(&merged)
+	}
+	return merged
+}
+
 func NewApp(version string) *cli.App {
-	config := commonConfig{}
+	cfg := commonConfig{}
 
 	app := cli.NewApp()
 	app.Version = version
@@ -141,32 +203,63 @@ func NewApp(version string) *cli.App {
 		{
 			Name:    "summary",
 			Aliases: []string{"s"},
+			Before: func(_ *cli.Context) error {
+				var err error
+				cfg.fileConfig, err = loadFileConfig(cfg.ConfigFile)
+				return err
+			},
 			Action: func(c *cli.Context) error {
-				summaryActionConfig := summaryConfig{commonConfig: config}
+				summaryActionConfig := summaryConfig{commonConfig: cfg}
 				summaryActionConfig.Name = c.String("name")
 				summaryActionConfig.Label = c.String("label")
 				summaryActionConfig.Sorting = c.String("sorting")
 				summaryActionConfig.Reverse = c.Bool("reverse")
 				cmdResources := c.StringSlice("resource")
+
+				mergedSummary := applySummaryConfig(&summaryActionConfig, cfg.fileConfig)
+				summaryActionConfig.Name = mergedSummary.Name
+				summaryActionConfig.Label = mergedSummary.Label
+				summaryActionConfig.Sorting = mergedSummary.Sorting
+				summaryActionConfig.Reverse = mergedSummary.Reverse
+				summaryActionConfig.Resources = mergedSummary.Resources
+
+				mergedCommon := applyCommonConfig(&cfg, cfg.fileConfig)
+				summaryActionConfig.KubeConfig = mergedCommon.KubeConfig
+				summaryActionConfig.KubeContext = mergedCommon.KubeContext
+				summaryActionConfig.Output = mergedCommon.Output
+				summaryActionConfig.Alert = mergedCommon.Alert
+				summaryActionConfig.KLogLevel = mergedCommon.KLogLevel
+				summaryActionConfig.WatchPeriod = mergedCommon.WatchPeriod
+				summaryActionConfig.WatchMetrics = mergedCommon.WatchMetrics
+
+				if len(cmdResources) == 0 && len(mergedSummary.Resources) > 0 {
+					cmdResources = mergedSummary.Resources
+				}
+
 				outputResources := resources.FromStrings(cmdResources...)
 				if err := resources.Valid(outputResources...); err != nil {
 					return err
 				}
 				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
-				summaryConfig := nodeResourcesConfig(summaryActionConfig)
+				summaryCfg := nodeResourcesConfig(summaryActionConfig)
 				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
 				if summaryActionConfig.WatchMetrics {
-					return summaryWatch(summaryConfig, outputProcessor, outputProcessor)
+					return summaryWatch(summaryCfg, outputProcessor, outputProcessor)
 				}
-				return summary(summaryConfig, outputProcessor)
+				return summary(summaryCfg, outputProcessor)
 			},
 			Flags: summaryFlags(),
 		},
 		{
 			Name:    "pods",
 			Aliases: []string{"p"},
+			Before: func(_ *cli.Context) error {
+				var err error
+				cfg.fileConfig, err = loadFileConfig(cfg.ConfigFile)
+				return err
+			},
 			Action: func(c *cli.Context) error {
-				podActionConfig := podConfig{commonConfig: config}
+				podActionConfig := podConfig{commonConfig: cfg}
 				podActionConfig.Namespace = c.String("namespace")
 				podActionConfig.Label = c.String("label")
 				podActionConfig.FieldSelector = c.String("field-selector")
@@ -174,21 +267,44 @@ func NewApp(version string) *cli.App {
 				podActionConfig.Reverse = c.Bool("reverse")
 				podActionConfig.Nodes = c.StringSlice("node")
 				cmdResources := c.StringSlice("resource")
+
+				mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig)
+				podActionConfig.Namespace = mergedPods.Namespace
+				podActionConfig.Label = mergedPods.Label
+				podActionConfig.FieldSelector = mergedPods.FieldSelector
+				podActionConfig.Nodes = mergedPods.Nodes
+				podActionConfig.Sorting = mergedPods.Sorting
+				podActionConfig.Reverse = mergedPods.Reverse
+				podActionConfig.Resources = mergedPods.Resources
+
+				mergedCommon := applyCommonConfig(&cfg, cfg.fileConfig)
+				podActionConfig.KubeConfig = mergedCommon.KubeConfig
+				podActionConfig.KubeContext = mergedCommon.KubeContext
+				podActionConfig.Output = mergedCommon.Output
+				podActionConfig.Alert = mergedCommon.Alert
+				podActionConfig.KLogLevel = mergedCommon.KLogLevel
+				podActionConfig.WatchPeriod = mergedCommon.WatchPeriod
+				podActionConfig.WatchMetrics = mergedCommon.WatchMetrics
+
+				if len(cmdResources) == 0 && len(mergedPods.Resources) > 0 {
+					cmdResources = mergedPods.Resources
+				}
+
 				outputResources := resources.FromStrings(cmdResources...)
 				if err := resources.Valid(outputResources...); err != nil {
 					return err
 				}
 				podActionConfig.Resources = resources.ToStrings(outputResources...)
-				podConfig := metricsResourcesConfig(podActionConfig)
+				podCfg := metricsResourcesConfig(podActionConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources)
 				if podActionConfig.WatchMetrics {
-					return podsWatch(podConfig, outputProcessor, outputProcessor)
+					return podsWatch(podCfg, outputProcessor, outputProcessor)
 				}
-				return pods(podConfig, outputProcessor)
+				return pods(podCfg, outputProcessor)
 			},
 			Flags: podsFlags(),
 		},
 	}
-	app.Flags = commonFlags(&config)
+	app.Flags = commonFlags(&cfg)
 	return app
 }

@@ -2,8 +2,8 @@
 
 ## Project Structure & Module Organization
 - `cmd/k8spodsmetrics/`: CLI entrypoint (`main`).
-- `internal/`: non-exported app code (adapters, output formats, sorting, resources, alerts, humanize).
-  - Examples: `internal/adapters/stdin` (CLI wiring), `internal/adapters/stdout/{table,json,yaml,string,screen}` (printers), `internal/{metricsresources,noderesources}` (domain services).
+- `internal/`: non-exported app code (adapters, output formats, sorting, resources, alerts, humanize, config).
+  - Examples: `internal/adapters/stdin` (CLI wiring), `internal/adapters/stdout/{table,json,yaml,string,screen}` (printers), `internal/{metricsresources,noderesources}` (domain services), `internal/config` (YAML config file handling).
 - `pkg/`: public Go APIs (`client`, `pods`, `nodes`, `podmetrics`, `nodemetrics`). Preferred for reuse.
 - `build/`: compiled binaries. CI/artifacts target.
 - Tests live beside code as `*_test.go`.
@@ -13,7 +13,7 @@
 - Services: `internal/{metricsresources,noderesources}` fetch/aggregate data and enforce sorting/filters.
 - Kubernetes access: `pkg/client` constructs CoreV1 and Metrics clients; domain packages in `pkg/` provide helpers.
 - Presentation: `internal/adapters/stdout/{table,json,yaml,string,screen}` implement output strategies; `screen` wraps watch mode.
-- Utilities: `internal/{sorting,resources,humanize,alert}` provide common transforms and validation.
+- Utilities: `internal/{sorting,resources,humanize,alert,config}` provide common transforms, validation, and configuration handling.
 - Flow: CLI → Config → Service → `pkg/client` → Formatter → stdout; watch mode uses screen wrappers for live updates.
 
 ## Build, Test, and Development Commands
@@ -49,6 +49,7 @@
 ## Security & Configuration Tips
 - Never commit kubeconfigs or secrets. Use `KUBECONFIG` or `--kubeconfig`/`--context` flags.
 - Requires Kubernetes Metrics API on the target cluster; verify access before running.
+- Supports YAML config file via `--config` flag. CLI flags take precedence over file values.
 
 - Always MUST check go formatting and linters
 - PROACTIVELY use MCP servers.

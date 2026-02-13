@@ -16,6 +16,12 @@ const (
 func commonFlags(config *commonConfig) []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
+			Name:        "config",
+			Value:       "",
+			Usage:       "Config file path (YAML format)",
+			Destination: &config.ConfigFile,
+		},
+		&cli.StringFlag{
 			Name:        "kubeconfig",
 			Aliases:     []string{"k"},
 			Value:       "",
