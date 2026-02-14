@@ -2,11 +2,9 @@ package noderesources
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -15,7 +13,6 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
 
@@ -28,7 +25,6 @@ type Config struct {
 	Sorting      string
 	Alert        string
 	Resources    []string
-	KLogLevel    uint
 	WatchPeriod  uint
 	Reverse      bool
 	WatchMetrics bool
@@ -115,9 +111,7 @@ func (c *Config) prepare() error {
 			return err
 		}
 	}
-	klog.InitFlags(nil)
-	defer klog.Flush()
-	return flag.Set("v", strconv.Itoa(int(c.KLogLevel))) //nolint:gosec // it is safe
+	return nil
 }
 
 func (c Config) Process(successProcessor SuccessProcessor) error {

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const serviceName = "k8spodmetrics"
+const serviceName = "k8spodsmetrics"
 
 func levelFromString(levelStr string) (slog.Level, error) {
 	switch strings.ToUpper(levelStr) {

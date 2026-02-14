@@ -1,6 +1,7 @@
 package client
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 
@@ -10,7 +11,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/flowcontrol"
-	"k8s.io/klog/v2"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
@@ -30,7 +30,7 @@ func rateLimitFromEnv() (float32, int) {
 	if rawQPS := os.Getenv(clientQPSEnvVar); rawQPS != "" {
 		parsedQPS, err := strconv.ParseFloat(rawQPS, 32)
 		if err != nil || parsedQPS <= 0 {
-			klog.Warningf("invalid %s=%q, using default %.2f", clientQPSEnvVar, rawQPS, defaultClientQPS)
+			slog.Warn("invalid env var, using default", "var", clientQPSEnvVar, "value", rawQPS, "default", defaultClientQPS)
 		} else {
 			qps = float32(parsedQPS)
 		}
@@ -39,7 +39,7 @@ func rateLimitFromEnv() (float32, int) {
 	if rawBurst := os.Getenv(clientBurstEnvVar); rawBurst != "" {
 		parsedBurst, err := strconv.Atoi(rawBurst)
 		if err != nil || parsedBurst <= 0 {
-			klog.Warningf("invalid %s=%q, using default %d", clientBurstEnvVar, rawBurst, defaultClientBurst)
+			slog.Warn("invalid env var, using default", "var", clientBurstEnvVar, "value", rawBurst, "default", defaultClientBurst)
 		} else {
 			burst = parsedBurst
 		}
@@ -57,13 +57,13 @@ func applyRateLimit(config *rest.Config) {
 
 func restConfig(kubeconfigPath string, context string) (*rest.Config, error) {
 	if kubeconfigPath == "" {
-		klog.Warning("--kubeconfig was not specified. Using the inClusterConfig.  This might not work.")
+		slog.Warn("--kubeconfig was not specified. Using the inClusterConfig. This might not work.")
 		kubeconfig, err := rest.InClusterConfig()
 		if err == nil {
 			applyRateLimit(kubeconfig)
 			return kubeconfig, nil
 		}
-		klog.Warning("error creating inClusterConfig, falling back to default config: ", err)
+		slog.Warn("error creating inClusterConfig, falling back to default config", "error", err)
 	}
 	configLoadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
 	configOverrides := &clientcmd.ConfigOverrides{}

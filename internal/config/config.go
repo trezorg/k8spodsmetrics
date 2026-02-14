@@ -7,7 +7,6 @@
 //	  context: my-context
 //	  output: json|yaml|table|string
 //	  alert: cpu|memory
-//	  kloglevel: 2
 //	  watch-period: 10
 //	  watch: true
 //	pods:
@@ -55,7 +54,6 @@ type Common struct {
 	KubeContext  string `yaml:"context"`
 	Output       string `yaml:"output"`
 	Alert        string `yaml:"alert"`
-	KLogLevel    uint   `yaml:"kloglevel"`
 	WatchPeriod  uint   `yaml:"watch-period"`
 	WatchMetrics bool   `yaml:"watch"`
 }
@@ -136,9 +134,6 @@ func (c *Config) MergeCommon(common *Common) {
 	}
 	if common.Alert == "" && c.Common.Alert != "" {
 		common.Alert = c.Common.Alert
-	}
-	if common.KLogLevel == 0 && c.Common.KLogLevel != 0 {
-		common.KLogLevel = c.Common.KLogLevel
 	}
 	if common.WatchPeriod == 0 && c.Common.WatchPeriod != 0 {
 		common.WatchPeriod = c.Common.WatchPeriod

@@ -27,7 +27,6 @@ type commonConfig struct {
 	KubeContext  string
 	Output       string
 	Alert        string
-	KLogLevel    uint
 	WatchPeriod  uint
 	WatchMetrics bool
 	fileConfig   *config.Config
@@ -138,7 +137,6 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Comm
 		KubeContext:  cfg.KubeContext,
 		Output:       cfg.Output,
 		Alert:        cfg.Alert,
-		KLogLevel:    cfg.KLogLevel,
 		WatchPeriod:  cfg.WatchPeriod,
 		WatchMetrics: cfg.WatchMetrics,
 	}
@@ -228,7 +226,6 @@ func NewApp(version string) *cli.App {
 				summaryActionConfig.KubeContext = mergedCommon.KubeContext
 				summaryActionConfig.Output = mergedCommon.Output
 				summaryActionConfig.Alert = mergedCommon.Alert
-				summaryActionConfig.KLogLevel = mergedCommon.KLogLevel
 				summaryActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 				summaryActionConfig.WatchMetrics = mergedCommon.WatchMetrics
 
@@ -282,7 +279,6 @@ func NewApp(version string) *cli.App {
 				podActionConfig.KubeContext = mergedCommon.KubeContext
 				podActionConfig.Output = mergedCommon.Output
 				podActionConfig.Alert = mergedCommon.Alert
-				podActionConfig.KLogLevel = mergedCommon.KLogLevel
 				podActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 				podActionConfig.WatchMetrics = mergedCommon.WatchMetrics
 

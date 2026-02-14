@@ -16,7 +16,6 @@ common:
   context: my-context
   output: json
   alert: cpu
-  kloglevel: 2
   watch-period: 10
   watch: true
 pods:
@@ -50,7 +49,6 @@ summary:
 		require.Equal(t, "my-context", cfg.Common.KubeContext)
 		require.Equal(t, "json", cfg.Common.Output)
 		require.Equal(t, "cpu", cfg.Common.Alert)
-		require.Equal(t, uint(2), cfg.Common.KLogLevel)
 		require.Equal(t, uint(10), cfg.Common.WatchPeriod)
 		require.True(t, cfg.Common.WatchMetrics)
 
@@ -125,7 +123,6 @@ func TestMergeCommon(t *testing.T) {
 				KubeContext:  "my-context",
 				Output:       "json",
 				Alert:        "cpu",
-				KLogLevel:    2,
 				WatchPeriod:  10,
 				WatchMetrics: true,
 			},
@@ -137,7 +134,6 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "my-context", common.KubeContext)
 		require.Equal(t, "json", common.Output)
 		require.Equal(t, "cpu", common.Alert)
-		require.Equal(t, uint(2), common.KLogLevel)
 		require.Equal(t, uint(10), common.WatchPeriod)
 		require.True(t, common.WatchMetrics)
 	})
@@ -149,7 +145,6 @@ func TestMergeCommon(t *testing.T) {
 				KubeContext: "file-context",
 				Output:      "yaml",
 				Alert:       "memory",
-				KLogLevel:   1,
 				WatchPeriod: 5,
 			},
 		}
@@ -158,7 +153,6 @@ func TestMergeCommon(t *testing.T) {
 			KubeContext: "cli-context",
 			Output:      "json",
 			Alert:       "cpu",
-			KLogLevel:   3,
 			WatchPeriod: 15,
 		}
 
@@ -167,7 +161,6 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "cli-context", common.KubeContext)
 		require.Equal(t, "json", common.Output)
 		require.Equal(t, "cpu", common.Alert)
-		require.Equal(t, uint(3), common.KLogLevel)
 		require.Equal(t, uint(15), common.WatchPeriod)
 	})
 

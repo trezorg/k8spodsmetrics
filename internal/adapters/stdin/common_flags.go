@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	defaultKlogLevel          = 3
 	defaultWatchPeriodSeconds = 5
 )
 
@@ -40,13 +39,6 @@ func commonFlags(config *commonConfig) []cli.Flag {
 			Aliases: []string{"level"},
 			Value:   "INFO",
 			Usage:   "Log level",
-		},
-		&cli.UintFlag{
-			Name:        "kloglevel",
-			Aliases:     []string{"klevel"},
-			Value:       defaultKlogLevel,
-			Usage:       "k8s client log level",
-			Destination: &config.KLogLevel,
 		},
 		&cli.StringFlag{
 			Name:        "alerts",

@@ -38,7 +38,6 @@ func TestConfigBuilder(t *testing.T) {
 		builder := NewConfigBuilder()
 		config := builder.Build()
 		require.Equal(t, uint(5), config.WatchPeriod)
-		require.Equal(t, uint(3), config.KLogLevel)
 	})
 
 	t.Run("with all options", func(t *testing.T) {
@@ -51,7 +50,6 @@ func TestConfigBuilder(t *testing.T) {
 			WithSorting("cpu").
 			WithResources([]string{"cpu", "memory"}).
 			WithAlert("cpu").
-			WithKLogLevel(5).
 			WithWatchPeriod(10).
 			WithReverse(true).
 			WithWatchMetrics(true).
@@ -65,7 +63,6 @@ func TestConfigBuilder(t *testing.T) {
 		require.Equal(t, "cpu", config.Sorting)
 		require.Equal(t, []string{"cpu", "memory"}, config.Resources)
 		require.Equal(t, "cpu", config.Alert)
-		require.Equal(t, uint(5), config.KLogLevel)
 		require.Equal(t, uint(10), config.WatchPeriod)
 		require.True(t, config.Reverse)
 		require.True(t, config.WatchMetrics)

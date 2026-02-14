@@ -29,7 +29,6 @@ func TestConfig(t *testing.T) {
 			Sorting:       "name",
 			Resources:     []string{"cpu", "memory"},
 			Alert:         "memory",
-			KLogLevel:     5,
 			WatchPeriod:   10,
 			Reverse:       true,
 			WatchMetrics:  true,

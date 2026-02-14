@@ -2,7 +2,6 @@ package metricsresources
 
 const (
 	defaultWatchPeriod = 5
-	defaultKLogLevel   = 3
 )
 
 type ConfigBuilder struct {
@@ -13,7 +12,6 @@ func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
 		config: &Config{
 			WatchPeriod: defaultWatchPeriod,
-			KLogLevel:   defaultKLogLevel,
 		},
 	}
 }
@@ -65,11 +63,6 @@ func (b *ConfigBuilder) WithResources(resources []string) *ConfigBuilder {
 
 func (b *ConfigBuilder) WithAlert(alert string) *ConfigBuilder {
 	b.config.Alert = alert
-	return b
-}
-
-func (b *ConfigBuilder) WithKLogLevel(level uint) *ConfigBuilder {
-	b.config.KLogLevel = level
 	return b
 }
 
