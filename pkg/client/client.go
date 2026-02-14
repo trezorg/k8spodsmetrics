@@ -2,22 +2,65 @@ package client
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/mitchellh/go-homedir"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/flowcontrol"
 	"k8s.io/klog/v2"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
+
+const (
+	defaultClientQPS   float32 = 10
+	defaultClientBurst int     = 20
+
+	clientQPSEnvVar   = "K8SPODSMETRICS_CLIENT_QPS"
+	clientBurstEnvVar = "K8SPODSMETRICS_CLIENT_BURST"
+)
+
+func rateLimitFromEnv() (float32, int) {
+	qps := defaultClientQPS
+	burst := defaultClientBurst
+
+	if rawQPS := os.Getenv(clientQPSEnvVar); rawQPS != "" {
+		parsedQPS, err := strconv.ParseFloat(rawQPS, 32)
+		if err != nil || parsedQPS <= 0 {
+			klog.Warningf("invalid %s=%q, using default %.2f", clientQPSEnvVar, rawQPS, defaultClientQPS)
+		} else {
+			qps = float32(parsedQPS)
+		}
+	}
+
+	if rawBurst := os.Getenv(clientBurstEnvVar); rawBurst != "" {
+		parsedBurst, err := strconv.Atoi(rawBurst)
+		if err != nil || parsedBurst <= 0 {
+			klog.Warningf("invalid %s=%q, using default %d", clientBurstEnvVar, rawBurst, defaultClientBurst)
+		} else {
+			burst = parsedBurst
+		}
+	}
+
+	return qps, burst
+}
+
+func applyRateLimit(config *rest.Config) {
+	qps, burst := rateLimitFromEnv()
+	config.QPS = qps
+	config.Burst = burst
+	config.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(qps, burst)
+}
 
 func restConfig(kubeconfigPath string, context string) (*rest.Config, error) {
 	if kubeconfigPath == "" {
 		klog.Warning("--kubeconfig was not specified. Using the inClusterConfig.  This might not work.")
 		kubeconfig, err := rest.InClusterConfig()
 		if err == nil {
+			applyRateLimit(kubeconfig)
 			return kubeconfig, nil
 		}
 		klog.Warning("error creating inClusterConfig, falling back to default config: ", err)
@@ -27,7 +70,12 @@ func restConfig(kubeconfigPath string, context string) (*rest.Config, error) {
 	if context != "" {
 		configOverrides.CurrentContext = context
 	}
-	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(configLoadingRules, configOverrides).ClientConfig()
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(configLoadingRules, configOverrides).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	applyRateLimit(config)
+	return config, nil
 }
 
 func metricsClient(config *rest.Config) (metricsv1beta1.MetricsV1beta1Interface, error) {

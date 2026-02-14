@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/client-go/rest"
 )
 
 func TestFindKubeConfig(t *testing.T) {
@@ -59,5 +60,43 @@ func TestForMetrics(t *testing.T) {
 		mc, err := ForMetrics("/invalid/path", "")
 		require.Error(t, err)
 		require.Nil(t, mc)
+	})
+}
+
+func TestApplyRateLimit(t *testing.T) {
+	t.Run("defaults", func(t *testing.T) {
+		t.Setenv(clientQPSEnvVar, "")
+		t.Setenv(clientBurstEnvVar, "")
+		cfg := &rest.Config{}
+
+		applyRateLimit(cfg)
+
+		require.Equal(t, defaultClientQPS, cfg.QPS)
+		require.Equal(t, defaultClientBurst, cfg.Burst)
+		require.NotNil(t, cfg.RateLimiter)
+	})
+
+	t.Run("env overrides", func(t *testing.T) {
+		t.Setenv(clientQPSEnvVar, "15.5")
+		t.Setenv(clientBurstEnvVar, "30")
+		cfg := &rest.Config{}
+
+		applyRateLimit(cfg)
+
+		require.Equal(t, float32(15.5), cfg.QPS)
+		require.Equal(t, 30, cfg.Burst)
+		require.NotNil(t, cfg.RateLimiter)
+	})
+
+	t.Run("invalid env values fallback to defaults", func(t *testing.T) {
+		t.Setenv(clientQPSEnvVar, "not-a-number")
+		t.Setenv(clientBurstEnvVar, "-1")
+		cfg := &rest.Config{}
+
+		applyRateLimit(cfg)
+
+		require.Equal(t, defaultClientQPS, cfg.QPS)
+		require.Equal(t, defaultClientBurst, cfg.Burst)
+		require.NotNil(t, cfg.RateLimiter)
 	})
 }
