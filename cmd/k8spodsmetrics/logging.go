@@ -26,7 +26,7 @@ func levelFromString(levelStr string) (slog.Level, error) {
 
 func initLogger(levelStr string) error {
 	level, err := levelFromString(levelStr)
-	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level, AddSource: true})
 	slog.SetDefault(slog.New(handler).With(slog.String("service", serviceName)))
 	return err
 }
