@@ -11,6 +11,7 @@ type Sorting string
 const (
 	Name                 Sorting = "name"
 	Namespace            Sorting = "namespace"
+	Node                 Sorting = "node"
 	RequestCPU           Sorting = "request_cpu"
 	LimitCPU             Sorting = "limit_cpu"
 	UsedCPU              Sorting = "used_cpu"
@@ -25,6 +26,7 @@ const (
 var choices = []Sorting{
 	Name,
 	Namespace,
+	Node,
 	RequestCPU,
 	LimitCPU,
 	UsedCPU,

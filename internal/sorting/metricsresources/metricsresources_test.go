@@ -14,6 +14,7 @@ func TestValid(t *testing.T) {
 	}{
 		{"valid name", Name, false},
 		{"valid namespace", Namespace, false},
+		{"valid node", Node, false},
 		{"valid request_cpu", RequestCPU, false},
 		{"valid limit_cpu", LimitCPU, false},
 		{"valid used_cpu", UsedCPU, false},
@@ -66,6 +67,7 @@ func TestStringListDefault(t *testing.T) {
 func TestSortingConstants(t *testing.T) {
 	require.Equal(t, Sorting("name"), Name)
 	require.Equal(t, Sorting("namespace"), Namespace)
+	require.Equal(t, Sorting("node"), Node)
 	require.Equal(t, Sorting("request_cpu"), RequestCPU)
 	require.Equal(t, Sorting("limit_cpu"), LimitCPU)
 	require.Equal(t, Sorting("used_cpu"), UsedCPU)

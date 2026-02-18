@@ -104,6 +104,16 @@ func (r PodMetricsResourceList) sortByName(reversed bool) {
 	sort.SliceStable(r, less)
 }
 
+func (r PodMetricsResourceList) sortByNode(reversed bool) {
+	less := func(i, j int) bool {
+		return r[i].NodeName < r[j].NodeName
+	}
+	if reversed {
+		less = reverse(less)
+	}
+	sort.SliceStable(r, less)
+}
+
 func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.ContainerResource) int64) {
 	type sortItem struct {
 		resource PodMetricsResource
@@ -188,6 +198,8 @@ func (r PodMetricsResourceList) sort(by string, reverse bool) {
 		r.sortByName(reverse)
 	case metricsresources.Namespace:
 		r.sortByNamespace(reverse)
+	case metricsresources.Node:
+		r.sortByNode(reverse)
 	case metricsresources.LimitCPU:
 		r.sortByLimitCPU(reverse)
 	case metricsresources.RequestCPU:

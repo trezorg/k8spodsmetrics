@@ -26,6 +26,12 @@ func testPodMetricsResource(name, namespace string, containers []pods.ContainerR
 	}
 }
 
+func testPodMetricsResourceWithNode(name, namespace, nodeName string, containers []pods.ContainerResource, metrics []podmetrics.ContainerMetric) PodMetricsResource {
+	r := testPodMetricsResource(name, namespace, containers, metrics)
+	r.NodeName = nodeName
+	return r
+}
+
 func testContainerResource(name string, cpuReq, cpuLimit, memReq, memLimit int64) pods.ContainerResource {
 	return pods.ContainerResource{
 		Name: name,
@@ -226,6 +232,24 @@ func TestSortByName(t *testing.T) {
 	require.Equal(t, "pod-c", list[0].Name)
 	require.Equal(t, "pod-b", list[1].Name)
 	require.Equal(t, "pod-a", list[2].Name)
+}
+
+func TestSortByNode(t *testing.T) {
+	list := PodMetricsResourceList{
+		testPodMetricsResourceWithNode("pod-1", "ns1", "node-c", nil, nil),
+		testPodMetricsResourceWithNode("pod-2", "ns1", "node-a", nil, nil),
+		testPodMetricsResourceWithNode("pod-3", "ns1", "node-b", nil, nil),
+	}
+
+	list.sortByNode(false)
+	require.Equal(t, "node-a", list[0].NodeName)
+	require.Equal(t, "node-b", list[1].NodeName)
+	require.Equal(t, "node-c", list[2].NodeName)
+
+	list.sortByNode(true)
+	require.Equal(t, "node-c", list[0].NodeName)
+	require.Equal(t, "node-b", list[1].NodeName)
+	require.Equal(t, "node-a", list[2].NodeName)
 }
 
 func TestSortByNamespace(t *testing.T) {
