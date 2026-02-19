@@ -86,7 +86,7 @@ func summaryOutputProcessor(out output.Output, res resources.Resources) SummaryO
 		return nodesjson.JSON(nodesjson.Print)
 	case output.Yaml:
 		return nodesyaml.Yaml(nodesyaml.Print)
-	case output.String:
+	case output.Text:
 		return nodesstring.String(nodesstring.Print)
 	}
 	return nodestable.ToTable(res)
@@ -100,7 +100,7 @@ func podsOutputProcessor(out output.Output, res resources.Resources) PodsOutputP
 		return metricsjson.JSON(metricsjson.Print)
 	case output.Yaml:
 		return metricsyaml.Yaml(metricsyaml.Print)
-	case output.String:
+	case output.Text:
 		return metricsstring.String(metricsstring.Print)
 	}
 	return metricstable.ToTable(res)

@@ -11,12 +11,12 @@ type Output string
 const (
 	Table            Output = "table"
 	JSON             Output = "json"
-	String           Output = "string"
+	Text             Output = "text"
 	Yaml             Output = "yaml"
 	defaultSeparator string = "|"
 )
 
-var choices = []Output{Table, JSON, String, Yaml}
+var choices = []Output{Table, JSON, Text, Yaml}
 
 func Valid(o Output) error {
 	if !choiceutil.Valid(o, choices) {

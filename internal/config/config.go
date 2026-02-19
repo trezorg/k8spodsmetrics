@@ -5,7 +5,7 @@
 //	common:
 //	  kubeconfig: /path/to/kubeconfig
 //	  context: my-context
-//	  output: json|yaml|table|string
+//	  output: json|yaml|table|text
 //	  alert: cpu|memory
 //	  watch-period: 10
 //	  watch: true

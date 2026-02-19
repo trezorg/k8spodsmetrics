@@ -8,7 +8,7 @@ import (
 
 func TestValid(t *testing.T) {
 	t.Run("valid outputs", func(t *testing.T) {
-		validOutputs := []Output{Table, JSON, String, Yaml}
+		validOutputs := []Output{Table, JSON, Text, Yaml}
 		for _, out := range validOutputs {
 			err := Valid(out)
 			require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestStringList(t *testing.T) {
 
 	t.Run("all outputs included", func(t *testing.T) {
 		list := StringListDefault()
-		expectedOutputs := []string{"table", "json", "string", "yaml"}
+		expectedOutputs := []string{"table", "json", "text", "yaml"}
 		for _, out := range expectedOutputs {
 			require.Contains(t, list, out)
 		}
@@ -57,7 +57,7 @@ func TestOutputString(t *testing.T) {
 		require.Equal(t, "yaml", string(Yaml))
 	})
 
-	t.Run("string output", func(t *testing.T) {
-		require.Equal(t, "string", string(String))
+	t.Run("text output", func(t *testing.T) {
+		require.Equal(t, "text", string(Text))
 	})
 }
