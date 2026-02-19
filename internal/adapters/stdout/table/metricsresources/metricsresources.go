@@ -266,5 +266,5 @@ func (s Table) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (Table) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("table metrics resources output failed", "error", err)
 }

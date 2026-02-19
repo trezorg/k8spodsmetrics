@@ -193,5 +193,5 @@ func (s Table) Success(list noderesources.NodeResourceList) {
 }
 
 func (Table) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("table node resources output failed", "error", err)
 }

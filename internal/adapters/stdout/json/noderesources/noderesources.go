@@ -15,7 +15,7 @@ func Print(list noderesources.NodeResourceList) {
 	enc.SetIndent("", "    ")
 	envelop := noderesources.NodeResourceListEnvelop{Items: list}
 	if err := enc.Encode(envelop); err != nil {
-		slog.Error("", slog.Any("error", err))
+		slog.Error("failed to encode node resources as json", "error", err)
 	}
 }
 
@@ -24,5 +24,5 @@ func (j JSON) Success(list noderesources.NodeResourceList) {
 }
 
 func (JSON) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("json node resources output failed", "error", err)
 }

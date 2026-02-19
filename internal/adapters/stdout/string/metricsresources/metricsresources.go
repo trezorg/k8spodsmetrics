@@ -18,5 +18,5 @@ func (j String) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (String) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("string metrics resources output failed", "error", err)
 }

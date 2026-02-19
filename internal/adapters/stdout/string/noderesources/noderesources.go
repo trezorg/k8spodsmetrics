@@ -18,5 +18,5 @@ func (j String) Success(list noderesources.NodeResourceList) {
 }
 
 func (String) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("string node resources output failed", "error", err)
 }

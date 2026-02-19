@@ -14,7 +14,7 @@ type Yaml func(list metricsresources.PodMetricsResourceList)
 func Print(list metricsresources.PodMetricsResourceList) {
 	data, err := yaml.Marshal(list)
 	if err != nil {
-		slog.Error("", slog.Any("error", err))
+		slog.Error("failed to marshal metrics resources to yaml", "error", err)
 		return
 	}
 	_, _ = os.Stdout.WriteString(string(data) + "\n")
@@ -25,5 +25,5 @@ func (j Yaml) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (Yaml) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("yaml metrics resources output failed", "error", err)
 }

@@ -15,7 +15,7 @@ func Print(list noderesources.NodeResourceList) {
 	enc := yaml.NewEncoder(os.Stdout)
 	envelop := noderesources.NodeResourceListEnvelop{Items: list}
 	if err := enc.Encode(envelop); err != nil {
-		slog.Error("", slog.Any("error", err))
+		slog.Error("failed to encode node resources as yaml", "error", err)
 	}
 }
 
@@ -24,5 +24,5 @@ func (j Yaml) Success(list noderesources.NodeResourceList) {
 }
 
 func (Yaml) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("yaml node resources output failed", "error", err)
 }

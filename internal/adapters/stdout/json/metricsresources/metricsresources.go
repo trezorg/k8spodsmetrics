@@ -14,7 +14,7 @@ func Print(list metricsresources.PodMetricsResourceList) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
 	if err := enc.Encode(list); err != nil {
-		slog.Error("", slog.Any("error", err))
+		slog.Error("failed to encode metrics resources as json", "error", err)
 	}
 }
 
@@ -23,5 +23,5 @@ func (j JSON) Success(list metricsresources.PodMetricsResourceList) {
 }
 
 func (JSON) Error(err error) {
-	slog.Error("", slog.Any("error", err))
+	slog.Error("json metrics resources output failed", "error", err)
 }
