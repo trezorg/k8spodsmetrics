@@ -29,7 +29,7 @@ const (
 	StorageEphemeral            Sorting = "storage_ephemeral"
 	AllocatableStorageEphemeral Sorting = "allocatable_storage_ephemeral"
 	UsedStorageEphemeral        Sorting = "used_storage_ephemeral"
-	FreeStorageEphemeral Sorting = "free_storage_ephemeral"
+	FreeStorageEphemeral        Sorting = "free_storage_ephemeral"
 )
 
 var choices = []Sorting{

@@ -9,14 +9,14 @@ import (
 type Alert string
 
 const (
-	Any              Alert  = "any"
-	Memory           Alert  = "memory"
-	MemoryRequest    Alert  = "memory_request"
-	MemoryLimit      Alert  = "memory_limit"
-	CPU              Alert  = "cpu"
-	CPURequest       Alert  = "cpu_request"
-	CPULimit         Alert  = "cpu_limit"
-	Storage          Alert  = "storage"
+	Any              Alert = "any"
+	Memory           Alert = "memory"
+	MemoryRequest    Alert = "memory_request"
+	MemoryLimit      Alert = "memory_limit"
+	CPU              Alert = "cpu"
+	CPURequest       Alert = "cpu_request"
+	CPULimit         Alert = "cpu_limit"
+	Storage          Alert = "storage"
 	StorageEphemeral Alert = "storage_ephemeral"
 	None             Alert = "none"
 )
