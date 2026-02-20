@@ -10,8 +10,8 @@ About
 The utility displays the consumption of memory and CPU, requests and limits in the context of kubernetes containers and nodes.
 Differs from
 
-    kubernetes top pods
-    kubernetes top nodes
+    kubectl top pods
+    kubectl top nodes
 
 in that it adds requests and limits for each container.
 Also shows total requests and limits by nodes.
