@@ -53,7 +53,10 @@ common:
   context: my-context
   output: json
   alert: cpu
-  kloglevel: 2
+  columns:
+    - pod
+    - container
+    - node
   watch-period: 10
   watch: true
 
