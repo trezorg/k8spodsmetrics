@@ -82,5 +82,9 @@ func commonFlags(config *commonConfig) []cli.Flag {
 				return nil
 			},
 		},
+		&cli.StringSliceFlag{
+			Name:  "columns",
+			Usage: "Table columns to display (table output only). Nodes: [total|allocatable|used|request|limit|available|free], Pods: [request|limit|used]",
+		},
 	}
 }

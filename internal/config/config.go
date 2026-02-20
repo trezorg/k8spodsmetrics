@@ -9,6 +9,10 @@
 //	  alert: cpu|memory
 //	  watch-period: 10
 //	  watch: true
+//	  columns:                    # Filter table columns (table output only)
+//	    - request
+//	    - limit
+//	    - used
 //	pods:
 //	  namespace: default          # Single namespace (string)
 //	  # OR
@@ -50,12 +54,13 @@ import (
 
 // Common holds shared configuration options applicable to all commands.
 type Common struct {
-	KubeConfig   string `yaml:"kubeconfig"`
-	KubeContext  string `yaml:"context"`
-	Output       string `yaml:"output"`
-	Alert        string `yaml:"alert"`
-	WatchPeriod  uint   `yaml:"watch-period"`
-	WatchMetrics bool   `yaml:"watch"`
+	KubeConfig   string   `yaml:"kubeconfig"`
+	KubeContext  string   `yaml:"context"`
+	Output       string   `yaml:"output"`
+	Alert        string   `yaml:"alert"`
+	WatchPeriod  uint     `yaml:"watch-period"`
+	WatchMetrics bool     `yaml:"watch"`
+	Columns      []string `yaml:"columns"`
 }
 
 // StringOrSlice is a custom type that can unmarshal from either a string or a slice of strings in YAML.
@@ -140,6 +145,9 @@ func (c *Config) MergeCommon(common *Common) {
 	}
 	if !common.WatchMetrics && c.Common.WatchMetrics {
 		common.WatchMetrics = c.Common.WatchMetrics
+	}
+	if len(common.Columns) == 0 && len(c.Common.Columns) > 0 {
+		common.Columns = c.Common.Columns
 	}
 }
 

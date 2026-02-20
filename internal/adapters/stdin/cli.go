@@ -6,6 +6,7 @@ import (
 	metricsstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
+	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/config"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
 
@@ -29,6 +30,7 @@ type commonConfig struct {
 	Alert        string
 	WatchPeriod  uint
 	WatchMetrics bool
+	Columns      []string
 	fileConfig   *config.Config
 }
 
@@ -78,10 +80,10 @@ type PodsWatcher interface {
 	ProcessWatch(metricsresources.SuccessProcessor, metricsresources.ErrorProcessor) error
 }
 
-func summaryOutputProcessor(out output.Output, res resources.Resources) SummaryOutputProcessor {
+func summaryOutputProcessor(out output.Output, res resources.Resources, cols []columns.Column) SummaryOutputProcessor {
 	switch out {
 	case output.Table:
-		return nodestable.ToTable(res)
+		return nodestable.ToTable(res, cols)
 	case output.JSON:
 		return nodesjson.JSON(nodesjson.Print)
 	case output.Yaml:
@@ -89,13 +91,13 @@ func summaryOutputProcessor(out output.Output, res resources.Resources) SummaryO
 	case output.Text:
 		return nodesstring.String(nodesstring.Print)
 	}
-	return nodestable.ToTable(res)
+	return nodestable.ToTable(res, cols)
 }
 
-func podsOutputProcessor(out output.Output, res resources.Resources) PodsOutputProcessor {
+func podsOutputProcessor(out output.Output, res resources.Resources, cols []columns.Column) PodsOutputProcessor {
 	switch out {
 	case output.Table:
-		return metricstable.ToTable(res)
+		return metricstable.ToTable(res, cols)
 	case output.JSON:
 		return metricsjson.JSON(metricsjson.Print)
 	case output.Yaml:
@@ -103,7 +105,25 @@ func podsOutputProcessor(out output.Output, res resources.Resources) PodsOutputP
 	case output.Text:
 		return metricsstring.String(metricsstring.Print)
 	}
-	return metricstable.ToTable(res)
+	return metricstable.ToTable(res, cols)
+}
+
+func parseColumnsForOutput(
+	out output.Output,
+	values []string,
+	parse func([]string) []columns.Column,
+	validate func([]columns.Column) error,
+) ([]columns.Column, error) {
+	if out != output.Table {
+		return nil, nil
+	}
+
+	cols := parse(values)
+	if err := validate(cols); err != nil {
+		return nil, err
+	}
+
+	return cols, nil
 }
 
 func summary(processor SummaryProcessor, successProcessor noderesources.SuccessProcessor) error {
@@ -139,6 +159,7 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Comm
 		Alert:        cfg.Alert,
 		WatchPeriod:  cfg.WatchPeriod,
 		WatchMetrics: cfg.WatchMetrics,
+		Columns:      cfg.Columns,
 	}
 	if fileConfig != nil {
 		fileConfig.MergeCommon(&merged)
@@ -212,6 +233,7 @@ func NewApp(version string) *cli.App {
 				summaryActionConfig.Label = c.String("label")
 				summaryActionConfig.Sorting = c.String("sorting")
 				summaryActionConfig.Reverse = c.Bool("reverse")
+				summaryActionConfig.Columns = c.StringSlice("columns")
 				cmdResources := c.StringSlice("resource")
 
 				mergedSummary := applySummaryConfig(&summaryActionConfig, cfg.fileConfig)
@@ -221,13 +243,14 @@ func NewApp(version string) *cli.App {
 				summaryActionConfig.Reverse = mergedSummary.Reverse
 				summaryActionConfig.Resources = mergedSummary.Resources
 
-				mergedCommon := applyCommonConfig(&cfg, cfg.fileConfig)
+				mergedCommon := applyCommonConfig(&summaryActionConfig.commonConfig, cfg.fileConfig)
 				summaryActionConfig.KubeConfig = mergedCommon.KubeConfig
 				summaryActionConfig.KubeContext = mergedCommon.KubeContext
 				summaryActionConfig.Output = mergedCommon.Output
 				summaryActionConfig.Alert = mergedCommon.Alert
 				summaryActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 				summaryActionConfig.WatchMetrics = mergedCommon.WatchMetrics
+				summaryActionConfig.Columns = mergedCommon.Columns
 
 				if len(cmdResources) == 0 && len(mergedSummary.Resources) > 0 {
 					cmdResources = mergedSummary.Resources
@@ -238,8 +261,17 @@ func NewApp(version string) *cli.App {
 					return err
 				}
 				summaryActionConfig.Resources = resources.ToStrings(outputResources...)
+				nodeCols, err := parseColumnsForOutput(
+					output.Output(summaryActionConfig.Output),
+					summaryActionConfig.Columns,
+					nodestable.ParseColumns,
+					nodestable.ValidateColumns,
+				)
+				if err != nil {
+					return err
+				}
 				summaryCfg := nodeResourcesConfig(summaryActionConfig)
-				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources)
+				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources, nodeCols)
 				if summaryActionConfig.WatchMetrics {
 					return summaryWatch(summaryCfg, outputProcessor, outputProcessor)
 				}
@@ -263,6 +295,7 @@ func NewApp(version string) *cli.App {
 				podActionConfig.Sorting = c.String("sorting")
 				podActionConfig.Reverse = c.Bool("reverse")
 				podActionConfig.Nodes = c.StringSlice("node")
+				podActionConfig.Columns = c.StringSlice("columns")
 				cmdResources := c.StringSlice("resource")
 
 				mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig)
@@ -274,13 +307,14 @@ func NewApp(version string) *cli.App {
 				podActionConfig.Reverse = mergedPods.Reverse
 				podActionConfig.Resources = mergedPods.Resources
 
-				mergedCommon := applyCommonConfig(&cfg, cfg.fileConfig)
+				mergedCommon := applyCommonConfig(&podActionConfig.commonConfig, cfg.fileConfig)
 				podActionConfig.KubeConfig = mergedCommon.KubeConfig
 				podActionConfig.KubeContext = mergedCommon.KubeContext
 				podActionConfig.Output = mergedCommon.Output
 				podActionConfig.Alert = mergedCommon.Alert
 				podActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 				podActionConfig.WatchMetrics = mergedCommon.WatchMetrics
+				podActionConfig.Columns = mergedCommon.Columns
 
 				if len(cmdResources) == 0 && len(mergedPods.Resources) > 0 {
 					cmdResources = mergedPods.Resources
@@ -291,8 +325,17 @@ func NewApp(version string) *cli.App {
 					return err
 				}
 				podActionConfig.Resources = resources.ToStrings(outputResources...)
+				podCols, err := parseColumnsForOutput(
+					output.Output(podActionConfig.Output),
+					podActionConfig.Columns,
+					metricstable.ParseColumns,
+					metricstable.ValidateColumns,
+				)
+				if err != nil {
+					return err
+				}
 				podCfg := metricsResourcesConfig(podActionConfig)
-				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources)
+				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources, podCols)
 				if podActionConfig.WatchMetrics {
 					return podsWatch(podCfg, outputProcessor, outputProcessor)
 				}
