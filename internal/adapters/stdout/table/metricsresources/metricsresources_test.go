@@ -138,6 +138,28 @@ func TestRow(t *testing.T) {
 		require.Equal(t, "default", result[1])
 		require.Equal(t, "node-1", result[2])
 	})
+
+	t.Run("uses pod resource identity when pod metric identity is empty", func(t *testing.T) {
+		outputResources := resources.Resources{resources.Memory}
+		resource := metricsresources.PodMetricsResource{
+			PodResource: pods.PodResource{
+				NamespaceName: pods.NamespaceName{
+					Name:      "system-kube-state-metrics-7d4fb49747-7n7b9",
+					Namespace: "kube-system",
+				},
+				NodeName: "pool-dev-54704",
+				Containers: []pods.ContainerResource{{
+					Name: "kube-state-metrics",
+				}},
+			},
+			PodMetric: podmetrics.PodMetric{},
+		}
+
+		result := row(resource, outputResources)
+		require.Equal(t, "system-kube-state-metrics-7d4fb49747-7n7b9", result[0])
+		require.Equal(t, "kube-system", result[1])
+		require.Equal(t, "pool-dev-54704", result[2])
+	})
 }
 
 func TestToTable(t *testing.T) {

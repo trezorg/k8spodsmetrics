@@ -598,6 +598,44 @@ func TestSortWithEqualValues(t *testing.T) {
 	require.Equal(t, "pod-c", list[2].Name)
 }
 
+func TestSortByNameUsesPodResourceIdentity(t *testing.T) {
+	list := PodMetricsResourceList{
+		{
+			PodResource: pods.PodResource{
+				NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-b"},
+			},
+		},
+		{
+			PodResource: pods.PodResource{
+				NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-a"},
+			},
+		},
+	}
+
+	list.sortByName(false)
+	require.Equal(t, "pod-a", list[0].PodResource.Name)
+	require.Equal(t, "pod-b", list[1].PodResource.Name)
+}
+
+func TestSortByNamespaceUsesPodResourceIdentity(t *testing.T) {
+	list := PodMetricsResourceList{
+		{
+			PodResource: pods.PodResource{
+				NamespaceName: pods.NamespaceName{Namespace: "ns-b", Name: "pod-b"},
+			},
+		},
+		{
+			PodResource: pods.PodResource{
+				NamespaceName: pods.NamespaceName{Namespace: "ns-a", Name: "pod-a"},
+			},
+		},
+	}
+
+	list.sortByNamespace(false)
+	require.Equal(t, "ns-a", list[0].PodResource.Namespace)
+	require.Equal(t, "ns-b", list[1].PodResource.Namespace)
+}
+
 func TestSortWithMultipleContainers(t *testing.T) {
 	list := PodMetricsResourceList{
 		testPodMetricsResource("pod-1", "ns1", []pods.ContainerResource{

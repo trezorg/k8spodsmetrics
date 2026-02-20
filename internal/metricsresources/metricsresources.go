@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Name:		{{.Name}}
-Namespace:	{{.Namespace}}
+	metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Name:		{{.PodResource.Name}}
+Namespace:	{{.PodResource.Namespace}}
 Node:		{{.NodeName}}
 Containers:
   {{ range $index, $container := .ContainersMetrics -}}
@@ -490,8 +490,8 @@ func (r PodMetricsResourceList) filterByAlert(alert alerts.Alert) PodMetricsReso
 func (r PodMetricsResource) toOutput() PodMetricsResourceOutput {
 	containers := r.ContainersMetrics()
 	return PodMetricsResourceOutput{
-		r.Name,
-		r.Namespace,
+		r.PodResource.Name,
+		r.PodResource.Namespace,
 		r.NodeName,
 		containers.toOutput(),
 	}
@@ -538,13 +538,17 @@ func merge(podResourceList pods.PodResourceList, podMetricList podmetrics.PodMet
 	for _, pr := range podResourceList {
 		podsMap[pods.NamespaceName{Namespace: pr.Namespace, Name: pr.Name}] = &PodMetricsResource{PodResource: pr}
 	}
+	unmatchedMetrics := 0
 	for _, pm := range podMetricList {
 		podMetricsResource, ok := podsMap[pods.NamespaceName{Namespace: pm.Namespace, Name: pm.Name}]
 		if !ok {
-			slog.Warn("Cannot substitute namespace and name", slog.String("namespace", pm.Namespace), slog.String("name", pm.Name))
+			unmatchedMetrics++
 			continue
 		}
 		podMetricsResource.PodMetric = pm
+	}
+	if unmatchedMetrics > 0 {
+		slog.Debug("Skipped unmatched pod metrics", slog.Int("count", unmatchedMetrics))
 	}
 	podMetricsResourceList := make(PodMetricsResourceList, 0, len(podsMap))
 	for _, podMetricsResource := range podsMap {

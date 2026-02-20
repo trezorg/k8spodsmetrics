@@ -80,13 +80,13 @@ func storageEphemeralUsed(containers []podmetrics.ContainerMetric) int64 {
 
 func (r PodMetricsResourceList) sortByNamespace(reversed bool) {
 	less := func(i, j int) bool {
-		if r[i].Namespace < r[j].Namespace {
+		if r[i].PodResource.Namespace < r[j].PodResource.Namespace {
 			return true
 		}
-		if r[i].Namespace > r[j].Namespace {
+		if r[i].PodResource.Namespace > r[j].PodResource.Namespace {
 			return false
 		}
-		return r[i].Name < r[j].Name
+		return r[i].PodResource.Name < r[j].PodResource.Name
 	}
 	if reversed {
 		less = reverse(less)
@@ -96,7 +96,7 @@ func (r PodMetricsResourceList) sortByNamespace(reversed bool) {
 
 func (r PodMetricsResourceList) sortByName(reversed bool) {
 	less := func(i, j int) bool {
-		return r[i].Name < r[j].Name
+		return r[i].PodResource.Name < r[j].PodResource.Name
 	}
 	if reversed {
 		less = reverse(less)

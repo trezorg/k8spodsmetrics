@@ -1,7 +1,9 @@
 package metricsresources
 
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -93,5 +95,33 @@ func TestMerge(t *testing.T) {
 		}
 		result := merge(podResources, podMetrics)
 		require.Len(t, result, 1)
+
+		output := result.toOutput()
+		require.Len(t, output.Items, 1)
+		require.Equal(t, "pod1", output.Items[0].Name)
+		require.Equal(t, "ns1", output.Items[0].Namespace)
+	})
+
+	t.Run("mismatched namespace/name does not emit warn log", func(t *testing.T) {
+		oldLogger := slog.Default()
+		defer slog.SetDefault(oldLogger)
+
+		var logBuffer bytes.Buffer
+		handler := slog.NewJSONHandler(&logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+		slog.SetDefault(slog.New(handler))
+
+		podResources := pods.PodResourceList{
+			{NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod1"}},
+		}
+		podMetrics := podmetrics.PodMetricList{
+			{Namespace: "ns2", Name: "pod2"},
+		}
+
+		result := merge(podResources, podMetrics)
+		require.Len(t, result, 1)
+
+		logs := logBuffer.String()
+		require.NotContains(t, logs, `"level":"WARN"`)
+		require.Contains(t, logs, "Skipped unmatched pod metrics")
 	})
 }

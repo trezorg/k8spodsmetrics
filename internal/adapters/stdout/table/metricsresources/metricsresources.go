@@ -187,7 +187,7 @@ func (cs ColumnSet) appendStorageColumns(result table.Row, container metricsreso
 }
 
 func (cs ColumnSet) dataRow(resource metricsresources.PodMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{resource.Name, resource.Namespace, resource.NodeName}
+	result := table.Row{resource.PodResource.Name, resource.PodResource.Namespace, resource.NodeName}
 	containers := resource.ContainersMetrics()
 	if len(containers) == 0 {
 		return result
@@ -365,7 +365,7 @@ func secondaryHeader(outputResources resources.Resources) table.Row {
 }
 
 func row(resource metricsresources.PodMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{resource.Name, resource.Namespace, resource.NodeName}
+	result := table.Row{resource.PodResource.Name, resource.PodResource.Namespace, resource.NodeName}
 	containers := resource.ContainersMetrics()
 	if len(containers) == 0 {
 		return result
