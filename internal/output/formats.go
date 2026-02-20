@@ -9,11 +9,10 @@ import (
 type Output string
 
 const (
-	Table            Output = "table"
-	JSON             Output = "json"
-	Text             Output = "text"
-	Yaml             Output = "yaml"
-	defaultSeparator string = "|"
+	Table Output = "table"
+	JSON  Output = "json"
+	Text  Output = "text"
+	Yaml  Output = "yaml"
 )
 
 var choices = []Output{Table, JSON, Text, Yaml}
@@ -30,5 +29,5 @@ func StringList(separator string) string {
 }
 
 func StringListDefault() string {
-	return StringList(defaultSeparator)
+	return StringList(choiceutil.DefaultSeparator)
 }

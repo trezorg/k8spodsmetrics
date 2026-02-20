@@ -17,9 +17,8 @@ const (
 	CPURequest       Alert  = "cpu_request"
 	CPULimit         Alert  = "cpu_limit"
 	Storage          Alert  = "storage"
-	StorageEphemeral Alert  = "storage_ephemeral"
-	None             Alert  = "none"
-	defaultSeparator string = "|"
+	StorageEphemeral Alert = "storage_ephemeral"
+	None             Alert = "none"
 )
 
 var choices = []Alert{Any, Memory, MemoryLimit, MemoryRequest, CPU, CPULimit, CPURequest, Storage, StorageEphemeral, None}
@@ -36,5 +35,5 @@ func StringList(separator string) string {
 }
 
 func StringListDefault() string {
-	return StringList(defaultSeparator)
+	return StringList(choiceutil.DefaultSeparator)
 }

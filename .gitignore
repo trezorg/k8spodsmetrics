@@ -9,3 +9,6 @@
 /.serena
 /k8spodsmetrics
 coverage.out
+.claude
+.codex
+.opencode

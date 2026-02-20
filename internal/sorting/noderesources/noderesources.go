@@ -29,8 +29,7 @@ const (
 	StorageEphemeral            Sorting = "storage_ephemeral"
 	AllocatableStorageEphemeral Sorting = "allocatable_storage_ephemeral"
 	UsedStorageEphemeral        Sorting = "used_storage_ephemeral"
-	FreeStorageEphemeral        Sorting = "free_storage_ephemeral"
-	defaultSeparator            string  = "|"
+	FreeStorageEphemeral Sorting = "free_storage_ephemeral"
 )
 
 var choices = []Sorting{
@@ -69,5 +68,5 @@ func StringList(separator string) string {
 }
 
 func StringListDefault() string {
-	return StringList(defaultSeparator)
+	return StringList(choiceutil.DefaultSeparator)
 }

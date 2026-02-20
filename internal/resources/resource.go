@@ -13,11 +13,10 @@ type (
 )
 
 const (
-	Memory           Resource = "memory"
-	CPU              Resource = "cpu"
-	Storage          Resource = "storage"
-	All              Resource = "all"
-	defaultSeparator string   = "|"
+	Memory  Resource = "memory"
+	CPU     Resource = "cpu"
+	Storage Resource = "storage"
+	All     Resource = "all"
 )
 
 var (
@@ -82,5 +81,5 @@ func StringList(separator string) string {
 }
 
 func StringListDefault() string {
-	return StringList(defaultSeparator)
+	return StringList(choiceutil.DefaultSeparator)
 }

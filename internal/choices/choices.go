@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// DefaultSeparator is the standard separator used for formatting choice lists.
+const DefaultSeparator = "|"
+
 func Valid[T comparable](value T, choices []T) bool {
 	return slices.Contains(choices, value)
 }
