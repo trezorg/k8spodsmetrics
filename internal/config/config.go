@@ -41,8 +41,8 @@
 // Merge Behavior:
 //   - CLI flags take precedence over file config values
 //   - Empty/zero values from CLI are replaced with file config values
-//   - Boolean limitation: CLI default false cannot override file's true
-//     (use --watch=false explicitly if supported by CLI library)
+//   - Boolean values from file are used unless the CLI flag is explicitly set.
+//     In the CLI adapter, explicit `--watch=false` / `--reverse=false` overrides file `true`.
 package config
 
 import (

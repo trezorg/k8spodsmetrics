@@ -151,7 +151,7 @@ func loadFileConfig(configFile string) (*config.Config, error) {
 
 // applyCommonConfig merges file config with CLI common config values.
 // CLI values take precedence over file config for string and numeric types.
-func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Common {
+func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config, watchMetricsSet bool) config.Common {
 	merged := config.Common{
 		KubeConfig:   cfg.KubeConfig,
 		KubeContext:  cfg.KubeContext,
@@ -164,12 +164,15 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config) config.Comm
 	if fileConfig != nil {
 		fileConfig.MergeCommon(&merged)
 	}
+	if watchMetricsSet {
+		merged.WatchMetrics = cfg.WatchMetrics
+	}
 	return merged
 }
 
 // applyPodsConfig merges file config with CLI pods command config values.
 // CLI values take precedence over file config for string and slice types.
-func applyPodsConfig(podCfg *podConfig, fileConfig *config.Config) config.Pods {
+func applyPodsConfig(podCfg *podConfig, fileConfig *config.Config, reverseSet bool) config.Pods {
 	merged := config.Pods{
 		Namespaces:    podCfg.Namespaces,
 		Label:         podCfg.Label,
@@ -182,12 +185,15 @@ func applyPodsConfig(podCfg *podConfig, fileConfig *config.Config) config.Pods {
 	if fileConfig != nil {
 		fileConfig.MergePods(&merged)
 	}
+	if reverseSet {
+		merged.Reverse = podCfg.Reverse
+	}
 	return merged
 }
 
 // applySummaryConfig merges file config with CLI summary command config values.
 // CLI values take precedence over file config for string and slice types.
-func applySummaryConfig(summaryCfg *summaryConfig, fileConfig *config.Config) config.Summary {
+func applySummaryConfig(summaryCfg *summaryConfig, fileConfig *config.Config, reverseSet bool) config.Summary {
 	merged := config.Summary{
 		Name:      summaryCfg.Name,
 		Label:     summaryCfg.Label,
@@ -197,6 +203,9 @@ func applySummaryConfig(summaryCfg *summaryConfig, fileConfig *config.Config) co
 	}
 	if fileConfig != nil {
 		fileConfig.MergeSummary(&merged)
+	}
+	if reverseSet {
+		merged.Reverse = summaryCfg.Reverse
 	}
 	return merged
 }
@@ -236,14 +245,17 @@ func NewApp(version string) *cli.App {
 				summaryActionConfig.Columns = c.StringSlice("columns")
 				cmdResources := c.StringSlice("resource")
 
-				mergedSummary := applySummaryConfig(&summaryActionConfig, cfg.fileConfig)
+				reverseSet := c.IsSet("reverse")
+				watchSet := c.IsSet("watch")
+
+				mergedSummary := applySummaryConfig(&summaryActionConfig, cfg.fileConfig, reverseSet)
 				summaryActionConfig.Name = mergedSummary.Name
 				summaryActionConfig.Label = mergedSummary.Label
 				summaryActionConfig.Sorting = mergedSummary.Sorting
 				summaryActionConfig.Reverse = mergedSummary.Reverse
 				summaryActionConfig.Resources = mergedSummary.Resources
 
-				mergedCommon := applyCommonConfig(&summaryActionConfig.commonConfig, cfg.fileConfig)
+				mergedCommon := applyCommonConfig(&summaryActionConfig.commonConfig, cfg.fileConfig, watchSet)
 				summaryActionConfig.KubeConfig = mergedCommon.KubeConfig
 				summaryActionConfig.KubeContext = mergedCommon.KubeContext
 				summaryActionConfig.Output = mergedCommon.Output
@@ -298,7 +310,10 @@ func NewApp(version string) *cli.App {
 				podActionConfig.Columns = c.StringSlice("columns")
 				cmdResources := c.StringSlice("resource")
 
-				mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig)
+				reverseSet := c.IsSet("reverse")
+				watchSet := c.IsSet("watch")
+
+				mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig, reverseSet)
 				podActionConfig.Namespaces = mergedPods.Namespaces
 				podActionConfig.Label = mergedPods.Label
 				podActionConfig.FieldSelector = mergedPods.FieldSelector
@@ -307,7 +322,7 @@ func NewApp(version string) *cli.App {
 				podActionConfig.Reverse = mergedPods.Reverse
 				podActionConfig.Resources = mergedPods.Resources
 
-				mergedCommon := applyCommonConfig(&podActionConfig.commonConfig, cfg.fileConfig)
+				mergedCommon := applyCommonConfig(&podActionConfig.commonConfig, cfg.fileConfig, watchSet)
 				podActionConfig.KubeConfig = mergedCommon.KubeConfig
 				podActionConfig.KubeContext = mergedCommon.KubeContext
 				podActionConfig.Output = mergedCommon.Output
