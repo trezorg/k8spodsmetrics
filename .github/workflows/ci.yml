@@ -24,8 +24,8 @@ jobs:
         with:
           version: 3.x
 
-      - name: Format
-        run: task format
+      - name: Format check
+        run: task format:check
 
       - name: Lint
         run: task lint

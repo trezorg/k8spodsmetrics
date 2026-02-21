@@ -72,6 +72,17 @@ tasks:
     cmds:
       - go fmt ./...
 
+  format:check:
+    desc: Check Go code formatting without modifying files
+    cmds:
+      - |
+        UNFORMATTED=$(gofmt -l -d .)
+        if [ -n "$UNFORMATTED" ]; then
+          echo "Unformatted Go files found:"
+          echo "$UNFORMATTED"
+          exit 1
+        fi
+
   check:
     desc: Run fix, format, lint and test
     deps:
