@@ -36,6 +36,9 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 	} else {
 		var nodeMetric *v1beta1.NodeMetrics
 		nodeMetric, err = api.NodeMetricses().Get(ctx, nodeName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 		allNodeMetrics := v1beta1.NodeMetricsList{Items: []v1beta1.NodeMetrics{*nodeMetric}}
 		nodeMetrics = &allNodeMetrics
 	}
