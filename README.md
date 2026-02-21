@@ -25,7 +25,7 @@ Download
 Install
 ------------------------------------
 
-    go get -u github.com/trezorg/k8spodsmetrics/cmd/k8spodsmetrics
+    go install github.com/trezorg/k8spodsmetrics/cmd/k8spodsmetrics@latest
 
 Using
 ------------------------------------
@@ -54,9 +54,9 @@ common:
   output: json
   alert: cpu
   columns:
-    - pod
-    - container
-    - node
+    - request
+    - limit
+    - used
   watch-period: 10
   watch: true
 
@@ -82,4 +82,4 @@ summary:
     - all
 ```
 
-**Merge Behavior:** CLI flags take precedence over file config values. Empty/zero values from CLI are replaced with file config values. Note that boolean flags have a limitation: if the file has `watch: true` or `reverse: true`, the CLI default of `false` cannot override it.
+**Merge Behavior:** CLI flags take precedence over file config values. Empty/zero values from CLI are replaced with file config values. For boolean flags, file values are used unless the CLI flag is explicitly set, so `--watch=false` and `--reverse=false` override `true` values from the config file.

@@ -41,8 +41,8 @@ func commonFlags(config *commonConfig) []cli.Flag {
 			Usage:   "Log level",
 		},
 		&cli.StringFlag{
-			Name:        "alerts",
-			Aliases:     []string{"a"},
+			Name:        "alert",
+			Aliases:     []string{"a", "alerts"},
 			Value:       string(alert.None),
 			Usage:       fmt.Sprintf("Alert format. [%s]", alert.StringListDefault()),
 			Destination: &config.Alert,

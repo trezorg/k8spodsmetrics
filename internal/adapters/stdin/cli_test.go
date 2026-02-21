@@ -9,7 +9,28 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/config"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
+	"github.com/urfave/cli/v2"
 )
+
+func TestCommonFlagsAlertNaming(t *testing.T) {
+	flags := commonFlags(&commonConfig{})
+
+	var alertFlag *cli.StringFlag
+	for _, flag := range flags {
+		f, ok := flag.(*cli.StringFlag)
+		if !ok {
+			continue
+		}
+		if f.Name == "alert" {
+			alertFlag = f
+			break
+		}
+	}
+
+	require.NotNil(t, alertFlag)
+	require.Contains(t, alertFlag.Aliases, "alerts")
+	require.Contains(t, alertFlag.Aliases, "a")
+}
 
 func TestParseColumnsForOutput(t *testing.T) {
 	t.Run("non table output skips parsing and validation", func(t *testing.T) {
