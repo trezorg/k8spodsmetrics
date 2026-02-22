@@ -75,8 +75,18 @@ func (cs ColumnSet) appendStorageHeaderRow(result table.Row) table.Row {
 	return result
 }
 
-func (cs ColumnSet) headerFooterRow(outputResources resources.Resources, firstColumn string) table.Row {
-	result := table.Row{firstColumn, "", ""}
+func (cs ColumnSet) headerFooterRow(outputResources resources.Resources, columnNames ...string) table.Row {
+	maxColumsNames := 3
+	if len(columnNames) > maxColumsNames {
+		columnNames = columnNames[:3]
+	}
+	result := table.Row{}
+	for _, column := range columnNames {
+		result = append(result, column)
+	}
+	for range maxColumsNames - len(columnNames) {
+		result = append(result, "")
+	}
 	if outputResources.IsCPU() {
 		result = cs.appendResourceHeaderRow(result, "CPU")
 	}
@@ -244,7 +254,7 @@ func (cs ColumnSet) containerRow(container metricsresources.ContainerMetricsReso
 }
 
 func (cs ColumnSet) totalRow(outputResources resources.Resources, total metricsresources.ContainerMetricsResource) table.Row {
-	totalRow := table.Row{"", "", ""}
+	totalRow := table.Row{"Total", "Total", "Total"}
 	if outputResources.IsCPU() {
 		if cs.Request {
 			totalRow = append(totalRow, total.Requests.CPURequestString())
@@ -300,165 +310,6 @@ func ToTable(
 	})
 }
 
-func headerFooter(outputResources resources.Resources, firstColumn string) table.Row {
-	result := table.Row{firstColumn, "", ""}
-	if outputResources.IsCPU() {
-		result = append(
-			result,
-			"CPU",
-			"CPU",
-			"CPU",
-		)
-	}
-	if outputResources.IsMemory() {
-		result = append(
-			result,
-			"Memory",
-			"Memory",
-			"Memory",
-		)
-	}
-	if outputResources.IsStorage() {
-		result = append(
-			result,
-			"Storage",
-			"Storage",
-			"Storage",
-			"Storage Ephemeral",
-			"Storage Ephemeral",
-			"Storage Ephemeral",
-		)
-	}
-	return result
-}
-
-func secondaryHeader(outputResources resources.Resources) table.Row {
-	result := table.Row{"", "", ""}
-	if outputResources.IsCPU() {
-		result = append(
-			result,
-			"Request",
-			"Limit",
-			"Used",
-		)
-	}
-	if outputResources.IsMemory() {
-		result = append(
-			result,
-			"Request",
-			"Limit",
-			"Used",
-		)
-	}
-	if outputResources.IsStorage() {
-		result = append(
-			result,
-			"Request",
-			"Limit",
-			"Used",
-			"Request",
-			"Limit",
-			"Used",
-		)
-	}
-	return result
-}
-
-func row(resource metricsresources.PodMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{resource.PodResource.Name, resource.PodResource.Namespace, resource.NodeName}
-	containers := resource.ContainersMetrics()
-	if len(containers) == 0 {
-		return result
-	}
-	container := containers[0]
-
-	if outputResources.IsCPU() {
-		for _, cn := range containers[1:] {
-			container.Requests.CPURequest += cn.Requests.CPURequest
-			container.Limits.CPURequest += cn.Limits.CPURequest
-			container.Requests.CPUUsed += cn.Requests.CPUUsed
-			container.Limits.CPUUsed += cn.Limits.CPUUsed
-		}
-		result = append(
-			result,
-			container.Requests.CPURequestString(),
-			container.Limits.CPURequestString(),
-			container.CPUUsed(),
-		)
-	}
-	if outputResources.IsMemory() {
-		for _, cn := range containers[1:] {
-			container.Requests.MemoryRequest += cn.Requests.MemoryRequest
-			container.Limits.MemoryRequest += cn.Limits.MemoryRequest
-			container.Requests.MemoryUsed += cn.Requests.MemoryUsed
-			container.Limits.MemoryUsed += cn.Limits.MemoryUsed
-		}
-		result = append(
-			result,
-			container.Requests.MemoryRequestString(),
-			container.Limits.MemoryRequestString(),
-			container.MemoryUsed(),
-		)
-	}
-	if outputResources.IsStorage() {
-		for _, cn := range containers[1:] {
-			container.Requests.StorageRequest += cn.Requests.StorageRequest
-			container.Limits.StorageRequest += cn.Limits.StorageRequest
-			container.Requests.StorageUsed += cn.Requests.StorageUsed
-			container.Limits.StorageUsed += cn.Limits.StorageUsed
-		}
-		for _, cn := range containers[1:] {
-			container.Requests.StorageEphemeralRequest += cn.Requests.StorageEphemeralRequest
-			container.Limits.StorageEphemeralRequest += cn.Limits.StorageEphemeralRequest
-			container.Requests.StorageEphemeralUsed += cn.Requests.StorageEphemeralUsed
-			container.Limits.StorageEphemeralUsed += cn.Limits.StorageEphemeralUsed
-		}
-		result = append(
-			result,
-			container.Requests.StorageRequestString(),
-			container.Limits.StorageRequestString(),
-			container.StorageUsed(),
-			container.Requests.StorageEphemeralRequestString(),
-			container.Limits.StorageEphemeralRequestString(),
-			container.StorageEphemeralUsed(),
-		)
-	}
-	return result
-}
-
-func containerRow(container metricsresources.ContainerMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{container.Name, "", ""}
-
-	if outputResources.IsCPU() {
-		result = append(
-			result,
-			container.Requests.CPURequestString(),
-			container.Limits.CPURequestString(),
-			container.CPUUsed(),
-		)
-	}
-	if outputResources.IsMemory() {
-		result = append(
-			result,
-			container.Requests.MemoryRequestString(),
-			container.Limits.MemoryRequestString(),
-			container.MemoryUsed(),
-		)
-	}
-	if outputResources.IsStorage() {
-		result = append(
-			result,
-			container.Requests.StorageRequestString(),
-			container.Limits.StorageRequestString(),
-			container.StorageUsed(),
-			container.Requests.StorageEphemeralRequestString(),
-			container.Limits.StorageEphemeralRequestString(),
-			container.StorageEphemeralUsed(),
-		)
-	}
-	return result
-}
-
 func Print(
 	list metricsresources.PodMetricsResourceList,
 	outputResources resources.Resources,
@@ -467,7 +318,7 @@ func Print(
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod Name / Container Names"), rowConfigAutoMerge)
+	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod/Container", "Namespace", "Node"), rowConfigAutoMerge)
 	t.AppendHeader(cs.secondaryHeaderRow(outputResources))
 
 	total := metricsresources.ContainerMetricsResource{}
@@ -508,9 +359,7 @@ func Print(
 	}
 
 	// Add footer with totals
-	t.AppendFooter(cs.headerFooterRow(outputResources, "Total"), rowConfigAutoMerge)
-	t.AppendFooter(cs.secondaryHeaderRow(outputResources))
-	t.AppendFooter(cs.totalRow(outputResources, total))
+	t.AppendFooter(cs.totalRow(outputResources, total), rowConfigAutoMerge)
 	t.Render()
 }
 

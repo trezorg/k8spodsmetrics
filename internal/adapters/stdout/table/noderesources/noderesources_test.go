@@ -13,7 +13,8 @@ import (
 func TestHeaderFooter(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 8)
 		require.Equal(t, "Test", result[0])
 		require.Equal(t, "CPU", result[1])
@@ -21,7 +22,8 @@ func TestHeaderFooter(t *testing.T) {
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 8)
 		require.Equal(t, "Test", result[0])
 		require.Equal(t, "Memory", result[1])
@@ -29,7 +31,8 @@ func TestHeaderFooter(t *testing.T) {
 
 	t.Run("with all resources", func(t *testing.T) {
 		outputResources := resources.Resources{resources.All}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 23)
 		require.Equal(t, "Test", result[0])
 	})
@@ -38,7 +41,8 @@ func TestHeaderFooter(t *testing.T) {
 func TestSecondaryHeader(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
-		result := secondaryHeader(outputResources)
+		cs := newColumnSet(nil)
+		result := cs.secondaryHeaderRow(outputResources)
 		require.Len(t, result, 8)
 		require.Equal(t, "Total", result[1])
 		require.Equal(t, "Allocatable", result[2])
@@ -47,7 +51,8 @@ func TestSecondaryHeader(t *testing.T) {
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
-		result := secondaryHeader(outputResources)
+		cs := newColumnSet(nil)
+		result := cs.secondaryHeaderRow(outputResources)
 		require.Len(t, result, 8)
 		require.Equal(t, "Total", result[1])
 		require.Equal(t, "Allocatable", result[2])
@@ -58,26 +63,28 @@ func TestSecondaryHeader(t *testing.T) {
 func TestRow(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
+		cs := newColumnSet(nil)
 		resource := noderesources.NodeResource{
 			Name:           "node-1",
 			CPU:            4000,
 			AllocatableCPU: 3900,
 			UsedCPU:        100,
 		}
-		result := row(resource, outputResources)
+		result := cs.dataRow(resource, outputResources)
 		require.Len(t, result, 8)
 		require.Equal(t, "node-1", result[0])
 	})
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
+		cs := newColumnSet(nil)
 		resource := noderesources.NodeResource{
 			Name:              "node-1",
 			Memory:            8 * 1024 * 1024 * 1024,
 			AllocatableMemory: 7 * 1024 * 1024 * 1024,
 			UsedMemory:        1024 * 1024 * 1024,
 		}
-		result := row(resource, outputResources)
+		result := cs.dataRow(resource, outputResources)
 		require.Len(t, result, 8)
 		require.Equal(t, "node-1", result[0])
 	})

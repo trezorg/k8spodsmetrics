@@ -15,9 +15,12 @@ import (
 func TestHeaderFooter(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 6)
 		require.Equal(t, "Test", result[0])
+		require.Equal(t, "", result[1])
+		require.Equal(t, "", result[2])
 		require.Equal(t, "CPU", result[3])
 		require.Equal(t, "CPU", result[4])
 		require.Equal(t, "CPU", result[5])
@@ -25,9 +28,12 @@ func TestHeaderFooter(t *testing.T) {
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 6)
 		require.Equal(t, "Test", result[0])
+		require.Equal(t, "", result[1])
+		require.Equal(t, "", result[2])
 		require.Equal(t, "Memory", result[3])
 		require.Equal(t, "Memory", result[4])
 		require.Equal(t, "Memory", result[5])
@@ -35,7 +41,8 @@ func TestHeaderFooter(t *testing.T) {
 
 	t.Run("with all resources", func(t *testing.T) {
 		outputResources := resources.Resources{resources.All}
-		result := headerFooter(outputResources, "Test")
+		cs := newColumnSet(nil)
+		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 15)
 		require.Equal(t, "Test", result[0])
 	})
@@ -44,8 +51,12 @@ func TestHeaderFooter(t *testing.T) {
 func TestSecondaryHeader(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
-		result := secondaryHeader(outputResources)
+		cs := newColumnSet(nil)
+		result := cs.secondaryHeaderRow(outputResources)
 		require.Len(t, result, 6)
+		require.Equal(t, "", result[0])
+		require.Equal(t, "", result[1])
+		require.Equal(t, "", result[2])
 		require.Equal(t, "Request", result[3])
 		require.Equal(t, "Limit", result[4])
 		require.Equal(t, "Used", result[5])
@@ -53,8 +64,12 @@ func TestSecondaryHeader(t *testing.T) {
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
-		result := secondaryHeader(outputResources)
+		cs := newColumnSet(nil)
+		result := cs.secondaryHeaderRow(outputResources)
 		require.Len(t, result, 6)
+		require.Equal(t, "", result[0])
+		require.Equal(t, "", result[1])
+		require.Equal(t, "", result[2])
 		require.Equal(t, "Request", result[3])
 		require.Equal(t, "Limit", result[4])
 		require.Equal(t, "Used", result[5])
@@ -64,6 +79,7 @@ func TestSecondaryHeader(t *testing.T) {
 func TestContainerRow(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
+		cs := newColumnSet(nil)
 		container := metricsresources.ContainerMetricsResource{
 			Name: "container-1",
 			Requests: metricsresources.MetricsResource{
@@ -74,13 +90,14 @@ func TestContainerRow(t *testing.T) {
 				CPUUsed:    1500,
 			},
 		}
-		result := containerRow(container, outputResources)
+		result := cs.containerRow(container, outputResources)
 		require.Len(t, result, 6)
 		require.Equal(t, "container-1", result[0])
 	})
 
 	t.Run("with Memory only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
+		cs := newColumnSet(nil)
 		container := metricsresources.ContainerMetricsResource{
 			Name: "container-1",
 			Requests: metricsresources.MetricsResource{
@@ -91,7 +108,7 @@ func TestContainerRow(t *testing.T) {
 				MemoryUsed:    1024 * 1024 * 150,
 			},
 		}
-		result := containerRow(container, outputResources)
+		result := cs.containerRow(container, outputResources)
 		require.Len(t, result, 6)
 		require.Equal(t, "container-1", result[0])
 	})
@@ -100,6 +117,7 @@ func TestContainerRow(t *testing.T) {
 func TestRow(t *testing.T) {
 	t.Run("with CPU only", func(t *testing.T) {
 		outputResources := resources.Resources{resources.CPU}
+		cs := newColumnSet(nil)
 		resource := metricsresources.PodMetricsResource{
 			PodResource: pods.PodResource{
 				NamespaceName: pods.NamespaceName{
@@ -132,7 +150,7 @@ func TestRow(t *testing.T) {
 				},
 			},
 		}
-		result := row(resource, outputResources)
+		result := cs.dataRow(resource, outputResources)
 		require.Len(t, result, 6)
 		require.Equal(t, "test-pod", result[0])
 		require.Equal(t, "default", result[1])
@@ -141,6 +159,7 @@ func TestRow(t *testing.T) {
 
 	t.Run("uses pod resource identity when pod metric identity is empty", func(t *testing.T) {
 		outputResources := resources.Resources{resources.Memory}
+		cs := newColumnSet(nil)
 		resource := metricsresources.PodMetricsResource{
 			PodResource: pods.PodResource{
 				NamespaceName: pods.NamespaceName{
@@ -155,7 +174,7 @@ func TestRow(t *testing.T) {
 			PodMetric: podmetrics.PodMetric{},
 		}
 
-		result := row(resource, outputResources)
+		result := cs.dataRow(resource, outputResources)
 		require.Equal(t, "system-kube-state-metrics-7d4fb49747-7n7b9", result[0])
 		require.Equal(t, "kube-system", result[1])
 		require.Equal(t, "pool-dev-54704", result[2])
