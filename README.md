@@ -21,6 +21,9 @@ Download
 
     curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | bash -s -- -d your_directory
     curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | bash -s
+    curl -sfL https://raw.githubusercontent.com/trezorg/k8spodsmetrics/main/install.sh | bash -s -- --checksums
+
+`--checksums` is optional, but recommended to verify release artifact integrity during installation.
 
 Install
 ------------------------------------
