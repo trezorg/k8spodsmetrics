@@ -92,7 +92,7 @@ func TestContainerRow(t *testing.T) {
 		}
 		result := cs.containerRow(container, outputResources)
 		require.Len(t, result, 6)
-		require.Equal(t, "container-1", result[0])
+		require.Equal(t, "└─ container-1", result[0])
 	})
 
 	t.Run("with Memory only", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestContainerRow(t *testing.T) {
 		}
 		result := cs.containerRow(container, outputResources)
 		require.Len(t, result, 6)
-		require.Equal(t, "container-1", result[0])
+		require.Equal(t, "└─ container-1", result[0])
 	})
 }
 

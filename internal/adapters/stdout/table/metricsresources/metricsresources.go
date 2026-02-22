@@ -239,7 +239,7 @@ func (cs ColumnSet) dataRow(resource metricsresources.PodMetricsResource, output
 }
 
 func (cs ColumnSet) containerRow(container metricsresources.ContainerMetricsResource, outputResources resources.Resources) table.Row {
-	result := table.Row{container.Name, "", ""}
+	result := table.Row{"└─ " + container.Name, "", ""}
 
 	if outputResources.IsCPU() {
 		result = cs.appendCPUColumns(result, container)
