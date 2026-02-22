@@ -44,16 +44,16 @@ func TestConfig(t *testing.T) {
 
 func TestWatchResponse(t *testing.T) {
 	t.Run("with error", func(t *testing.T) {
-		resp := WatchResponse{error: errors.New("test error")}
-		require.Error(t, resp.error)
-		require.Empty(t, resp.data)
+		resp := WatchResponse{Error: errors.New("test error")}
+		require.Error(t, resp.Error)
+		require.Empty(t, resp.Data)
 	})
 
 	t.Run("with data", func(t *testing.T) {
 		data := PodMetricsResourceList{{PodResource: pods.PodResource{NamespaceName: pods.NamespaceName{Name: "test"}}}}
-		resp := WatchResponse{data: data}
-		require.NoError(t, resp.error)
-		require.Len(t, resp.data, 1)
+		resp := WatchResponse{Data: data}
+		require.NoError(t, resp.Error)
+		require.Len(t, resp.Data, 1)
 	})
 }
 

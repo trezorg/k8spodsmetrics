@@ -2,7 +2,6 @@ package metricsresources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/serviceorchestration"
@@ -27,10 +26,7 @@ type Config struct {
 	WatchMetrics  bool
 }
 
-type WatchResponse struct {
-	error error
-	data  PodMetricsResourceList
-}
+type WatchResponse = serviceorchestration.WatchResponse[PodMetricsResourceList]
 
 func (c Config) apiRequest(
 	ctx context.Context,
@@ -54,57 +50,27 @@ func (c Config) apiRequest(
 	return podMetricsResourceList, nil
 }
 
-func (c Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
-	repo := NewPodRepository()
-	request := func(
-		requestContext context.Context,
-		metricsClient metricsv1beta1.MetricsV1beta1Interface,
-		coreClient corev1.CoreV1Interface,
-	) (PodMetricsResourceList, error) {
-		return c.apiRequest(requestContext, repo, metricsClient, coreClient)
-	}
-
-	return serviceorchestration.RequestWithClients(
+func (c *Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
+	return serviceorchestration.RequestWithRepo(
 		ctx,
 		c.KubeConfig,
 		c.KubeContext,
 		client.Clients,
-		request,
+		NewPodRepository,
+		c.apiRequest,
 	)
 }
 
-func (c Config) Watch(ctx context.Context) chan WatchResponse {
-	ch := make(chan WatchResponse, 1)
-	repo := NewPodRepository()
-	request := func(
-		requestContext context.Context,
-		metricsClient metricsv1beta1.MetricsV1beta1Interface,
-		coreClient corev1.CoreV1Interface,
-	) (PodMetricsResourceList, error) {
-		return c.apiRequest(requestContext, repo, metricsClient, coreClient)
-	}
-
-	responses := serviceorchestration.WatchWithClients(
+func (c *Config) Watch(ctx context.Context) chan WatchResponse {
+	return serviceorchestration.WatchWithRepo(
 		ctx,
 		c.KubeConfig,
 		c.KubeContext,
 		c.WatchPeriod,
 		client.Clients,
-		request,
+		NewPodRepository,
+		c.apiRequest,
 	)
-
-	go func() {
-		defer close(ch)
-		for response := range responses {
-			if response.Error != nil {
-				ch <- WatchResponse{error: response.Error}
-				continue
-			}
-			ch <- WatchResponse{data: response.Data}
-		}
-	}()
-
-	return ch
 }
 
 func (c *Config) prepare() error {
@@ -118,28 +84,12 @@ func (c *Config) prepare() error {
 	return nil
 }
 
-func (c Config) Process(successProcessor SuccessProcessor) error {
-	return serviceorchestration.RunWithPreparedContext(c.prepare, func(ctx context.Context) error {
-		resources, err := c.Request(ctx)
-		if err != nil {
-			return fmt.Errorf("cannot get k8s resources: %w", err)
-		}
-		successProcessor.Success(resources)
-		return nil
-	})
+func (c *Config) Process(successProcessor SuccessProcessor) error {
+	return serviceorchestration.ProcessRequest(c.prepare, c.Request, successProcessor.Success)
 }
 
-func (c Config) ProcessWatch(successProcessor SuccessProcessor, errorProcessor ErrorProcessor) error {
-	return serviceorchestration.RunWithPreparedContext(c.prepare, func(ctx context.Context) error {
-		for resources := range c.Watch(ctx) {
-			if resources.error != nil {
-				errorProcessor.Error(resources.error)
-			} else {
-				successProcessor.Success(resources.data)
-			}
-		}
-		return nil
-	})
+func (c *Config) ProcessWatch(successProcessor SuccessProcessor, errorProcessor ErrorProcessor) error {
+	return serviceorchestration.ProcessWatch(c.prepare, c.Watch, successProcessor.Success, errorProcessor.Error)
 }
 
 type SuccessProcessor interface {

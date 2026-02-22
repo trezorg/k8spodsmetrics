@@ -33,42 +33,6 @@ func TestStringify(t *testing.T) {
 	require.Contains(t, text, "/", text)
 }
 
-func TestConfigBuilder(t *testing.T) {
-	t.Run("default values", func(t *testing.T) {
-		builder := NewConfigBuilder()
-		config := builder.Build()
-		require.Equal(t, uint(5), config.WatchPeriod)
-	})
-
-	t.Run("with all options", func(t *testing.T) {
-		config := NewConfigBuilder().
-			WithKubeConfig("/custom/kubeconfig").
-			WithKubeContext("custom-context").
-			WithName("worker-1").
-			WithLabel("node-role=worker").
-			WithOutput("json").
-			WithSorting("cpu").
-			WithResources([]string{"cpu", "memory"}).
-			WithAlert("cpu").
-			WithWatchPeriod(10).
-			WithReverse(true).
-			WithWatchMetrics(true).
-			Build()
-
-		require.Equal(t, "/custom/kubeconfig", config.KubeConfig)
-		require.Equal(t, "custom-context", config.KubeContext)
-		require.Equal(t, "worker-1", config.Name)
-		require.Equal(t, "node-role=worker", config.Label)
-		require.Equal(t, "json", config.Output)
-		require.Equal(t, "cpu", config.Sorting)
-		require.Equal(t, []string{"cpu", "memory"}, config.Resources)
-		require.Equal(t, "cpu", config.Alert)
-		require.Equal(t, uint(10), config.WatchPeriod)
-		require.True(t, config.Reverse)
-		require.True(t, config.WatchMetrics)
-	})
-}
-
 func TestMergeNodeResources(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 

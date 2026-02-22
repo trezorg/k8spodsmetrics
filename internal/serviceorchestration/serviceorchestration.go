@@ -2,6 +2,7 @@ package serviceorchestration
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 type ClientsFactory func(string, string) (metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface, error)
 
 type RequestFunc[T any] func(context.Context, metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface) (T, error)
+type RepoRequestFunc[T any, R any] func(context.Context, R, metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface) (T, error)
 
 type WatchResponse[T any] struct {
 	Error error
@@ -39,6 +41,26 @@ func RequestWithClients[T any](
 	}
 
 	return request(ctx, metricsClient, coreClient)
+}
+
+func RequestWithRepo[T any, R any](
+	ctx context.Context,
+	kubeConfig string,
+	kubeContext string,
+	clientsFactory ClientsFactory,
+	repoFactory func() R,
+	request RepoRequestFunc[T, R],
+) (T, error) {
+	repo := repoFactory()
+	requestWithRepo := func(
+		requestContext context.Context,
+		metricsClient metricsv1beta1.MetricsV1beta1Interface,
+		coreClient corev1.CoreV1Interface,
+	) (T, error) {
+		return request(requestContext, repo, metricsClient, coreClient)
+	}
+
+	return RequestWithClients(ctx, kubeConfig, kubeContext, clientsFactory, requestWithRepo)
 }
 
 func WatchWithClients[T any](
@@ -95,6 +117,27 @@ func WatchWithClients[T any](
 	return ch
 }
 
+func WatchWithRepo[T any, R any](
+	ctx context.Context,
+	kubeConfig string,
+	kubeContext string,
+	watchPeriodSeconds uint,
+	clientsFactory ClientsFactory,
+	repoFactory func() R,
+	request RepoRequestFunc[T, R],
+) chan WatchResponse[T] {
+	repo := repoFactory()
+	requestWithRepo := func(
+		requestContext context.Context,
+		metricsClient metricsv1beta1.MetricsV1beta1Interface,
+		coreClient corev1.CoreV1Interface,
+	) (T, error) {
+		return request(requestContext, repo, metricsClient, coreClient)
+	}
+
+	return WatchWithClients(ctx, kubeConfig, kubeContext, watchPeriodSeconds, clientsFactory, requestWithRepo)
+}
+
 func RunWithPreparedContext(prepare func() error, run func(context.Context) error) error {
 	ctx, done := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer done()
@@ -104,4 +147,37 @@ func RunWithPreparedContext(prepare func() error, run func(context.Context) erro
 	}
 
 	return run(ctx)
+}
+
+func ProcessRequest[T any](
+	prepare func() error,
+	request func(context.Context) (T, error),
+	successProcessor func(T),
+) error {
+	return RunWithPreparedContext(prepare, func(ctx context.Context) error {
+		resources, err := request(ctx)
+		if err != nil {
+			return fmt.Errorf("cannot get k8s resources: %w", err)
+		}
+		successProcessor(resources)
+		return nil
+	})
+}
+
+func ProcessWatch[T any](
+	prepare func() error,
+	watch func(context.Context) chan WatchResponse[T],
+	successProcessor func(T),
+	errorProcessor func(error),
+) error {
+	return RunWithPreparedContext(prepare, func(ctx context.Context) error {
+		for resources := range watch(ctx) {
+			if resources.Error != nil {
+				errorProcessor(resources.Error)
+			} else {
+				successProcessor(resources.Data)
+			}
+		}
+		return nil
+	})
 }

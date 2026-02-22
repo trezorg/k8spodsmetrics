@@ -285,9 +285,9 @@ func NewApp(version string) *cli.App {
 				summaryCfg := nodeResourcesConfig(summaryActionConfig)
 				outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources, nodeCols)
 				if summaryActionConfig.WatchMetrics {
-					return summaryWatch(summaryCfg, outputProcessor, outputProcessor)
+					return summaryWatch(&summaryCfg, outputProcessor, outputProcessor)
 				}
-				return summary(summaryCfg, outputProcessor)
+				return summary(&summaryCfg, outputProcessor)
 			},
 			Flags: summaryFlags(),
 		},
@@ -352,9 +352,9 @@ func NewApp(version string) *cli.App {
 				podCfg := metricsResourcesConfig(podActionConfig)
 				outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources, podCols)
 				if podActionConfig.WatchMetrics {
-					return podsWatch(podCfg, outputProcessor, outputProcessor)
+					return podsWatch(&podCfg, outputProcessor, outputProcessor)
 				}
-				return pods(podCfg, outputProcessor)
+				return pods(&podCfg, outputProcessor)
 			},
 			Flags: podsFlags(),
 		},
