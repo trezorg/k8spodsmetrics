@@ -26,7 +26,7 @@ cmd/k8spodsmetrics/       # CLI entrypoint (main)
 internal/
 ├── adapters/
 │   ├── stdin/           # CLI flags and config loading (urfave/cli)
-│   └── stdout/          # Output formatters (table/json/yaml/string/screen)
+│   └── stdout/          # Output formatters (table/json/yaml/text/screen)
 ├── config/              # YAML config file parsing
 ├── metricsresources/    # Pod metrics service (fetch, aggregate, sort)
 ├── noderesources/       # Node summary service

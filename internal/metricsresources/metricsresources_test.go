@@ -56,37 +56,41 @@ func TestMergeSameNamespaceAndName(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := posMetricsList("foo", "bar", "foo-container")
-	pods := merge(podResourceList, podMetricList)
-	require.Len(t, pods, 1)
-	for _, pod := range pods {
+	podResources := merge(podResourceList, podMetricList)
+	require.Len(t, podResources, 1)
+	for _, pod := range podResources {
 		require.Len(t, pod.PodResource.Containers, 1)
-		require.Contains(t, pod.String(), "/", pod.String())
+		containers := pod.ContainersMetrics()
+		require.Len(t, containers, 1)
+		require.Equal(t, int64(2000), containers[0].Requests.CPUUsed)
+		require.Equal(t, int64(2048), containers[0].Requests.MemoryUsed)
 	}
-	require.Contains(t, pods.String(), "/", pods.String())
 }
 
 func TestMergeDifferentNamespaceAndName(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := posMetricsList("foo1", "bar", "foo-container")
-	pods := merge(podResourceList, podMetricList)
-	require.Len(t, pods, 1)
-	for _, pod := range pods {
-		require.NotContains(t, pod.String(), "/", pod.String())
+	podResources := merge(podResourceList, podMetricList)
+	require.Len(t, podResources, 1)
+	for _, pod := range podResources {
+		containers := pod.ContainersMetrics()
+		require.Len(t, containers, 1)
+		require.Equal(t, unset, containers[0].Requests.CPUUsed)
+		require.Equal(t, unset, containers[0].Requests.MemoryUsed)
 	}
-	require.NotContains(t, pods.String(), "/", pods.String())
 }
 
-func TestStringify(t *testing.T) {
+func TestContainersMetricsWithoutMetrics(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	podResourceList := posResourceList("foo", "bar", "foo-container")
 	podMetricList := []podmetrics.PodMetric{}
-	pods := merge(podResourceList, podMetricList)
-	require.Len(t, pods, 1)
-	text := pods[0].String()
-	require.Greater(t, len(text), 0)
-	require.NotContains(t, text, "/", text)
-	require.NotContains(t, pods.String(), "/", pods.String())
+	podResources := merge(podResourceList, podMetricList)
+	require.Len(t, podResources, 1)
+	containers := podResources[0].ContainersMetrics()
+	require.Len(t, containers, 1)
+	require.Equal(t, unset, containers[0].Requests.CPUUsed)
+	require.Equal(t, unset, containers[0].Requests.MemoryUsed)
 }
 
 func TestNewPodRepository(t *testing.T) {

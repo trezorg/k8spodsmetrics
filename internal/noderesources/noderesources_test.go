@@ -25,10 +25,10 @@ func nodeResourceList(name string) NodeResourceList {
 	}
 }
 
-func TestStringify(t *testing.T) {
+func TestMemoryTemplate(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelInfo})))
-	nodeResourceList := nodeResourceList("foo")
-	text := nodeResourceList.String()
+	resources := nodeResourceList("foo")
+	text := resources[0].MemoryTemplate()
 	require.Greater(t, len(text), 0)
 	require.Contains(t, text, "/", text)
 }

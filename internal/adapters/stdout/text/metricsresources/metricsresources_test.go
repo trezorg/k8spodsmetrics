@@ -14,7 +14,7 @@ import (
 )
 
 func TestPrint(t *testing.T) {
-	t.Run("prints string", func(t *testing.T) {
+	t.Run("prints text", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
 				PodResource: pods.PodResource{
@@ -72,7 +72,7 @@ func TestPrint(t *testing.T) {
 	})
 }
 
-func TestString_Success(t *testing.T) {
+func TestTextSuccess(t *testing.T) {
 	t.Run("calls Print", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
@@ -94,7 +94,7 @@ func TestString_Success(t *testing.T) {
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		formatter := String(Print)
+		formatter := Text(Print)
 		formatter.Success(list)
 
 		w.Close()
@@ -108,9 +108,9 @@ func TestString_Success(t *testing.T) {
 	})
 }
 
-func TestString_Error(t *testing.T) {
+func TestTextError(t *testing.T) {
 	t.Run("logs error without panicking", func(t *testing.T) {
-		formatter := String(Print)
+		formatter := Text(Print)
 		err := errors.New("test error")
 		require.NotPanics(t, func() {
 			formatter.Error(err)

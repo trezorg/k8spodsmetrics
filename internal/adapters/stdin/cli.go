@@ -3,8 +3,8 @@ package stdin
 import (
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
 	metricsscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/metricsresources"
-	metricsstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
+	metricstext "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/text/metricsresources"
 	metricsyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/config"
@@ -12,8 +12,8 @@ import (
 
 	nodesjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/noderesources"
 	nodesscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/noderesources"
-	nodesstring "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/string/noderesources"
 	nodestable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/noderesources"
+	nodestext "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/text/noderesources"
 	nodesyaml "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/yaml/noderesources"
 
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
@@ -89,7 +89,7 @@ func summaryOutputProcessor(out output.Output, res resources.Resources, cols []c
 	case output.Yaml:
 		return nodesyaml.Yaml(nodesyaml.Print)
 	case output.Text:
-		return nodesstring.String(nodesstring.Print)
+		return nodestext.Text(nodestext.Print)
 	}
 	return nodestable.ToTable(res, cols)
 }
@@ -103,7 +103,7 @@ func podsOutputProcessor(out output.Output, res resources.Resources, cols []colu
 	case output.Yaml:
 		return metricsyaml.Yaml(metricsyaml.Print)
 	case output.Text:
-		return metricsstring.String(metricsstring.Print)
+		return metricstext.Text(metricstext.Print)
 	}
 	return metricstable.ToTable(res, cols)
 }
