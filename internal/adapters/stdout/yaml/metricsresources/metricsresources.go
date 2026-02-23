@@ -1,8 +1,7 @@
 package metricsresources
 
 import (
-	"os"
-
+	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"gopkg.in/yaml.v3"
 
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
@@ -17,7 +16,7 @@ func Print(list metricsresources.PodMetricsResourceList) {
 		slog.Error("failed to marshal metrics resources to yaml", "error", err)
 		return
 	}
-	_, _ = os.Stdout.WriteString(string(data) + "\n")
+	stdoutcommon.WriteStringLine(string(data))
 }
 
 func (j Yaml) Success(list metricsresources.PodMetricsResourceList) {

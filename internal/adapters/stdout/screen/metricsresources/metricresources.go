@@ -1,7 +1,7 @@
 package metricsresources
 
 import (
-	screen "github.com/aditya43/clear-shell-screen-golang"
+	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 )
 
@@ -9,21 +9,11 @@ type ScreenSuccessWriter func(list metricsresources.PodMetricsResourceList)
 type ScreenErrorWriter func(err error)
 
 func NewScreenSuccessWriter(writer metricsresources.SuccessProcessor) ScreenSuccessWriter {
-	return func(list metricsresources.PodMetricsResourceList) {
-		screen.Clear()
-		screen.MoveTopLeft()
-		writer.Success(list)
-		screen.MoveTopLeft()
-	}
+	return ScreenSuccessWriter(stdoutcommon.WrapScreenSuccess(writer.Success))
 }
 
 func NewScreenErrorWriter(writer metricsresources.ErrorProcessor) ScreenErrorWriter {
-	return func(err error) {
-		screen.Clear()
-		screen.MoveTopLeft()
-		writer.Error(err)
-		screen.MoveTopLeft()
-	}
+	return ScreenErrorWriter(stdoutcommon.WrapScreenError(writer.Error))
 }
 
 func (s ScreenSuccessWriter) Success(list metricsresources.PodMetricsResourceList) {

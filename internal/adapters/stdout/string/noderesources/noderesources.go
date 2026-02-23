@@ -1,8 +1,7 @@
 package noderesources
 
 import (
-	"os"
-
+	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"log/slog"
 )
@@ -10,7 +9,7 @@ import (
 type String func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
-	_, _ = os.Stdout.WriteString(list.String() + "\n")
+	stdoutcommon.WriteStringLine(list.String())
 }
 
 func (j String) Success(list noderesources.NodeResourceList) {

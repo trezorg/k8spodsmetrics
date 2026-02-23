@@ -1,8 +1,7 @@
 package metricsresources
 
 import (
-	"os"
-
+	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"log/slog"
 )
@@ -10,7 +9,7 @@ import (
 type String func(list metricsresources.PodMetricsResourceList)
 
 func Print(list metricsresources.PodMetricsResourceList) {
-	_, _ = os.Stdout.WriteString(list.String() + "\n")
+	stdoutcommon.WriteStringLine(list.String())
 }
 
 func (j String) Success(list metricsresources.PodMetricsResourceList) {
