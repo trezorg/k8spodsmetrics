@@ -45,11 +45,13 @@ type (
 		UsedStorageEphemeral        int64  `json:"used_storage_ephemeral" yaml:"used_storage_ephemeral"`
 		FreeStorageEphemeral        int64  `json:"free_storage_ephemeral" yaml:"free_storage_ephemeral"`
 	}
-	NodeResourceList        []NodeResource
-	NodeResourceListEnvelop struct {
+	NodeResourceList         []NodeResource
+	NodeResourceListEnvelope struct {
 		Items NodeResourceList `json:"items,omitempty" yaml:"items,omitempty"`
 	}
-	nodePredicate func(n NodeResource) bool
+	// NodeResourceListEnvelop is kept as a compatibility alias for previous typoed name.
+	NodeResourceListEnvelop = NodeResourceListEnvelope
+	nodePredicate           func(n NodeResource) bool
 )
 
 var (
@@ -166,8 +168,13 @@ func (n NodeResource) MemoryNodeUsedString() string {
 	return humanize.Bytes(n.UsedMemory)
 }
 
-func (n NodeResource) MemoryNodeAlocatableString() string {
+func (n NodeResource) MemoryNodeAllocatableString() string {
 	return humanize.Bytes(n.AllocatableMemory)
+}
+
+// MemoryNodeAlocatableString is kept for compatibility with the previous typoed method name.
+func (n NodeResource) MemoryNodeAlocatableString() string {
+	return n.MemoryNodeAllocatableString()
 }
 
 func (n NodeResource) IsAlerted() bool {

@@ -13,8 +13,8 @@ type Yaml func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
 	enc := yaml.NewEncoder(os.Stdout)
-	envelop := noderesources.NodeResourceListEnvelop{Items: list}
-	if err := enc.Encode(envelop); err != nil {
+	envelope := noderesources.NodeResourceListEnvelope{Items: list}
+	if err := enc.Encode(envelope); err != nil {
 		slog.Error("failed to encode node resources as yaml", "error", err)
 	}
 }

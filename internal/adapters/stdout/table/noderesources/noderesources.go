@@ -216,7 +216,7 @@ func (cs ColumnSet) appendMemoryColumns(result table.Row, resource noderesources
 		result = append(result, resource.MemoryNodeString())
 	}
 	if cs.Allocatable {
-		result = append(result, resource.MemoryNodeAlocatableString())
+		result = append(result, resource.MemoryNodeAllocatableString())
 	}
 	if cs.Used {
 		result = append(result, resource.MemoryNodeUsedString())

@@ -37,7 +37,7 @@ func TestPrint(t *testing.T) {
 		buf.ReadFrom(r)
 		output := buf.String()
 
-		var decoded noderesources.NodeResourceListEnvelop
+		var decoded noderesources.NodeResourceListEnvelope
 		err := json.Unmarshal([]byte(output), &decoded)
 		require.NoError(t, err)
 		require.Len(t, decoded.Items, 1)
@@ -60,7 +60,7 @@ func TestPrint(t *testing.T) {
 		buf.ReadFrom(r)
 		output := buf.String()
 
-		var decoded noderesources.NodeResourceListEnvelop
+		var decoded noderesources.NodeResourceListEnvelope
 		err := json.Unmarshal([]byte(output), &decoded)
 		require.NoError(t, err)
 		require.Empty(t, decoded.Items)
@@ -91,7 +91,7 @@ func TestJSON_Success(t *testing.T) {
 		buf.ReadFrom(r)
 		output := buf.String()
 
-		var decoded noderesources.NodeResourceListEnvelop
+		var decoded noderesources.NodeResourceListEnvelope
 		err := json.Unmarshal([]byte(output), &decoded)
 		require.NoError(t, err)
 		require.Len(t, decoded.Items, 1)

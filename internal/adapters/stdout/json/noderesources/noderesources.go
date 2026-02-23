@@ -13,8 +13,8 @@ type JSON func(list noderesources.NodeResourceList)
 func Print(list noderesources.NodeResourceList) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
-	envelop := noderesources.NodeResourceListEnvelop{Items: list}
-	if err := enc.Encode(envelop); err != nil {
+	envelope := noderesources.NodeResourceListEnvelope{Items: list}
+	if err := enc.Encode(envelope); err != nil {
 		slog.Error("failed to encode node resources as json", "error", err)
 	}
 }
