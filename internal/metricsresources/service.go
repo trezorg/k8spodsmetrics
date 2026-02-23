@@ -17,13 +17,10 @@ type Config struct {
 	Label         string
 	FieldSelector string
 	Nodes         []string
-	Output        string
 	Sorting       string
-	Resources     []string
 	Alert         string
 	WatchPeriod   uint
 	Reverse       bool
-	WatchMetrics  bool
 }
 
 type WatchResponse = serviceorchestration.WatchResponse[PodMetricsResourceList]

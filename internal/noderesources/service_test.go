@@ -12,27 +12,22 @@ func TestConfig(t *testing.T) {
 		config := Config{}
 		require.Empty(t, config.KubeConfig)
 		require.Empty(t, config.Name)
-		require.False(t, config.WatchMetrics)
 	})
 
 	t.Run("with values", func(t *testing.T) {
 		config := Config{
-			KubeConfig:   "/path/to/config",
-			KubeContext:  "test-context",
-			Name:         "node1",
-			Label:        "node-role.kubernetes.io/worker",
-			Output:       "json",
-			Sorting:      "name",
-			Reverse:      true,
-			Resources:    []string{"cpu", "memory"},
-			Alert:        "memory",
-			WatchPeriod:  10,
-			WatchMetrics: true,
+			KubeConfig:  "/path/to/config",
+			KubeContext: "test-context",
+			Name:        "node1",
+			Label:       "node-role.kubernetes.io/worker",
+			Sorting:     "name",
+			Reverse:     true,
+			Alert:       "memory",
+			WatchPeriod: 10,
 		}
 		require.Equal(t, "/path/to/config", config.KubeConfig)
 		require.Equal(t, "test-context", config.KubeContext)
 		require.Equal(t, "node1", config.Name)
-		require.True(t, config.WatchMetrics)
 	})
 }
 

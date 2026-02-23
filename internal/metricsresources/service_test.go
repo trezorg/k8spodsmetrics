@@ -16,7 +16,6 @@ func TestConfig(t *testing.T) {
 		config := Config{}
 		require.Empty(t, config.KubeConfig)
 		require.Empty(t, config.Namespaces)
-		require.False(t, config.WatchMetrics)
 	})
 
 	t.Run("with values", func(t *testing.T) {
@@ -27,18 +26,14 @@ func TestConfig(t *testing.T) {
 			Label:         "app=test",
 			FieldSelector: "spec.nodeName=node1",
 			Nodes:         []string{"node1", "node2"},
-			Output:        "json",
 			Sorting:       "name",
-			Resources:     []string{"cpu", "memory"},
 			Alert:         "memory",
 			WatchPeriod:   10,
 			Reverse:       true,
-			WatchMetrics:  true,
 		}
 		require.Equal(t, "/path/to/config", config.KubeConfig)
 		require.Equal(t, "test-context", config.KubeContext)
 		require.Equal(t, []string{"test-ns"}, config.Namespaces)
-		require.True(t, config.WatchMetrics)
 	})
 }
 

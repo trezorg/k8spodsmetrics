@@ -11,17 +11,14 @@ import (
 )
 
 type Config struct {
-	KubeConfig   string
-	KubeContext  string
-	Label        string
-	Name         string
-	Output       string
-	Sorting      string
-	Alert        string
-	Resources    []string
-	WatchPeriod  uint
-	Reverse      bool
-	WatchMetrics bool
+	KubeConfig  string
+	KubeContext string
+	Label       string
+	Name        string
+	Sorting     string
+	Alert       string
+	WatchPeriod uint
+	Reverse     bool
 }
 
 type WatchResponse = serviceorchestration.WatchResponse[NodeResourceList]

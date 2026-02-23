@@ -13,28 +13,22 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Label:         c.Label,
 		FieldSelector: c.FieldSelector,
 		Nodes:         c.Nodes,
-		Output:        c.Output,
 		Sorting:       c.Sorting,
 		Reverse:       c.Reverse,
-		Resources:     c.Resources,
 		Alert:         c.Alert,
-		WatchMetrics:  c.WatchMetrics,
 		WatchPeriod:   c.WatchPeriod,
 	}
 }
 
 func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 	return noderesources.Config{
-		KubeConfig:   c.KubeConfig,
-		KubeContext:  c.KubeContext,
-		Label:        c.Label,
-		Name:         c.Name,
-		Output:       c.Output,
-		Sorting:      c.Sorting,
-		Reverse:      c.Reverse,
-		Resources:    c.Resources,
-		Alert:        c.Alert,
-		WatchMetrics: c.WatchMetrics,
-		WatchPeriod:  c.WatchPeriod,
+		KubeConfig:  c.KubeConfig,
+		KubeContext: c.KubeContext,
+		Label:       c.Label,
+		Name:        c.Name,
+		Sorting:     c.Sorting,
+		Reverse:     c.Reverse,
+		Alert:       c.Alert,
+		WatchPeriod: c.WatchPeriod,
 	}
 }
