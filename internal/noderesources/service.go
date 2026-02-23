@@ -2,9 +2,11 @@ package noderesources
 
 import (
 	"context"
+	"errors"
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/serviceorchestration"
+	sorting "github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
 	"github.com/trezorg/k8spodsmetrics/pkg/client"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
@@ -22,6 +24,23 @@ type Config struct {
 }
 
 type WatchResponse = serviceorchestration.WatchResponse[NodeResourceList]
+
+func (c Config) Validate() error {
+	if err := alert.Valid(alert.Alert(c.Alert)); err != nil {
+		return err
+	}
+	return sorting.Valid(sorting.Sorting(c.Sorting))
+}
+
+func (c Config) ValidateWatch() error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
+	if c.WatchPeriod == 0 {
+		return errors.New("watch period must be greater than 0")
+	}
+	return nil
+}
 
 func (c Config) apiRequest(
 	ctx context.Context,
@@ -76,12 +95,26 @@ func (c *Config) prepare() error {
 	return nil
 }
 
+func (c *Config) prepareRequest() error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
+	return c.prepare()
+}
+
+func (c *Config) prepareWatch() error {
+	if err := c.ValidateWatch(); err != nil {
+		return err
+	}
+	return c.prepare()
+}
+
 func (c *Config) Process(successProcessor SuccessProcessor) error {
-	return serviceorchestration.ProcessRequest(c.prepare, c.Request, successProcessor.Success)
+	return serviceorchestration.ProcessRequest(c.prepareRequest, c.Request, successProcessor.Success)
 }
 
 func (c *Config) ProcessWatch(successProcessor SuccessProcessor, errorProcessor ErrorProcessor) error {
-	return serviceorchestration.ProcessWatch(c.prepare, c.Watch, successProcessor.Success, errorProcessor.Error)
+	return serviceorchestration.ProcessWatch(c.prepareWatch, c.Watch, successProcessor.Success, errorProcessor.Error)
 }
 
 type SuccessProcessor interface {

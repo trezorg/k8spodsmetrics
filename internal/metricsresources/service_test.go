@@ -52,6 +52,52 @@ func TestWatchResponse(t *testing.T) {
 	})
 }
 
+func TestConfigValidate(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := Config{Sorting: "name", Alert: "none"}
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("invalid sorting", func(t *testing.T) {
+		cfg := Config{Sorting: "invalid", Alert: "none"}
+		require.ErrorContains(t, cfg.Validate(), "sorting should be one of")
+	})
+
+	t.Run("invalid alert", func(t *testing.T) {
+		cfg := Config{Sorting: "name", Alert: "invalid"}
+		require.ErrorContains(t, cfg.Validate(), "alert should be one of")
+	})
+}
+
+func TestConfigValidateWatch(t *testing.T) {
+	t.Run("zero watch period", func(t *testing.T) {
+		cfg := Config{Sorting: "name", Alert: "none", WatchPeriod: 0}
+		require.ErrorContains(t, cfg.ValidateWatch(), "watch period must be greater than 0")
+	})
+}
+
+type noopSuccessProcessor struct{}
+
+func (noopSuccessProcessor) Success(PodMetricsResourceList) {}
+
+type noopErrorProcessor struct{}
+
+func (noopErrorProcessor) Error(error) {}
+
+func TestProcessValidationError(t *testing.T) {
+	cfg := Config{KubeConfig: "dummy", Sorting: "invalid", Alert: "none"}
+
+	err := cfg.Process(noopSuccessProcessor{})
+	require.ErrorContains(t, err, "sorting should be one of")
+}
+
+func TestProcessWatchValidationError(t *testing.T) {
+	cfg := Config{KubeConfig: "dummy", Sorting: "name", Alert: "none", WatchPeriod: 0}
+
+	err := cfg.ProcessWatch(noopSuccessProcessor{}, noopErrorProcessor{})
+	require.ErrorContains(t, err, "watch period must be greater than 0")
+}
+
 func TestMerge(t *testing.T) {
 	t.Run("empty lists", func(t *testing.T) {
 		result := merge(pods.PodResourceList{}, podmetrics.PodMetricList{})
