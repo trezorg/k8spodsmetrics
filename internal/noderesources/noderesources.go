@@ -199,10 +199,16 @@ func (n NodeResource) IsCPULimitAlerted() bool {
 }
 
 func (n NodeResource) IsStorageAlerted() bool {
+	if n.Storage <= 0 {
+		return false
+	}
 	return (float64(n.UsedStorage)/float64(n.Storage))*100 > storageUsedPercentAlert
 }
 
 func (n NodeResource) IsStorageEphemeralAlerted() bool {
+	if n.StorageEphemeral <= 0 {
+		return false
+	}
 	return (float64(n.UsedStorageEphemeral)/float64(n.StorageEphemeral))*100 > storageEphemeralPercentAlert
 }
 

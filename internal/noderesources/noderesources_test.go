@@ -81,3 +81,37 @@ func TestNewNodeRepository(t *testing.T) {
 	repo := NewNodeRepository()
 	require.NotNil(t, repo)
 }
+
+func TestNodeResource_IsStorageAlerted(t *testing.T) {
+	t.Run("zero storage is not alerted", func(t *testing.T) {
+		resource := NodeResource{Storage: 0, UsedStorage: 100}
+		require.False(t, resource.IsStorageAlerted())
+	})
+
+	t.Run("high storage usage is alerted", func(t *testing.T) {
+		resource := NodeResource{Storage: 100, UsedStorage: 96}
+		require.True(t, resource.IsStorageAlerted())
+	})
+
+	t.Run("usage at threshold is not alerted", func(t *testing.T) {
+		resource := NodeResource{Storage: 100, UsedStorage: 95}
+		require.False(t, resource.IsStorageAlerted())
+	})
+}
+
+func TestNodeResource_IsStorageEphemeralAlerted(t *testing.T) {
+	t.Run("zero ephemeral storage is not alerted", func(t *testing.T) {
+		resource := NodeResource{StorageEphemeral: 0, UsedStorageEphemeral: 100}
+		require.False(t, resource.IsStorageEphemeralAlerted())
+	})
+
+	t.Run("high ephemeral storage usage is alerted", func(t *testing.T) {
+		resource := NodeResource{StorageEphemeral: 100, UsedStorageEphemeral: 96}
+		require.True(t, resource.IsStorageEphemeralAlerted())
+	})
+
+	t.Run("ephemeral usage at threshold is not alerted", func(t *testing.T) {
+		resource := NodeResource{StorageEphemeral: 100, UsedStorageEphemeral: 95}
+		require.False(t, resource.IsStorageEphemeralAlerted())
+	})
+}
