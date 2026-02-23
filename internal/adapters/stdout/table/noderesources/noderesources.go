@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	formatnoderesources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
@@ -187,6 +188,7 @@ func (cs ColumnSet) secondaryHeaderRow(outputResources resources.Resources) tabl
 }
 
 func (cs ColumnSet) appendCPUColumns(result table.Row, resource noderesources.NodeResource) table.Row {
+	formatter := formatnoderesources.New(resource)
 	if cs.Total {
 		result = append(result, resource.CPU)
 	}
@@ -197,69 +199,71 @@ func (cs ColumnSet) appendCPUColumns(result table.Row, resource noderesources.No
 		result = append(result, resource.UsedCPU)
 	}
 	if cs.Request {
-		result = append(result, resource.CPURequestString())
+		result = append(result, formatter.CPURequestString())
 	}
 	if cs.Limit {
-		result = append(result, resource.CPULimitString())
+		result = append(result, formatter.CPULimitString())
 	}
 	if cs.Available {
-		result = append(result, resource.CPUAvailableString())
+		result = append(result, formatter.CPUAvailableString())
 	}
 	if cs.Free {
-		result = append(result, resource.CPUFreeString())
+		result = append(result, formatter.CPUFreeString())
 	}
 	return result
 }
 
 func (cs ColumnSet) appendMemoryColumns(result table.Row, resource noderesources.NodeResource) table.Row {
+	formatter := formatnoderesources.New(resource)
 	if cs.Total {
-		result = append(result, resource.MemoryNodeString())
+		result = append(result, formatter.MemoryNodeString())
 	}
 	if cs.Allocatable {
-		result = append(result, resource.MemoryNodeAllocatableString())
+		result = append(result, formatter.MemoryNodeAllocatableString())
 	}
 	if cs.Used {
-		result = append(result, resource.MemoryNodeUsedString())
+		result = append(result, formatter.MemoryNodeUsedString())
 	}
 	if cs.Request {
-		result = append(result, resource.MemoryRequestString())
+		result = append(result, formatter.MemoryRequestString())
 	}
 	if cs.Limit {
-		result = append(result, resource.MemoryLimitString())
+		result = append(result, formatter.MemoryLimitString())
 	}
 	if cs.Available {
-		result = append(result, resource.MemoryAvailableString())
+		result = append(result, formatter.MemoryAvailableString())
 	}
 	if cs.Free {
-		result = append(result, resource.MemoryFreeString())
+		result = append(result, formatter.MemoryFreeString())
 	}
 	return result
 }
 
 func (cs ColumnSet) appendStorageColumns(result table.Row, resource noderesources.NodeResource) table.Row {
+	formatter := formatnoderesources.New(resource)
 	if cs.Total {
-		result = append(result, resource.StorageString())
+		result = append(result, formatter.StorageString())
 	}
 	if cs.Allocatable {
-		result = append(result, resource.StorageAllocatableString())
+		result = append(result, formatter.StorageAllocatableString())
 	}
 	if cs.Used {
-		result = append(result, resource.StorageUsedString())
+		result = append(result, formatter.StorageUsedString())
 	}
 	if cs.Free {
-		result = append(result, resource.StorageFreeString())
+		result = append(result, formatter.StorageFreeString())
 	}
 	if cs.Total {
-		result = append(result, resource.StorageEphemeralString())
+		result = append(result, formatter.StorageEphemeralString())
 	}
 	if cs.Allocatable {
-		result = append(result, resource.StorageAllocatableEphemeralString())
+		result = append(result, formatter.StorageAllocatableEphemeralString())
 	}
 	if cs.Used {
-		result = append(result, resource.StorageUsedEphemeralString())
+		result = append(result, formatter.StorageUsedEphemeralString())
 	}
 	if cs.Free {
-		result = append(result, resource.StorageFreeEphemeralString())
+		result = append(result, formatter.StorageFreeEphemeralString())
 	}
 	return result
 }

@@ -2,30 +2,28 @@ package metricsresources
 
 import (
 	"bytes"
+	"fmt"
 	"log/slog"
-	"text/template"
 
 	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
+	formatmetricsresources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 )
-
-var metricsPodTemplate = template.Must(template.New("metricPod").Parse(`Name:		{{.PodResource.Name}}
-Namespace:	{{.PodResource.Namespace}}
-Node:		{{.NodeName}}
-Containers:
-  {{ range $index, $container := .ContainersMetrics -}}
-  Name:         {{ $container.Name }}
-  Requests: 	{{ (index $container.Requests).StringWithColor "yellow" }}
-  Limits:    	{{ (index $container.Limits).StringWithColor "red" }}
-  {{ end -}}`))
 
 type Text func(list metricsresources.PodMetricsResourceList)
 
 func Print(list metricsresources.PodMetricsResourceList) {
 	var buffer bytes.Buffer
 	for _, pod := range list {
-		if err := metricsPodTemplate.Execute(&buffer, pod); err != nil {
-			panic(err)
+		_, _ = fmt.Fprintf(&buffer, "Name:\t\t%s\n", pod.PodResource.Name)
+		_, _ = fmt.Fprintf(&buffer, "Namespace:\t%s\n", pod.PodResource.Namespace)
+		_, _ = fmt.Fprintf(&buffer, "Node:\t\t%s\n", pod.NodeName)
+		_, _ = fmt.Fprint(&buffer, "Containers:\n")
+		for _, container := range pod.ContainersMetrics() {
+			containerFormatter := formatmetricsresources.NewContainer(container)
+			_, _ = fmt.Fprintf(&buffer, "  Name:\t\t%s\n", containerFormatter.Name())
+			_, _ = fmt.Fprintf(&buffer, "  Requests:\t%s\n", containerFormatter.Requests().StringWithColor("yellow"))
+			_, _ = fmt.Fprintf(&buffer, "  Limits:\t%s\n", containerFormatter.Limits().StringWithColor("red"))
 		}
 		if err := buffer.WriteByte('\n'); err != nil {
 			panic(err)

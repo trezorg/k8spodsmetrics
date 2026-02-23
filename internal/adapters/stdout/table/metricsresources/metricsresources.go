@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	formatmetricsresources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
@@ -149,49 +150,52 @@ func (cs ColumnSet) secondaryHeaderRow(outputResources resources.Resources) tabl
 }
 
 func (cs ColumnSet) appendCPUColumns(result table.Row, container metricsresources.ContainerMetricsResource) table.Row {
+	containerFormatter := formatmetricsresources.NewContainer(container)
 	if cs.Request {
-		result = append(result, container.Requests.CPURequestString())
+		result = append(result, containerFormatter.Requests().CPURequestString())
 	}
 	if cs.Limit {
-		result = append(result, container.Limits.CPURequestString())
+		result = append(result, containerFormatter.Limits().CPURequestString())
 	}
 	if cs.Used {
-		result = append(result, container.CPUUsed())
+		result = append(result, containerFormatter.CPUUsed())
 	}
 	return result
 }
 
 func (cs ColumnSet) appendMemoryColumns(result table.Row, container metricsresources.ContainerMetricsResource) table.Row {
+	containerFormatter := formatmetricsresources.NewContainer(container)
 	if cs.Request {
-		result = append(result, container.Requests.MemoryRequestString())
+		result = append(result, containerFormatter.Requests().MemoryRequestString())
 	}
 	if cs.Limit {
-		result = append(result, container.Limits.MemoryRequestString())
+		result = append(result, containerFormatter.Limits().MemoryRequestString())
 	}
 	if cs.Used {
-		result = append(result, container.MemoryUsed())
+		result = append(result, containerFormatter.MemoryUsed())
 	}
 	return result
 }
 
 func (cs ColumnSet) appendStorageColumns(result table.Row, container metricsresources.ContainerMetricsResource) table.Row {
+	containerFormatter := formatmetricsresources.NewContainer(container)
 	if cs.Request {
-		result = append(result, container.Requests.StorageRequestString())
+		result = append(result, containerFormatter.Requests().StorageRequestString())
 	}
 	if cs.Limit {
-		result = append(result, container.Limits.StorageRequestString())
+		result = append(result, containerFormatter.Limits().StorageRequestString())
 	}
 	if cs.Used {
-		result = append(result, container.StorageUsed())
+		result = append(result, containerFormatter.StorageUsed())
 	}
 	if cs.Request {
-		result = append(result, container.Requests.StorageEphemeralRequestString())
+		result = append(result, containerFormatter.Requests().StorageEphemeralRequestString())
 	}
 	if cs.Limit {
-		result = append(result, container.Limits.StorageEphemeralRequestString())
+		result = append(result, containerFormatter.Limits().StorageEphemeralRequestString())
 	}
 	if cs.Used {
-		result = append(result, container.StorageEphemeralUsed())
+		result = append(result, containerFormatter.StorageEphemeralUsed())
 	}
 	return result
 }
@@ -257,44 +261,44 @@ func (cs ColumnSet) totalRow(outputResources resources.Resources, total metricsr
 	totalRow := table.Row{"Total", "Total", "Total"}
 	if outputResources.IsCPU() {
 		if cs.Request {
-			totalRow = append(totalRow, total.Requests.CPURequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).CPURequestString())
 		}
 		if cs.Limit {
-			totalRow = append(totalRow, total.Limits.CPURequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Limits).CPURequestString())
 		}
 		if cs.Used {
-			totalRow = append(totalRow, total.Requests.CPUUsedString(""))
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).CPUUsedString(""))
 		}
 	}
 	if outputResources.IsMemory() {
 		if cs.Request {
-			totalRow = append(totalRow, total.Requests.MemoryRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).MemoryRequestString())
 		}
 		if cs.Limit {
-			totalRow = append(totalRow, total.Limits.MemoryRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Limits).MemoryRequestString())
 		}
 		if cs.Used {
-			totalRow = append(totalRow, total.Requests.MemoryUsedString(""))
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).MemoryUsedString(""))
 		}
 	}
 	if outputResources.IsStorage() {
 		if cs.Request {
-			totalRow = append(totalRow, total.Requests.StorageRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).StorageRequestString())
 		}
 		if cs.Limit {
-			totalRow = append(totalRow, total.Limits.StorageRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Limits).StorageRequestString())
 		}
 		if cs.Used {
-			totalRow = append(totalRow, total.Requests.StorageString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).StorageString())
 		}
 		if cs.Request {
-			totalRow = append(totalRow, total.Requests.StorageEphemeralRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).StorageEphemeralRequestString())
 		}
 		if cs.Limit {
-			totalRow = append(totalRow, total.Limits.StorageEphemeralRequestString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Limits).StorageEphemeralRequestString())
 		}
 		if cs.Used {
-			totalRow = append(totalRow, total.Requests.StorageEphemeralString())
+			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).StorageEphemeralString())
 		}
 	}
 	return totalRow

@@ -5,247 +5,255 @@ import (
 
 	escapes "github.com/snugfox/ansi-escapes"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
+	servicenoderesources "github.com/trezorg/k8spodsmetrics/internal/noderesources"
 )
 
-func (n NodeResource) MemoryTemplate() string {
+type Formatter struct {
+	resource servicenoderesources.NodeResource
+}
+
+func New(resource servicenoderesources.NodeResource) Formatter {
+	return Formatter{resource: resource}
+}
+
+func (f Formatter) MemoryTemplate() string {
 	memoryRequestStartColor := ""
 	memoryRequestEndColor := ""
 	memoryLimitStartColor := ""
 	memoryLimitEndColor := ""
-	if n.Memory <= n.MemoryRequest {
+	if f.resource.Memory <= f.resource.MemoryRequest {
 		memoryRequestStartColor = escapes.TextColorYellow
 		memoryRequestEndColor = escapes.ColorReset
 	}
-	if n.Memory <= n.MemoryLimit {
+	if f.resource.Memory <= f.resource.MemoryLimit {
 		memoryLimitStartColor = escapes.TextColorRed
 		memoryLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"Node=%s/%s, Requests=%s%s%s, Limits=%s%s%s",
-		humanize.Bytes(n.Memory),
-		humanize.Bytes(n.UsedMemory),
+		humanize.Bytes(f.resource.Memory),
+		humanize.Bytes(f.resource.UsedMemory),
 		memoryRequestStartColor,
-		humanize.Bytes(n.MemoryRequest),
+		humanize.Bytes(f.resource.MemoryRequest),
 		memoryRequestEndColor,
 		memoryLimitStartColor,
-		humanize.Bytes(n.MemoryLimit),
+		humanize.Bytes(f.resource.MemoryLimit),
 		memoryLimitEndColor,
 	)
 }
 
-func (n NodeResource) MemoryRequestString() string {
+func (f Formatter) MemoryRequestString() string {
 	memoryRequestStartColor := ""
 	memoryRequestEndColor := ""
-	if n.Memory <= n.MemoryRequest {
+	if f.resource.Memory <= f.resource.MemoryRequest {
 		memoryRequestStartColor = escapes.TextColorYellow
 		memoryRequestEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		memoryRequestStartColor,
-		humanize.Bytes(n.MemoryRequest),
+		humanize.Bytes(f.resource.MemoryRequest),
 		memoryRequestEndColor,
 	)
 }
 
-func (n NodeResource) MemoryLimitString() string {
+func (f Formatter) MemoryLimitString() string {
 	memoryLimitStartColor := ""
 	memoryLimitEndColor := ""
-	if n.Memory <= n.MemoryLimit {
+	if f.resource.Memory <= f.resource.MemoryLimit {
 		memoryLimitStartColor = escapes.TextColorRed
 		memoryLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		memoryLimitStartColor,
-		humanize.Bytes(n.MemoryLimit),
+		humanize.Bytes(f.resource.MemoryLimit),
 		memoryLimitEndColor,
 	)
 }
 
-func (n NodeResource) MemoryAvailableString() string {
+func (f Formatter) MemoryAvailableString() string {
 	memoryAvailableStartColor := ""
 	memoryAvailableEndColor := ""
-	if n.AvailableMemory == 0 {
+	if f.resource.AvailableMemory == 0 {
 		memoryAvailableStartColor = escapes.TextColorRed
 		memoryAvailableEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		memoryAvailableStartColor,
-		humanize.Bytes(n.AvailableMemory),
+		humanize.Bytes(f.resource.AvailableMemory),
 		memoryAvailableEndColor,
 	)
 }
 
-func (n NodeResource) MemoryFreeString() string {
+func (f Formatter) MemoryFreeString() string {
 	memoryFreeStartColor := ""
 	memoryFreeEndColor := ""
-	if n.FreeMemory == 0 {
+	if f.resource.FreeMemory == 0 {
 		memoryFreeStartColor = escapes.TextColorRed
 		memoryFreeEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		memoryFreeStartColor,
-		humanize.Bytes(n.FreeMemory),
+		humanize.Bytes(f.resource.FreeMemory),
 		memoryFreeEndColor,
 	)
 }
 
-func (n NodeResource) MemoryNodeString() string {
-	return humanize.Bytes(n.Memory)
+func (f Formatter) MemoryNodeString() string {
+	return humanize.Bytes(f.resource.Memory)
 }
 
-func (n NodeResource) MemoryNodeUsedString() string {
-	return humanize.Bytes(n.UsedMemory)
+func (f Formatter) MemoryNodeUsedString() string {
+	return humanize.Bytes(f.resource.UsedMemory)
 }
 
-func (n NodeResource) MemoryNodeAllocatableString() string {
-	return humanize.Bytes(n.AllocatableMemory)
+func (f Formatter) MemoryNodeAllocatableString() string {
+	return humanize.Bytes(f.resource.AllocatableMemory)
 }
 
-// MemoryNodeAlocatableString is kept for compatibility with the previous typoed method name.
-func (n NodeResource) MemoryNodeAlocatableString() string {
-	return n.MemoryNodeAllocatableString()
+func (f Formatter) MemoryNodeAlocatableString() string {
+	return f.MemoryNodeAllocatableString()
 }
 
-func (n NodeResource) CPUTemplate() string {
+func (f Formatter) CPUTemplate() string {
 	cpuRequestStartColor := ""
 	cpuRequestEndColor := ""
 	cpuLimitStartColor := ""
 	cpuLimitEndColor := ""
-	if n.CPU <= n.CPURequest {
+	if f.resource.CPU <= f.resource.CPURequest {
 		cpuRequestStartColor = escapes.TextColorYellow
 		cpuRequestEndColor = escapes.ColorReset
 	}
-	if n.CPU <= n.CPULimit {
+	if f.resource.CPU <= f.resource.CPULimit {
 		cpuLimitStartColor = escapes.TextColorRed
 		cpuLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"Node=%d/%d, Requests=%s%d%s, Limits=%s%d%s",
-		n.CPU,
-		n.UsedCPU,
+		f.resource.CPU,
+		f.resource.UsedCPU,
 		cpuRequestStartColor,
-		n.CPURequest,
+		f.resource.CPURequest,
 		cpuRequestEndColor,
 		cpuLimitStartColor,
-		n.CPULimit,
+		f.resource.CPULimit,
 		cpuLimitEndColor,
 	)
 }
 
-func (n NodeResource) CPURequestString() string {
+func (f Formatter) CPURequestString() string {
 	cpuRequestStartColor := ""
 	cpuRequestEndColor := ""
-	if n.CPU <= n.CPURequest {
+	if f.resource.CPU <= f.resource.CPURequest {
 		cpuRequestStartColor = escapes.TextColorYellow
 		cpuRequestEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%d%s",
 		cpuRequestStartColor,
-		n.CPURequest,
+		f.resource.CPURequest,
 		cpuRequestEndColor,
 	)
 }
 
-func (n NodeResource) CPULimitString() string {
+func (f Formatter) CPULimitString() string {
 	cpuLimitStartColor := ""
 	cpuLimitEndColor := ""
-	if n.CPU <= n.CPULimit {
+	if f.resource.CPU <= f.resource.CPULimit {
 		cpuLimitStartColor = escapes.TextColorRed
 		cpuLimitEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%d%s",
 		cpuLimitStartColor,
-		n.CPULimit,
+		f.resource.CPULimit,
 		cpuLimitEndColor,
 	)
 }
 
-func (n NodeResource) CPUAvailableString() string {
+func (f Formatter) CPUAvailableString() string {
 	cpuAvailableStartColor := ""
 	cpuAvailableEndColor := ""
-	if n.AvailableCPU == 0 {
+	if f.resource.AvailableCPU == 0 {
 		cpuAvailableStartColor = escapes.TextColorRed
 		cpuAvailableEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%d%s",
 		cpuAvailableStartColor,
-		n.AvailableCPU,
+		f.resource.AvailableCPU,
 		cpuAvailableEndColor,
 	)
 }
 
-func (n NodeResource) CPUFreeString() string {
+func (f Formatter) CPUFreeString() string {
 	cpuFreeStartColor := ""
 	cpuFreeEndColor := ""
-	if n.FreeCPU == 0 {
+	if f.resource.FreeCPU == 0 {
 		cpuFreeStartColor = escapes.TextColorRed
 		cpuFreeEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%d%s",
 		cpuFreeStartColor,
-		n.FreeCPU,
+		f.resource.FreeCPU,
 		cpuFreeEndColor,
 	)
 }
 
-func (n NodeResource) StorageString() string {
-	return humanize.Bytes(n.Storage)
+func (f Formatter) StorageString() string {
+	return humanize.Bytes(f.resource.Storage)
 }
 
-func (n NodeResource) StorageAllocatableString() string {
-	return humanize.Bytes(n.AllocatableStorage)
+func (f Formatter) StorageAllocatableString() string {
+	return humanize.Bytes(f.resource.AllocatableStorage)
 }
 
-func (n NodeResource) StorageFreeString() string {
-	return humanize.Bytes(n.FreeStorage)
+func (f Formatter) StorageFreeString() string {
+	return humanize.Bytes(f.resource.FreeStorage)
 }
 
-func (n NodeResource) StorageUsedString() string {
+func (f Formatter) StorageUsedString() string {
 	usedStorageStartColor := ""
 	usedStorageEndColor := ""
-	if n.IsStorageAlerted() {
+	if f.resource.IsStorageAlerted() {
 		usedStorageStartColor = escapes.TextColorRed
 		usedStorageEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		usedStorageStartColor,
-		humanize.Bytes(n.UsedStorage),
+		humanize.Bytes(f.resource.UsedStorage),
 		usedStorageEndColor,
 	)
 }
 
-func (n NodeResource) StorageEphemeralString() string {
-	return humanize.Bytes(n.StorageEphemeral)
+func (f Formatter) StorageEphemeralString() string {
+	return humanize.Bytes(f.resource.StorageEphemeral)
 }
 
-func (n NodeResource) StorageAllocatableEphemeralString() string {
-	return humanize.Bytes(n.AllocatableStorageEphemeral)
+func (f Formatter) StorageAllocatableEphemeralString() string {
+	return humanize.Bytes(f.resource.AllocatableStorageEphemeral)
 }
 
-func (n NodeResource) StorageFreeEphemeralString() string {
-	return humanize.Bytes(n.FreeStorageEphemeral)
+func (f Formatter) StorageFreeEphemeralString() string {
+	return humanize.Bytes(f.resource.FreeStorageEphemeral)
 }
 
-func (n NodeResource) StorageUsedEphemeralString() string {
+func (f Formatter) StorageUsedEphemeralString() string {
 	usedStorageStartColor := ""
 	usedStorageEndColor := ""
-	if n.IsStorageEphemeralAlerted() {
+	if f.resource.IsStorageEphemeralAlerted() {
 		usedStorageStartColor = escapes.TextColorRed
 		usedStorageEndColor = escapes.ColorReset
 	}
 	return fmt.Sprintf(
 		"%s%s%s",
 		usedStorageStartColor,
-		humanize.Bytes(n.UsedStorageEphemeral),
+		humanize.Bytes(f.resource.UsedStorageEphemeral),
 		usedStorageEndColor,
 	)
 }
