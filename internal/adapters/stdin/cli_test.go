@@ -32,6 +32,46 @@ func TestCommonFlagsAlertNaming(t *testing.T) {
 	require.Contains(t, alertFlag.Aliases, "a")
 }
 
+func TestPodsFlagsResourcesNaming(t *testing.T) {
+	flags := podsFlags()
+
+	var resourcesFlag *cli.StringSliceFlag
+	for _, flag := range flags {
+		f, ok := flag.(*cli.StringSliceFlag)
+		if !ok {
+			continue
+		}
+		if f.Name == "resources" {
+			resourcesFlag = f
+			break
+		}
+	}
+
+	require.NotNil(t, resourcesFlag)
+	require.Contains(t, resourcesFlag.Aliases, "resource")
+	require.Contains(t, resourcesFlag.Aliases, "res")
+}
+
+func TestSummaryFlagsResourcesNaming(t *testing.T) {
+	flags := summaryFlags()
+
+	var resourcesFlag *cli.StringSliceFlag
+	for _, flag := range flags {
+		f, ok := flag.(*cli.StringSliceFlag)
+		if !ok {
+			continue
+		}
+		if f.Name == "resources" {
+			resourcesFlag = f
+			break
+		}
+	}
+
+	require.NotNil(t, resourcesFlag)
+	require.Contains(t, resourcesFlag.Aliases, "resource")
+	require.Contains(t, resourcesFlag.Aliases, "res")
+}
+
 func TestParseColumnsForOutput(t *testing.T) {
 	t.Run("non table output skips parsing and validation", func(t *testing.T) {
 		parseCalled := false

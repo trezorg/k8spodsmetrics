@@ -23,7 +23,7 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	summaryActionConfig.Sorting = c.String("sorting")
 	summaryActionConfig.Reverse = c.Bool("reverse")
 	summaryActionConfig.Columns = c.StringSlice("columns")
-	cmdResources := c.StringSlice("resource")
+	cmdResources := c.StringSlice("resources")
 
 	reverseSet := c.IsSet("reverse")
 	watchSet := c.IsSet("watch")
@@ -82,7 +82,7 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	podActionConfig.Reverse = c.Bool("reverse")
 	podActionConfig.Nodes = c.StringSlice("node")
 	podActionConfig.Columns = c.StringSlice("columns")
-	cmdResources := c.StringSlice("resource")
+	cmdResources := c.StringSlice("resources")
 
 	reverseSet := c.IsSet("reverse")
 	watchSet := c.IsSet("watch")

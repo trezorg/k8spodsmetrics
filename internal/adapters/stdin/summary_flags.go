@@ -38,8 +38,8 @@ func summaryFlags() []cli.Flag {
 			Usage:   "Reverse sort",
 		},
 		&cli.StringSliceFlag{
-			Name:    "resource",
-			Aliases: []string{"res"},
+			Name:    "resources",
+			Aliases: []string{"res", "resource"},
 			Value:   cli.NewStringSlice(string(resources.All)),
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
 			Action: func(_ *cli.Context, value []string) error {
