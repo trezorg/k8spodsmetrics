@@ -19,25 +19,6 @@ go run ./cmd/k8spodsmetrics pods --namespace default
 go run ./cmd/k8spodsmetrics summary
 ```
 
-## Architecture
-
-```
-cmd/k8spodsmetrics/       # CLI entrypoint (main)
-internal/
-├── adapters/
-│   ├── stdin/           # CLI flags and config loading (urfave/cli)
-│   └── stdout/          # Output formatters (table/json/yaml/text/screen)
-├── config/              # YAML config file parsing
-├── metricsresources/    # Pod metrics service (fetch, aggregate, sort)
-├── noderesources/       # Node summary service
-├── sorting/             # Sort strategies for metrics/nodes
-├── resources/           # Resource type parsing (cpu/memory)
-├── humanize/            # Byte/unit formatting
-├── alert/               # Alert threshold handling
-└── choices/             # Enum validation (output format, sort fields)
-pkg/                      # Public APIs (client, pods, nodes, podmetrics, nodemetrics)
-```
-
 **Data Flow:** CLI flags → Config merge (file + CLI) → Service → Kubernetes API → Formatter → stdout
 
 ## Key Patterns
@@ -46,12 +27,3 @@ pkg/                      # Public APIs (client, pods, nodes, podmetrics, nodeme
 - **Output formatters:** Strategy pattern in `internal/adapters/stdout/{format}/`
 - **Watch mode:** Screen wrappers refresh output at `--watch-period` intervals
 - **Sorting:** Extensible via `internal/sorting/` with field-specific comparators
-
-## Dependencies
-
-- CLI: `github.com/urfave/cli/v2`
-- Kubernetes: `k8s.io/client-go`, `k8s.io/metrics`
-- Output: `github.com/jedib0t/go-pretty/v6` (tables)
-- Testing: `github.com/stretchr/testify`
-
-See `AGENTS.md` for detailed guidelines on coding style, testing, and PR requirements.
