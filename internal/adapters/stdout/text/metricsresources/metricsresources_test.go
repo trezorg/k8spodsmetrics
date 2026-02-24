@@ -117,3 +117,40 @@ func TestTextError(t *testing.T) {
 		})
 	})
 }
+
+func TestPrintToDoesNotPanic(t *testing.T) {
+	t.Run("non-empty list", func(t *testing.T) {
+		list := metricsresources.PodMetricsResourceList{
+			{
+				PodResource: pods.PodResource{
+					NamespaceName: pods.NamespaceName{
+						Name:      "test-pod",
+						Namespace: "default",
+					},
+					NodeName: "node-1",
+				},
+				PodMetric: podmetrics.PodMetric{
+					Name:       "test-pod",
+					Namespace:  "default",
+					Containers: []podmetrics.ContainerMetric{},
+				},
+			},
+		}
+
+		var buffer bytes.Buffer
+		require.NotPanics(t, func() {
+			PrintTo(&buffer, list)
+		})
+		require.Contains(t, buffer.String(), "test-pod")
+	})
+
+	t.Run("empty list", func(t *testing.T) {
+		list := metricsresources.PodMetricsResourceList{}
+
+		var buffer bytes.Buffer
+		require.NotPanics(t, func() {
+			PrintTo(&buffer, list)
+		})
+		require.NotEmpty(t, buffer.String())
+	})
+}

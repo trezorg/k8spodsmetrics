@@ -30,9 +30,7 @@ func PrintTo(w io.Writer, list metricsresources.PodMetricsResourceList) {
 			_, _ = fmt.Fprintf(&buffer, "  Requests:\t%s\n", containerFormatter.Requests().StringWithColor("yellow"))
 			_, _ = fmt.Fprintf(&buffer, "  Limits:\t%s\n", containerFormatter.Limits().StringWithColor("red"))
 		}
-		if err := buffer.WriteByte('\n'); err != nil {
-			panic(err)
-		}
+		_, _ = fmt.Fprintln(&buffer)
 	}
 	_, _ = io.WriteString(w, buffer.String())
 	_, _ = io.WriteString(w, "\n")
