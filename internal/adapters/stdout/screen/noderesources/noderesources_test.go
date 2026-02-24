@@ -2,20 +2,13 @@ package noderesources
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 )
-
-type mockSuccessProcessor struct {
-	called bool
-}
-
-func (m *mockSuccessProcessor) Success(list noderesources.NodeResourceList) {
-	m.called = true
-}
 
 type mockErrorProcessor struct {
 	called bool
@@ -27,8 +20,10 @@ func (m *mockErrorProcessor) Error(err error) {
 
 func TestNewScreenSuccessWriter(t *testing.T) {
 	t.Run("creates success writer", func(t *testing.T) {
-		mock := &mockSuccessProcessor{}
-		writer := NewScreenSuccessWriter(mock)
+		called := false
+		writer := NewScreenSuccessWriter(func(_ io.Writer, _ noderesources.NodeResourceList) {
+			called = true
+		})
 		require.NotNil(t, writer)
 
 		list := noderesources.NodeResourceList{
@@ -39,7 +34,7 @@ func TestNewScreenSuccessWriter(t *testing.T) {
 		}
 
 		writer.Success(list)
-		require.True(t, mock.called)
+		require.True(t, called)
 	})
 }
 
@@ -57,10 +52,12 @@ func TestNewScreenErrorWriter(t *testing.T) {
 
 func TestScreenSuccessWriter_Success(t *testing.T) {
 	t.Run("calls underlying writer", func(t *testing.T) {
-		mock := &mockSuccessProcessor{}
-		writer := NewScreenSuccessWriter(mock)
+		called := false
+		writer := NewScreenSuccessWriter(func(_ io.Writer, _ noderesources.NodeResourceList) {
+			called = true
+		})
 		writer.Success(noderesources.NodeResourceList{})
-		require.True(t, mock.called)
+		require.True(t, called)
 	})
 }
 

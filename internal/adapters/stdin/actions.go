@@ -67,7 +67,7 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	summaryCfg := nodeResourcesConfig(summaryActionConfig)
 	outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources, nodeCols)
 	if summaryActionConfig.WatchMetrics {
-		return summaryWatch(&summaryCfg, outputProcessor, outputProcessor)
+		return summaryWatch(&summaryCfg, summaryWatchRenderer(output.Output(summaryActionConfig.Output), outputResources, nodeCols), outputProcessor)
 	}
 
 	return summary(&summaryCfg, outputProcessor)
@@ -128,7 +128,7 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	podCfg := metricsResourcesConfig(podActionConfig)
 	outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources, podCols)
 	if podActionConfig.WatchMetrics {
-		return podsWatch(&podCfg, outputProcessor, outputProcessor)
+		return podsWatch(&podCfg, podsWatchRenderer(output.Output(podActionConfig.Output), outputResources, podCols), outputProcessor)
 	}
 
 	return pods(&podCfg, outputProcessor)

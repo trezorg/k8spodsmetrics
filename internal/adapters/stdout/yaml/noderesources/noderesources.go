@@ -1,6 +1,7 @@
 package noderesources
 
 import (
+	"io"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -12,11 +13,20 @@ import (
 type Yaml func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
-	enc := yaml.NewEncoder(os.Stdout)
+	PrintTo(os.Stdout, list)
+}
+
+func PrintTo(w io.Writer, list noderesources.NodeResourceList) {
+	enc := yaml.NewEncoder(w)
+	defer func() { _ = enc.Close() }()
 	envelope := noderesources.NodeResourceListEnvelope{Items: list}
 	if err := enc.Encode(envelope); err != nil {
 		slog.Error("failed to encode node resources as yaml", "error", err)
 	}
+}
+
+func (Yaml) SuccessTo(w io.Writer, list noderesources.NodeResourceList) {
+	PrintTo(w, list)
 }
 
 func (j Yaml) Success(list noderesources.NodeResourceList) {

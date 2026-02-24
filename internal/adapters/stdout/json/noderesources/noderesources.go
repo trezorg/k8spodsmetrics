@@ -2,6 +2,7 @@ package noderesources
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
@@ -11,12 +12,20 @@ import (
 type JSON func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
-	enc := json.NewEncoder(os.Stdout)
+	PrintTo(os.Stdout, list)
+}
+
+func PrintTo(w io.Writer, list noderesources.NodeResourceList) {
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "    ")
 	envelope := noderesources.NodeResourceListEnvelope{Items: list}
 	if err := enc.Encode(envelope); err != nil {
 		slog.Error("failed to encode node resources as json", "error", err)
 	}
+}
+
+func (JSON) SuccessTo(w io.Writer, list noderesources.NodeResourceList) {
+	PrintTo(w, list)
 }
 
 func (j JSON) Success(list noderesources.NodeResourceList) {

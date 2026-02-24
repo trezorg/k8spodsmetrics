@@ -3,9 +3,10 @@ package noderesources
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
 
-	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	formatnoderesources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 )
@@ -13,6 +14,10 @@ import (
 type Text func(list noderesources.NodeResourceList)
 
 func Print(list noderesources.NodeResourceList) {
+	PrintTo(os.Stdout, list)
+}
+
+func PrintTo(w io.Writer, list noderesources.NodeResourceList) {
 	var buffer bytes.Buffer
 	for _, node := range list {
 		formatter := formatnoderesources.New(node)
@@ -20,7 +25,12 @@ func Print(list noderesources.NodeResourceList) {
 		_, _ = fmt.Fprintf(&buffer, "Memory: %s\n", formatter.MemoryTemplate())
 		_, _ = fmt.Fprintf(&buffer, "CPU: %s\n", formatter.CPUTemplate())
 	}
-	stdoutcommon.WriteStringLine(buffer.String())
+	_, _ = io.WriteString(w, buffer.String())
+	_, _ = io.WriteString(w, "\n")
+}
+
+func (Text) SuccessTo(w io.Writer, list noderesources.NodeResourceList) {
+	PrintTo(w, list)
 }
 
 func (j Text) Success(list noderesources.NodeResourceList) {

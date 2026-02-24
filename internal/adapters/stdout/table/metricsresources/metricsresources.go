@@ -1,6 +1,7 @@
 package metricsresources
 
 import (
+	"io"
 	"os"
 
 	"log/slog"
@@ -310,8 +311,18 @@ func ToTable(
 ) Table {
 	cs := newColumnSet(cols)
 	return Table(func(list metricsresources.PodMetricsResourceList) {
-		Print(list, outputResources, cs)
+		PrintTo(os.Stdout, list, outputResources, cs)
 	})
+}
+
+func ToWriter(
+	outputResources resources.Resources,
+	cols []columns.Column,
+) func(io.Writer, metricsresources.PodMetricsResourceList) {
+	cs := newColumnSet(cols)
+	return func(w io.Writer, list metricsresources.PodMetricsResourceList) {
+		PrintTo(w, list, outputResources, cs)
+	}
 }
 
 func Print(
@@ -319,8 +330,17 @@ func Print(
 	outputResources resources.Resources,
 	cs ColumnSet,
 ) {
+	PrintTo(os.Stdout, list, outputResources, cs)
+}
+
+func PrintTo(
+	w io.Writer,
+	list metricsresources.PodMetricsResourceList,
+	outputResources resources.Resources,
+	cs ColumnSet,
+) {
 	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
+	t.SetOutputMirror(w)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod/Container", "Namespace", "Node"), rowConfigAutoMerge)
 	t.AppendHeader(cs.secondaryHeaderRow(outputResources))

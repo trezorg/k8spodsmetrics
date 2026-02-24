@@ -1,6 +1,8 @@
 package noderesources
 
 import (
+	"io"
+
 	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 )
@@ -8,8 +10,8 @@ import (
 type ScreenSuccessWriter func(list noderesources.NodeResourceList)
 type ScreenErrorWriter func(err error)
 
-func NewScreenSuccessWriter(writer noderesources.SuccessProcessor) ScreenSuccessWriter {
-	return ScreenSuccessWriter(stdoutcommon.WrapScreenSuccess(writer.Success))
+func NewScreenSuccessWriter(writer func(io.Writer, noderesources.NodeResourceList)) ScreenSuccessWriter {
+	return ScreenSuccessWriter(stdoutcommon.WrapScreenSuccess(writer))
 }
 
 func NewScreenErrorWriter(writer noderesources.ErrorProcessor) ScreenErrorWriter {

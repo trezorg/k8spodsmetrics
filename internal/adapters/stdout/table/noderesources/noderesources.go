@@ -1,6 +1,7 @@
 package noderesources
 
 import (
+	"io"
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -288,8 +289,18 @@ func ToTable(
 ) Table {
 	cs := newColumnSet(cols)
 	return Table(func(list noderesources.NodeResourceList) {
-		Print(list, outputResources, cs)
+		PrintTo(os.Stdout, list, outputResources, cs)
 	})
+}
+
+func ToWriter(
+	outputResources resources.Resources,
+	cols []columns.Column,
+) func(io.Writer, noderesources.NodeResourceList) {
+	cs := newColumnSet(cols)
+	return func(w io.Writer, list noderesources.NodeResourceList) {
+		PrintTo(w, list, outputResources, cs)
+	}
 }
 
 func Print(
@@ -297,8 +308,17 @@ func Print(
 	outputResources resources.Resources,
 	cs ColumnSet,
 ) {
+	PrintTo(os.Stdout, list, outputResources, cs)
+}
+
+func PrintTo(
+	w io.Writer,
+	list noderesources.NodeResourceList,
+	outputResources resources.Resources,
+	cs ColumnSet,
+) {
 	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
+	t.SetOutputMirror(w)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t.AppendHeader(cs.headerFooterRow(outputResources, "Name"), rowConfigAutoMerge)
 	t.AppendHeader(cs.secondaryHeaderRow(outputResources))

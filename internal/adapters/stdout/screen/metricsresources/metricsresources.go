@@ -1,6 +1,8 @@
 package metricsresources
 
 import (
+	"io"
+
 	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 )
@@ -8,8 +10,8 @@ import (
 type ScreenSuccessWriter func(list metricsresources.PodMetricsResourceList)
 type ScreenErrorWriter func(err error)
 
-func NewScreenSuccessWriter(writer metricsresources.SuccessProcessor) ScreenSuccessWriter {
-	return ScreenSuccessWriter(stdoutcommon.WrapScreenSuccess(writer.Success))
+func NewScreenSuccessWriter(writer func(io.Writer, metricsresources.PodMetricsResourceList)) ScreenSuccessWriter {
+	return ScreenSuccessWriter(stdoutcommon.WrapScreenSuccess(writer))
 }
 
 func NewScreenErrorWriter(writer metricsresources.ErrorProcessor) ScreenErrorWriter {

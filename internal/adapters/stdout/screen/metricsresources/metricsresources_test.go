@@ -2,6 +2,7 @@ package metricsresources
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,14 +11,6 @@ import (
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
 )
-
-type mockSuccessProcessor struct {
-	called bool
-}
-
-func (m *mockSuccessProcessor) Success(list metricsresources.PodMetricsResourceList) {
-	m.called = true
-}
 
 type mockErrorProcessor struct {
 	called bool
@@ -29,8 +22,10 @@ func (m *mockErrorProcessor) Error(err error) {
 
 func TestNewScreenSuccessWriter(t *testing.T) {
 	t.Run("creates success writer", func(t *testing.T) {
-		mock := &mockSuccessProcessor{}
-		writer := NewScreenSuccessWriter(mock)
+		called := false
+		writer := NewScreenSuccessWriter(func(_ io.Writer, _ metricsresources.PodMetricsResourceList) {
+			called = true
+		})
 		require.NotNil(t, writer)
 
 		list := metricsresources.PodMetricsResourceList{
@@ -50,7 +45,7 @@ func TestNewScreenSuccessWriter(t *testing.T) {
 		}
 
 		writer.Success(list)
-		require.True(t, mock.called)
+		require.True(t, called)
 	})
 }
 
@@ -68,10 +63,12 @@ func TestNewScreenErrorWriter(t *testing.T) {
 
 func TestScreenSuccessWriter_Success(t *testing.T) {
 	t.Run("calls underlying writer", func(t *testing.T) {
-		mock := &mockSuccessProcessor{}
-		writer := NewScreenSuccessWriter(mock)
+		called := false
+		writer := NewScreenSuccessWriter(func(_ io.Writer, _ metricsresources.PodMetricsResourceList) {
+			called = true
+		})
 		writer.Success(metricsresources.PodMetricsResourceList{})
-		require.True(t, mock.called)
+		require.True(t, called)
 	})
 }
 

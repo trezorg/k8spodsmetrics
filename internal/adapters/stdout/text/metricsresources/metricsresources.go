@@ -3,9 +3,10 @@ package metricsresources
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
 
-	stdoutcommon "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/common"
 	formatmetricsresources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 )
@@ -13,6 +14,10 @@ import (
 type Text func(list metricsresources.PodMetricsResourceList)
 
 func Print(list metricsresources.PodMetricsResourceList) {
+	PrintTo(os.Stdout, list)
+}
+
+func PrintTo(w io.Writer, list metricsresources.PodMetricsResourceList) {
 	var buffer bytes.Buffer
 	for _, pod := range list {
 		_, _ = fmt.Fprintf(&buffer, "Name:\t\t%s\n", pod.PodResource.Name)
@@ -29,7 +34,12 @@ func Print(list metricsresources.PodMetricsResourceList) {
 			panic(err)
 		}
 	}
-	stdoutcommon.WriteStringLine(buffer.String())
+	_, _ = io.WriteString(w, buffer.String())
+	_, _ = io.WriteString(w, "\n")
+}
+
+func (Text) SuccessTo(w io.Writer, list metricsresources.PodMetricsResourceList) {
+	PrintTo(w, list)
 }
 
 func (j Text) Success(list metricsresources.PodMetricsResourceList) {

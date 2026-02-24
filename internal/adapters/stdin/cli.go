@@ -1,6 +1,8 @@
 package stdin
 
 import (
+	"io"
+
 	metricsjson "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/json/metricsresources"
 	metricsscreen "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/screen/metricsresources"
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
@@ -94,6 +96,20 @@ func summaryOutputProcessor(out output.Output, res resources.Resources, cols []c
 	return nodestable.ToTable(res, cols)
 }
 
+func summaryWatchRenderer(out output.Output, res resources.Resources, cols []columns.Column) func(io.Writer, noderesources.NodeResourceList) {
+	switch out {
+	case output.Table:
+		return nodestable.ToWriter(res, cols)
+	case output.JSON:
+		return nodesjson.PrintTo
+	case output.Yaml:
+		return nodesyaml.PrintTo
+	case output.Text:
+		return nodestext.PrintTo
+	}
+	return nodestable.ToWriter(res, cols)
+}
+
 func podsOutputProcessor(out output.Output, res resources.Resources, cols []columns.Column) PodsOutputProcessor {
 	switch out {
 	case output.Table:
@@ -106,6 +122,20 @@ func podsOutputProcessor(out output.Output, res resources.Resources, cols []colu
 		return metricstext.Text(metricstext.Print)
 	}
 	return metricstable.ToTable(res, cols)
+}
+
+func podsWatchRenderer(out output.Output, res resources.Resources, cols []columns.Column) func(io.Writer, metricsresources.PodMetricsResourceList) {
+	switch out {
+	case output.Table:
+		return metricstable.ToWriter(res, cols)
+	case output.JSON:
+		return metricsjson.PrintTo
+	case output.Yaml:
+		return metricsyaml.PrintTo
+	case output.Text:
+		return metricstext.PrintTo
+	}
+	return metricstable.ToWriter(res, cols)
 }
 
 func parseColumnsForOutput(
@@ -130,16 +160,24 @@ func summary(processor SummaryProcessor, successProcessor noderesources.SuccessP
 	return processor.Process(successProcessor)
 }
 
-func summaryWatch(processor SummaryWatcher, successProcessor noderesources.SuccessProcessor, errorProcessor noderesources.ErrorProcessor) error {
-	return processor.ProcessWatch(nodesscreen.NewScreenSuccessWriter(successProcessor), nodesscreen.NewScreenErrorWriter(errorProcessor))
+func summaryWatch(
+	processor SummaryWatcher,
+	successRenderer func(io.Writer, noderesources.NodeResourceList),
+	errorProcessor noderesources.ErrorProcessor,
+) error {
+	return processor.ProcessWatch(nodesscreen.NewScreenSuccessWriter(successRenderer), nodesscreen.NewScreenErrorWriter(errorProcessor))
 }
 
 func pods(processor PodsProcessor, successProcessor metricsresources.SuccessProcessor) error {
 	return processor.Process(successProcessor)
 }
 
-func podsWatch(processor PodsWatcher, successProcessor metricsresources.SuccessProcessor, errorProcessor metricsresources.ErrorProcessor) error {
-	return processor.ProcessWatch(metricsscreen.NewScreenSuccessWriter(successProcessor), metricsscreen.NewScreenErrorWriter(errorProcessor))
+func podsWatch(
+	processor PodsWatcher,
+	successRenderer func(io.Writer, metricsresources.PodMetricsResourceList),
+	errorProcessor metricsresources.ErrorProcessor,
+) error {
+	return processor.ProcessWatch(metricsscreen.NewScreenSuccessWriter(successRenderer), metricsscreen.NewScreenErrorWriter(errorProcessor))
 }
 
 func loadFileConfig(configFile string) (*config.Config, error) {
