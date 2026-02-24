@@ -18,14 +18,26 @@ func TestCommonConfigValidate(t *testing.T) {
 		require.NoError(t, cfg.Validate())
 	})
 
-	t.Run("zero watch period", func(t *testing.T) {
+	t.Run("zero watch period when watch enabled", func(t *testing.T) {
 		cfg := commonConfig{
-			Output:      "table",
-			Alert:       "none",
-			WatchPeriod: 0,
+			Output:       "table",
+			Alert:        "none",
+			WatchMetrics: true,
+			WatchPeriod:  0,
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "watch period must be greater than 0")
+	})
+
+	t.Run("zero watch period when watch disabled", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:       "table",
+			Alert:        "none",
+			WatchMetrics: false,
+			WatchPeriod:  0,
+		}
+
+		require.NoError(t, cfg.Validate())
 	})
 
 	t.Run("invalid output", func(t *testing.T) {

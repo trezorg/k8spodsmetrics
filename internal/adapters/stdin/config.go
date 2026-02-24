@@ -13,7 +13,7 @@ import (
 )
 
 func (c *commonConfig) Validate() error {
-	if c.WatchPeriod == 0 {
+	if c.WatchMetrics && c.WatchPeriod == 0 {
 		return errors.New("watch period must be greater than 0")
 	}
 	if err := output.Valid(output.Output(c.Output)); err != nil {
