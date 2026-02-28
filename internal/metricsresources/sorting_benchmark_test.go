@@ -64,7 +64,7 @@ func benchmarkSortByUsedCPU(b *testing.B, size, containers int) {
 	work := make(PodMetricsResourceList, len(base))
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		copy(work, base)
 		work.sortByUsedCPU(false)
 	}
@@ -75,7 +75,7 @@ func benchmarkSortByRequestMemory(b *testing.B, size, containers int) {
 	work := make(PodMetricsResourceList, len(base))
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		copy(work, base)
 		work.sortByRequestMemory(false)
 	}

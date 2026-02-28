@@ -1,7 +1,6 @@
 package nodes
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestNodes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("list all nodes", func(t *testing.T) {
 		nodes := []v1.Node{

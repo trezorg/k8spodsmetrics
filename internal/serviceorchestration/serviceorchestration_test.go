@@ -72,7 +72,7 @@ func TestWatchWithClients(t *testing.T) {
 	})
 
 	t.Run("publishes first and ticker responses", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
 		calls := 0
