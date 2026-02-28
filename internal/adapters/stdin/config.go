@@ -64,6 +64,7 @@ func metricsResourcesConfig(c podConfig) metricsresources.Config {
 		Reverse:       c.Reverse,
 		Alert:         c.Alert,
 		WatchPeriod:   c.WatchPeriod,
+		Timeout:       c.Timeout,
 	}
 }
 
@@ -77,5 +78,6 @@ func nodeResourcesConfig(c summaryConfig) noderesources.Config {
 		Reverse:     c.Reverse,
 		Alert:       c.Alert,
 		WatchPeriod: c.WatchPeriod,
+		Timeout:     c.Timeout,
 	}
 }

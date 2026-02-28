@@ -2,8 +2,9 @@ package serviceorchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
+	"math"
 	"os/signal"
 	"strconv"
 	"syscall"
@@ -25,14 +26,30 @@ type WatchResponse[T any] struct {
 	Data  T
 }
 
+var (
+	ErrSignalCanceled = errors.New("request canceled by signal")
+	ErrRequestTimeout = errors.New("request timed out")
+)
+
 func RequestWithClients[T any](
 	ctx context.Context,
 	kubeConfig string,
 	kubeContext string,
+	timeout uint,
 	clientsFactory ClientsFactory,
 	request RequestFunc[T],
 ) (T, error) {
 	var zero T
+
+	if timeout > 0 {
+		if timeout > uint(math.MaxInt64/int64(time.Second)) {
+			return zero, fmt.Errorf("timeout is too large: %d", timeout)
+		}
+		timeoutDuration := time.Duration(int64(timeout)) * time.Second
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeoutCause(ctx, timeoutDuration, ErrRequestTimeout)
+		defer cancel()
+	}
 
 	slog.Debug("Preparing client...")
 	metricsClient, coreClient, err := clientsFactory(kubeConfig, kubeContext)
@@ -47,6 +64,7 @@ func RequestWithRepo[T any, R any](
 	ctx context.Context,
 	kubeConfig string,
 	kubeContext string,
+	timeout uint,
 	clientsFactory ClientsFactory,
 	repoFactory func() R,
 	request RepoRequestFunc[T, R],
@@ -60,7 +78,7 @@ func RequestWithRepo[T any, R any](
 		return request(requestContext, repo, metricsClient, coreClient)
 	}
 
-	return RequestWithClients(ctx, kubeConfig, kubeContext, clientsFactory, requestWithRepo)
+	return RequestWithClients(ctx, kubeConfig, kubeContext, timeout, clientsFactory, requestWithRepo)
 }
 
 func WatchWithClients[T any](
@@ -68,6 +86,7 @@ func WatchWithClients[T any](
 	kubeConfig string,
 	kubeContext string,
 	watchPeriodSeconds uint,
+	timeout uint,
 	clientsFactory ClientsFactory,
 	request RequestFunc[T],
 ) chan WatchResponse[T] {
@@ -89,8 +108,23 @@ func WatchWithClients[T any](
 			return
 		}
 
+		var timeoutDuration time.Duration
+		if timeout > 0 {
+			if timeout > uint(math.MaxInt64/int64(time.Second)) {
+				ch <- WatchResponse[T]{Error: fmt.Errorf("timeout is too large: %d", timeout)}
+				return
+			}
+			timeoutDuration = time.Duration(int64(timeout)) * time.Second
+		}
+
 		produce := func() {
-			data, requestErr := request(ctx, metricsClient, coreClient)
+			requestCtx := ctx
+			if timeout > 0 {
+				var cancel context.CancelFunc
+				requestCtx, cancel = context.WithTimeoutCause(ctx, timeoutDuration, ErrRequestTimeout)
+				defer cancel()
+			}
+			data, requestErr := request(requestCtx, metricsClient, coreClient)
 			if requestErr != nil {
 				ch <- WatchResponse[T]{Error: requestErr}
 				return
@@ -122,6 +156,7 @@ func WatchWithRepo[T any, R any](
 	kubeConfig string,
 	kubeContext string,
 	watchPeriodSeconds uint,
+	timeout uint,
 	clientsFactory ClientsFactory,
 	repoFactory func() R,
 	request RepoRequestFunc[T, R],
@@ -135,12 +170,14 @@ func WatchWithRepo[T any, R any](
 		return request(requestContext, repo, metricsClient, coreClient)
 	}
 
-	return WatchWithClients(ctx, kubeConfig, kubeContext, watchPeriodSeconds, clientsFactory, requestWithRepo)
+	return WatchWithClients(ctx, kubeConfig, kubeContext, watchPeriodSeconds, timeout, clientsFactory, requestWithRepo)
 }
 
 func RunWithPreparedContext(prepare func() error, run func(context.Context) error) error {
-	ctx, done := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	defer done()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 
 	if err := prepare(); err != nil {
 		return err

@@ -22,6 +22,7 @@ type Config struct {
 	Sorting       string
 	Alert         string
 	WatchPeriod   uint
+	Timeout       uint
 	Reverse       bool
 }
 
@@ -71,6 +72,7 @@ func (c *Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 		ctx,
 		c.KubeConfig,
 		c.KubeContext,
+		c.Timeout,
 		client.Clients,
 		NewPodRepository,
 		c.apiRequest,
@@ -83,6 +85,7 @@ func (c *Config) Watch(ctx context.Context) chan WatchResponse {
 		c.KubeConfig,
 		c.KubeContext,
 		c.WatchPeriod,
+		c.Timeout,
 		client.Clients,
 		NewPodRepository,
 		c.apiRequest,

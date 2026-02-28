@@ -18,6 +18,7 @@ common:
   alert: cpu
   watch-period: 10
   watch: true
+  timeout: 45
 pods:
   namespace: default
   label: app=nginx
@@ -51,6 +52,7 @@ summary:
 		require.Equal(t, "cpu", cfg.Common.Alert)
 		require.Equal(t, uint(10), cfg.Common.WatchPeriod)
 		require.True(t, cfg.Common.WatchMetrics)
+		require.Equal(t, uint(45), cfg.Common.Timeout)
 
 		require.Equal(t, StringOrSlice{"default"}, cfg.Pods.Namespaces)
 		require.Equal(t, "app=nginx", cfg.Pods.Label)
@@ -125,6 +127,7 @@ func TestMergeCommon(t *testing.T) {
 				Alert:        "cpu",
 				WatchPeriod:  10,
 				WatchMetrics: true,
+				Timeout:      45,
 			},
 		}
 		common := &Common{}
@@ -136,6 +139,7 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "cpu", common.Alert)
 		require.Equal(t, uint(10), common.WatchPeriod)
 		require.True(t, common.WatchMetrics)
+		require.Equal(t, uint(45), common.Timeout)
 	})
 
 	t.Run("cli string and numeric values take precedence", func(t *testing.T) {
@@ -146,6 +150,7 @@ func TestMergeCommon(t *testing.T) {
 				Output:      "yaml",
 				Alert:       "memory",
 				WatchPeriod: 5,
+				Timeout:     20,
 			},
 		}
 		common := &Common{
@@ -154,6 +159,7 @@ func TestMergeCommon(t *testing.T) {
 			Output:      "json",
 			Alert:       "cpu",
 			WatchPeriod: 15,
+			Timeout:     10,
 		}
 
 		fileConfig.MergeCommon(common)
@@ -162,6 +168,7 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "json", common.Output)
 		require.Equal(t, "cpu", common.Alert)
 		require.Equal(t, uint(15), common.WatchPeriod)
+		require.Equal(t, uint(10), common.Timeout)
 	})
 
 	// Note: Boolean fields have a limitation - CLI default false cannot override file's true.

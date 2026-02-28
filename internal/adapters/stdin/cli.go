@@ -33,6 +33,7 @@ type commonConfig struct {
 	WatchPeriod  uint
 	WatchMetrics bool
 	Columns      []string
+	Timeout      uint
 	fileConfig   *config.Config
 }
 
@@ -189,7 +190,12 @@ func loadFileConfig(configFile string) (*config.Config, error) {
 
 // applyCommonConfig merges file config with CLI common config values.
 // CLI values take precedence over file config for string and numeric types.
-func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config, watchMetricsSet bool) config.Common {
+func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config, watchMetricsSet bool, timeoutSet bool) config.Common {
+	timeout := cfg.Timeout
+	if !timeoutSet {
+		timeout = 0
+	}
+
 	merged := config.Common{
 		KubeConfig:   cfg.KubeConfig,
 		KubeContext:  cfg.KubeContext,
@@ -198,12 +204,19 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config, watchMetric
 		WatchPeriod:  cfg.WatchPeriod,
 		WatchMetrics: cfg.WatchMetrics,
 		Columns:      cfg.Columns,
+		Timeout:      timeout,
 	}
 	if fileConfig != nil {
 		fileConfig.MergeCommon(&merged)
 	}
 	if watchMetricsSet {
 		merged.WatchMetrics = cfg.WatchMetrics
+	}
+	if timeoutSet {
+		merged.Timeout = cfg.Timeout
+	}
+	if !timeoutSet && merged.Timeout == 0 {
+		merged.Timeout = defaultTimeoutSeconds
 	}
 	return merged
 }

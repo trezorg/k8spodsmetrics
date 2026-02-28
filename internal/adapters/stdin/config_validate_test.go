@@ -146,7 +146,7 @@ func TestValidateRejectsInvalidMergedFileConfig(t *testing.T) {
 		Common: config.Common{Output: "invalid"},
 	}
 
-	mergedCommon := applyCommonConfig(&base.commonConfig, fileCfg, false)
+	mergedCommon := applyCommonConfig(&base.commonConfig, fileCfg, false, false)
 	base.KubeConfig = mergedCommon.KubeConfig
 	base.KubeContext = mergedCommon.KubeContext
 	base.Output = mergedCommon.Output

@@ -27,6 +27,7 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 
 	reverseSet := c.IsSet("reverse")
 	watchSet := c.IsSet("watch")
+	timeoutSet := c.IsSet("timeout")
 
 	mergedSummary := applySummaryConfig(&summaryActionConfig, cfg.fileConfig, reverseSet)
 	summaryActionConfig.Name = mergedSummary.Name
@@ -35,7 +36,7 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	summaryActionConfig.Reverse = mergedSummary.Reverse
 	summaryActionConfig.Resources = mergedSummary.Resources
 
-	mergedCommon := applyCommonConfig(&summaryActionConfig.commonConfig, cfg.fileConfig, watchSet)
+	mergedCommon := applyCommonConfig(&summaryActionConfig.commonConfig, cfg.fileConfig, watchSet, timeoutSet)
 	summaryActionConfig.KubeConfig = mergedCommon.KubeConfig
 	summaryActionConfig.KubeContext = mergedCommon.KubeContext
 	summaryActionConfig.Output = mergedCommon.Output
@@ -43,6 +44,7 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	summaryActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 	summaryActionConfig.WatchMetrics = mergedCommon.WatchMetrics
 	summaryActionConfig.Columns = mergedCommon.Columns
+	summaryActionConfig.Timeout = mergedCommon.Timeout
 
 	if len(cmdResources) == 0 && len(mergedSummary.Resources) > 0 {
 		cmdResources = mergedSummary.Resources
@@ -86,6 +88,7 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 
 	reverseSet := c.IsSet("reverse")
 	watchSet := c.IsSet("watch")
+	timeoutSet := c.IsSet("timeout")
 
 	mergedPods := applyPodsConfig(&podActionConfig, cfg.fileConfig, reverseSet)
 	podActionConfig.Namespaces = mergedPods.Namespaces
@@ -96,7 +99,7 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	podActionConfig.Reverse = mergedPods.Reverse
 	podActionConfig.Resources = mergedPods.Resources
 
-	mergedCommon := applyCommonConfig(&podActionConfig.commonConfig, cfg.fileConfig, watchSet)
+	mergedCommon := applyCommonConfig(&podActionConfig.commonConfig, cfg.fileConfig, watchSet, timeoutSet)
 	podActionConfig.KubeConfig = mergedCommon.KubeConfig
 	podActionConfig.KubeContext = mergedCommon.KubeContext
 	podActionConfig.Output = mergedCommon.Output
@@ -104,6 +107,7 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	podActionConfig.WatchPeriod = mergedCommon.WatchPeriod
 	podActionConfig.WatchMetrics = mergedCommon.WatchMetrics
 	podActionConfig.Columns = mergedCommon.Columns
+	podActionConfig.Timeout = mergedCommon.Timeout
 
 	if len(cmdResources) == 0 && len(mergedPods.Resources) > 0 {
 		cmdResources = mergedPods.Resources

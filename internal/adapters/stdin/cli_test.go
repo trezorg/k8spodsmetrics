@@ -144,7 +144,7 @@ func TestApplyCommonConfig(t *testing.T) {
 		cfg := &commonConfig{WatchMetrics: false}
 		fileCfg := &config.Config{Common: config.Common{WatchMetrics: true}}
 
-		merged := applyCommonConfig(cfg, fileCfg, false)
+		merged := applyCommonConfig(cfg, fileCfg, false, false)
 		require.True(t, merged.WatchMetrics)
 	})
 
@@ -152,8 +152,31 @@ func TestApplyCommonConfig(t *testing.T) {
 		cfg := &commonConfig{WatchMetrics: false}
 		fileCfg := &config.Config{Common: config.Common{WatchMetrics: true}}
 
-		merged := applyCommonConfig(cfg, fileCfg, true)
+		merged := applyCommonConfig(cfg, fileCfg, true, false)
 		require.False(t, merged.WatchMetrics)
+	})
+
+	t.Run("uses file timeout when flag is not explicitly set", func(t *testing.T) {
+		cfg := &commonConfig{Timeout: defaultTimeoutSeconds}
+		fileCfg := &config.Config{Common: config.Common{Timeout: 45}}
+
+		merged := applyCommonConfig(cfg, fileCfg, false, false)
+		require.Equal(t, uint(45), merged.Timeout)
+	})
+
+	t.Run("keeps cli timeout when flag is explicitly set", func(t *testing.T) {
+		cfg := &commonConfig{Timeout: 12}
+		fileCfg := &config.Config{Common: config.Common{Timeout: 45}}
+
+		merged := applyCommonConfig(cfg, fileCfg, false, true)
+		require.Equal(t, uint(12), merged.Timeout)
+	})
+
+	t.Run("uses default timeout when unset in cli and file", func(t *testing.T) {
+		cfg := &commonConfig{Timeout: defaultTimeoutSeconds}
+
+		merged := applyCommonConfig(cfg, nil, false, false)
+		require.Equal(t, uint(defaultTimeoutSeconds), merged.Timeout)
 	})
 }
 

@@ -9,6 +9,7 @@
 //	  alert: cpu|memory
 //	  watch-period: 10
 //	  watch: true
+//	  timeout: 30
 //	  columns:                    # Filter table columns (table output only)
 //	    - request
 //	    - limit
@@ -61,6 +62,7 @@ type Common struct {
 	WatchPeriod  uint     `yaml:"watch-period"`
 	WatchMetrics bool     `yaml:"watch"`
 	Columns      []string `yaml:"columns"`
+	Timeout      uint     `yaml:"timeout"`
 }
 
 // StringOrSlice is a custom type that can unmarshal from either a string or a slice of strings in YAML.
@@ -148,6 +150,9 @@ func (c *Config) MergeCommon(common *Common) {
 	}
 	if len(common.Columns) == 0 && len(c.Common.Columns) > 0 {
 		common.Columns = c.Common.Columns
+	}
+	if common.Timeout == 0 && c.Common.Timeout != 0 {
+		common.Timeout = c.Common.Timeout
 	}
 }
 

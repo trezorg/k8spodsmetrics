@@ -10,6 +10,7 @@ import (
 
 const (
 	defaultWatchPeriodSeconds = 5
+	defaultTimeoutSeconds     = 30
 )
 
 func commonFlags(config *commonConfig) []cli.Flag {
@@ -85,6 +86,13 @@ func commonFlags(config *commonConfig) []cli.Flag {
 		&cli.StringSliceFlag{
 			Name:  "columns",
 			Usage: "Table columns to display (table output only). Nodes: [total|allocatable|used|request|limit|available|free], Pods: [request|limit|used]",
+		},
+		&cli.UintFlag{
+			Name:        "timeout",
+			Aliases:     []string{"t"},
+			Value:       defaultTimeoutSeconds,
+			Usage:       "Timeout in seconds for Kubernetes API calls",
+			Destination: &config.Timeout,
 		},
 	}
 }

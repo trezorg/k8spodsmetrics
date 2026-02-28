@@ -17,6 +17,7 @@ func TestRequestWithClients(t *testing.T) {
 			context.Background(),
 			"config",
 			"context",
+			0,
 			func(string, string) (metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface, error) {
 				return nil, nil, expectedErr
 			},
@@ -33,6 +34,7 @@ func TestRequestWithClients(t *testing.T) {
 			context.Background(),
 			"config",
 			"context",
+			0,
 			func(string, string) (metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface, error) {
 				return nil, nil, nil
 			},
@@ -54,6 +56,7 @@ func TestWatchWithClients(t *testing.T) {
 			"config",
 			"context",
 			1,
+			0,
 			func(string, string) (metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface, error) {
 				return nil, nil, expectedErr
 			},
@@ -81,6 +84,7 @@ func TestWatchWithClients(t *testing.T) {
 			"config",
 			"context",
 			1,
+			0,
 			func(string, string) (metricsv1beta1.MetricsV1beta1Interface, corev1.CoreV1Interface, error) {
 				return nil, nil, nil
 			},
