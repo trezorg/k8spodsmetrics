@@ -7,7 +7,7 @@ vars:
   GOOS: linux
   GOARCH: amd64
   CGO_ENABLED: "0"
-  GOLANGCI_VERSION: v2.10.1
+  GOLANGCI_VERSION: 2.10.1
 
 env:
   CGO_ENABLED: "{{.CGO_ENABLED}}"
@@ -15,9 +15,10 @@ env:
 tasks:
   install:golangci:
     status:
-      - command -v golangci-lint
+      - |
+        command -v golangci-lint && [ "$(golangci-lint version --short)" = "{{.GOLANGCI_VERSION}}" ]
     cmds:
-      - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin {{.GOLANGCI_VERSION}}
+      - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v{{.GOLANGCI_VERSION}}
 
   install:task:
     desc: Install task binary
