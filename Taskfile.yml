@@ -8,6 +8,8 @@ vars:
   GOARCH: amd64
   CGO_ENABLED: "0"
   GOLANGCI_VERSION: 2.10.1
+  GOVULNCHECK_VERSION: 1.1.4
+  TESTFLAGS: -race -count 1
 
 env:
   CGO_ENABLED: "{{.CGO_ENABLED}}"
@@ -20,6 +22,13 @@ tasks:
     cmds:
       - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v{{.GOLANGCI_VERSION}}
 
+  install:govulncheck:
+    status:
+      - |
+        command -v govulncheck && govulncheck -version 2>/dev/null | grep -q "Scanner: govulncheck@v{{.GOVULNCHECK_VERSION}}"
+    cmds:
+      - go install golang.org/x/vuln/cmd/govulncheck@v{{.GOVULNCHECK_VERSION}}
+
   install:task:
     desc: Install task binary
     cmds:
@@ -31,12 +40,18 @@ tasks:
     cmds:
       - golangci-lint run --timeout 10m0s
 
+  govulncheck:
+    deps:
+      - install:govulncheck
+    cmds:
+      - govulncheck ./...
+
   test:
     desc: Run tests with race detector and coverage
     env:
       CGO_ENABLED: "1"
     cmds:
-      - go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...
+      - go test {{.TESTFLAGS}} -coverprofile=coverage.out -covermode=atomic ./...
 
   benchmark:
     desc: Run benchmarks
@@ -59,7 +74,14 @@ tasks:
   lint:
     desc: Run all linters
     deps:
+      - format
+      - vet
+      - fix
       - golangci
+      - govulncheck
+
+  vet:
+    desc: Run go vet to apply Go fixes
     cmds:
       - go vet ./...
 
@@ -85,7 +107,7 @@ tasks:
         fi
 
   check:
-    desc: Run fix, format, lint and test
+    desc: Run lint and test
     deps:
       - fix
       - format
