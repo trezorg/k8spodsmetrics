@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -96,11 +95,7 @@ func WatchWithClients[T any](
 	go func() {
 		defer close(ch)
 
-		watchPeriod, err := time.ParseDuration(strconv.FormatUint(uint64(watchPeriodSeconds), 10) + "s")
-		if err != nil {
-			ch <- WatchResponse[T]{Error: err}
-			return
-		}
+		watchPeriod := time.Duration(watchPeriodSeconds) * time.Second //nolint:gosec // uint to int64 is safe for realistic watch periods
 
 		metricsClient, coreClient, err := clientsFactory(kubeConfig, kubeContext)
 		if err != nil {

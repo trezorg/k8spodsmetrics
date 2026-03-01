@@ -74,15 +74,7 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 		return nil, errs
 	}
 
-	resultLen := 0
-	for _, m := range metrics {
-		resultLen += len(m)
-	}
-	result := make(PodMetricList, 0, resultLen)
-	for _, m := range metrics {
-		result = append(result, m...)
-	}
-	return result, nil
+	return slices.Concat(metrics...), nil
 }
 
 func listMetrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricFilter, namespace string) (PodMetricList, error) {

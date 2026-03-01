@@ -162,15 +162,7 @@ func Pods(
 		return nil, errs
 	}
 
-	resultLen := 0
-	for _, p := range pods {
-		resultLen += len(p)
-	}
-	result := make(PodResourceList, 0, resultLen)
-	for _, p := range pods {
-		result = append(result, p...)
-	}
-	return result, nil
+	return slices.Concat(pods...), nil
 }
 
 func podsForNamespace(
@@ -210,15 +202,7 @@ func podsForNamespace(
 		return nil, errs
 	}
 
-	resultLen := 0
-	for _, p := range pods {
-		resultLen += len(p)
-	}
-	result := make(PodResourceList, 0, resultLen)
-	for _, p := range pods {
-		result = append(result, p...)
-	}
-	return result, nil
+	return slices.Concat(pods...), nil
 }
 
 func listPods(
