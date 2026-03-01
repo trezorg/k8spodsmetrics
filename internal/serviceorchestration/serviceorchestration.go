@@ -174,7 +174,7 @@ func WatchWithRepo[T any, R any](
 }
 
 func RunWithPreparedContext(prepare func() error, run func(context.Context) error) error {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
