@@ -14,7 +14,7 @@ func TestRequestWithClients(t *testing.T) {
 	t.Run("returns clients factory error", func(t *testing.T) {
 		expectedErr := errors.New("cannot create clients")
 		_, err := RequestWithClients(
-			context.Background(),
+			t.Context(),
 			"config",
 			"context",
 			0,
@@ -31,7 +31,7 @@ func TestRequestWithClients(t *testing.T) {
 
 	t.Run("returns request result", func(t *testing.T) {
 		result, err := RequestWithClients(
-			context.Background(),
+			t.Context(),
 			"config",
 			"context",
 			0,
@@ -52,7 +52,7 @@ func TestWatchWithClients(t *testing.T) {
 	t.Run("returns clients factory error", func(t *testing.T) {
 		expectedErr := errors.New("cannot create clients")
 		responses := WatchWithClients(
-			context.Background(),
+			t.Context(),
 			"config",
 			"context",
 			1,
