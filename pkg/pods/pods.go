@@ -215,16 +215,21 @@ func listPods(
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: buildFieldSelector(filter),
 	}
-	pods, err := coreV1Ifc.Pods(namespace).List(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
+	result := PodResourceList{}
+	for {
+		pods, err := coreV1Ifc.Pods(namespace).List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
 
-	result := make(PodResourceList, 0, len(pods.Items))
-	for _, pod := range pods.Items {
-		result = append(result, convertPodToResource(pod))
+		for _, pod := range pods.Items {
+			result = append(result, convertPodToResource(pod))
+		}
+		if pods.Continue == "" {
+			return result, nil
+		}
+		opts.Continue = pods.Continue
 	}
-	return result, nil
 }
 
 func buildFieldSelector(filter PodFilter) string {

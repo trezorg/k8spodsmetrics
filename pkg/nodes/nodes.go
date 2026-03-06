@@ -36,7 +36,7 @@ func Nodes(ctx context.Context, corev1Ifc corev1.CoreV1Interface, filter NodeFil
 	var err error
 	client := corev1Ifc.Nodes()
 	if name == "" {
-		nodes, err = client.List(ctx, metav1.ListOptions{
+		nodes, err = listNodes(ctx, client, metav1.ListOptions{
 			LabelSelector: filter.LabelSelector,
 			FieldSelector: filter.FieldSelector,
 		})
@@ -98,4 +98,19 @@ func Nodes(ctx context.Context, corev1Ifc corev1.CoreV1Interface, filter NodeFil
 		result = append(result, nodeResource)
 	}
 	return result, err
+}
+
+func listNodes(ctx context.Context, client corev1.NodeInterface, opts metav1.ListOptions) (*v1.NodeList, error) {
+	result := &v1.NodeList{}
+	for {
+		nodes, err := client.List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		result.Items = append(result.Items, nodes.Items...)
+		if nodes.Continue == "" {
+			return result, nil
+		}
+		opts.Continue = nodes.Continue
+	}
 }

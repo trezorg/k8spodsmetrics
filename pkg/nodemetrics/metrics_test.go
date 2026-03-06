@@ -4,6 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ktesting "k8s.io/client-go/testing"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metricsfake "k8s.io/metrics/pkg/client/clientset/versioned/fake"
 )
 
 func TestNodeMetric(t *testing.T) {
@@ -65,4 +72,56 @@ func TestMetricsFilter(t *testing.T) {
 		filter := MetricsFilter{FieldSelector: "spec.unschedulable=true"}
 		require.Equal(t, "spec.unschedulable=true", filter.FieldSelector)
 	})
+}
+
+func TestMetricsFollowsPagination(t *testing.T) {
+	ctx := t.Context()
+	client := metricsfake.NewSimpleClientset()
+	type listOptionsGetter interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "nodes", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "" {
+			return false, nil, nil
+		}
+
+		return true, &metricsv1beta1.NodeMetricsList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []metricsv1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
+					Usage: v1.ResourceList{
+						v1.ResourceCPU: resource.MustParse("100m"),
+					},
+				},
+			},
+		}, nil
+	})
+	client.PrependReactor("list", "nodes", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &metricsv1beta1.NodeMetricsList{
+			Items: []metricsv1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+					Usage: v1.ResourceList{
+						v1.ResourceCPU: resource.MustParse("200m"),
+					},
+				},
+			},
+		}, nil
+	})
+
+	result, err := Metrics(ctx, client.MetricsV1beta1(), MetricsFilter{}, "")
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Equal(t, "node-1", result[0].Name)
+	require.Equal(t, "node-2", result[1].Name)
 }

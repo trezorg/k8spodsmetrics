@@ -78,40 +78,47 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 }
 
 func listMetrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, filter MetricFilter, namespace string) (PodMetricList, error) {
-	podMetrics, err := api.PodMetricses(namespace).List(ctx, metav1.ListOptions{
+	opts := metav1.ListOptions{
 		LabelSelector: filter.LabelSelector,
 		FieldSelector: filter.FieldSelector,
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	result := make(PodMetricList, 0, len(podMetrics.Items))
-	for _, podMetric := range podMetrics.Items {
-		metric := PodMetric{Name: podMetric.Name, Namespace: podMetric.Namespace}
-		for _, container := range podMetric.Containers {
-			containerMetric := ContainerMetric{
-				Name: container.Name,
-			}
-			containerMetric.CPU = container.Usage.Cpu().MilliValue()
-			memory, ok := container.Usage.Memory().AsInt64()
-			if ok {
-				containerMetric.Memory = memory
-			}
-			storage, ok := container.Usage.Storage().AsInt64()
-			if ok {
-				containerMetric.Storage = storage
-			}
-			storage, ok = container.Usage.StorageEphemeral().AsInt64()
-			if ok {
-				containerMetric.StorageEphemeral = storage
-			}
-			metric.Containers = append(metric.Containers, containerMetric)
+	result := PodMetricList{}
+	for {
+		podMetrics, err := api.PodMetricses(namespace).List(ctx, opts)
+		if err != nil {
+			return nil, err
 		}
-		sort.Slice(metric.Containers, func(i, j int) bool {
-			return metric.Containers[i].Name < metric.Containers[j].Name
-		})
-		result = append(result, metric)
+
+		for _, podMetric := range podMetrics.Items {
+			metric := PodMetric{Name: podMetric.Name, Namespace: podMetric.Namespace}
+			for _, container := range podMetric.Containers {
+				containerMetric := ContainerMetric{
+					Name: container.Name,
+				}
+				containerMetric.CPU = container.Usage.Cpu().MilliValue()
+				memory, ok := container.Usage.Memory().AsInt64()
+				if ok {
+					containerMetric.Memory = memory
+				}
+				storage, ok := container.Usage.Storage().AsInt64()
+				if ok {
+					containerMetric.Storage = storage
+				}
+				storage, ok = container.Usage.StorageEphemeral().AsInt64()
+				if ok {
+					containerMetric.StorageEphemeral = storage
+				}
+				metric.Containers = append(metric.Containers, containerMetric)
+			}
+			sort.Slice(metric.Containers, func(i, j int) bool {
+				return metric.Containers[i].Name < metric.Containers[j].Name
+			})
+			result = append(result, metric)
+		}
+		if podMetrics.Continue == "" {
+			return result, nil
+		}
+		opts.Continue = podMetrics.Continue
 	}
-	return result, nil
 }

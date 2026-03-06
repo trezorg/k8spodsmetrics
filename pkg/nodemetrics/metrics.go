@@ -29,7 +29,7 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 	var nodeMetrics *v1beta1.NodeMetricsList
 	var err error
 	if nodeName == "" {
-		nodeMetrics, err = api.NodeMetricses().List(ctx, metav1.ListOptions{
+		nodeMetrics, err = listNodeMetrics(ctx, api, metav1.ListOptions{
 			LabelSelector: filter.LabelSelector,
 			FieldSelector: filter.FieldSelector,
 		})
@@ -73,4 +73,23 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 		result = append(result, metric)
 	}
 	return result, nil
+}
+
+func listNodeMetrics(
+	ctx context.Context,
+	api metricsv1beta1.MetricsV1beta1Interface,
+	opts metav1.ListOptions,
+) (*v1beta1.NodeMetricsList, error) {
+	result := &v1beta1.NodeMetricsList{}
+	for {
+		nodeMetrics, err := api.NodeMetricses().List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		result.Items = append(result.Items, nodeMetrics.Items...)
+		if nodeMetrics.Continue == "" {
+			return result, nil
+		}
+		opts.Continue = nodeMetrics.Continue
+	}
 }

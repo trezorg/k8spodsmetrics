@@ -4,6 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ktesting "k8s.io/client-go/testing"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metricsfake "k8s.io/metrics/pkg/client/clientset/versioned/fake"
 )
 
 func TestMetricFilter(t *testing.T) {
@@ -109,4 +116,66 @@ func TestPodMetricList(t *testing.T) {
 		}
 		require.Len(t, list, 2)
 	})
+}
+
+func TestListMetricsFollowsPagination(t *testing.T) {
+	ctx := t.Context()
+	client := metricsfake.NewSimpleClientset()
+	type listOptionsGetter interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "" {
+			return false, nil, nil
+		}
+
+		return true, &metricsv1beta1.PodMetricsList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []metricsv1beta1.PodMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+					Containers: []metricsv1beta1.ContainerMetrics{
+						{
+							Name: "app",
+							Usage: v1.ResourceList{
+								v1.ResourceCPU: resource.MustParse("100m"),
+							},
+						},
+					},
+				},
+			},
+		}, nil
+	})
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &metricsv1beta1.PodMetricsList{
+			Items: []metricsv1beta1.PodMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+					Containers: []metricsv1beta1.ContainerMetrics{
+						{
+							Name: "app",
+							Usage: v1.ResourceList{
+								v1.ResourceCPU: resource.MustParse("200m"),
+							},
+						},
+					},
+				},
+			},
+		}, nil
+	})
+
+	result, err := listMetrics(ctx, client.MetricsV1beta1(), MetricFilter{}, "default")
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Equal(t, "pod-1", result[0].Name)
+	require.Equal(t, "pod-2", result[1].Name)
 }

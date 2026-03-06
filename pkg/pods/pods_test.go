@@ -7,6 +7,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 func TestBuildFieldSelector(t *testing.T) {
@@ -177,4 +180,50 @@ func TestResourceStructs(t *testing.T) {
 		}
 		require.Len(t, list, 2)
 	})
+}
+
+func TestListPodsFollowsPagination(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewSimpleClientset()
+	type listOptionsGetter interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		require.Equal(t, "", listAction.GetListOptions().Continue)
+
+		return true, &v1.PodList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+					Spec:       v1.PodSpec{NodeName: "worker-1"},
+				},
+			},
+		}, nil
+	})
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &v1.PodList{
+			Items: []v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+					Spec:       v1.PodSpec{NodeName: "worker-2"},
+				},
+			},
+		}, nil
+	})
+
+	result, err := listPods(ctx, client.CoreV1(), PodFilter{}, "default")
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Equal(t, "pod-1", result[0].Name)
+	require.Equal(t, "pod-2", result[1].Name)
 }

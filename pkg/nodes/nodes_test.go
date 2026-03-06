@@ -7,7 +7,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 func TestNodes(t *testing.T) {
@@ -163,4 +165,66 @@ func TestNodes(t *testing.T) {
 		_, err := Nodes(ctx, client.CoreV1(), NodeFilter{}, "nonexistent-node")
 		require.Error(t, err)
 	})
+}
+
+func TestNodesFollowsPagination(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewSimpleClientset()
+	type listOptionsGetter interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "nodes", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "" {
+			return false, nil, nil
+		}
+
+		return true, &v1.NodeList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
+					Status: v1.NodeStatus{
+						Capacity: v1.ResourceList{
+							v1.ResourceCPU: resource.MustParse("4"),
+						},
+						Allocatable: v1.ResourceList{
+							v1.ResourceCPU: resource.MustParse("3"),
+						},
+					},
+				},
+			},
+		}, nil
+	})
+	client.PrependReactor("list", "nodes", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &v1.NodeList{
+			Items: []v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+					Status: v1.NodeStatus{
+						Capacity: v1.ResourceList{
+							v1.ResourceCPU: resource.MustParse("2"),
+						},
+						Allocatable: v1.ResourceList{
+							v1.ResourceCPU: resource.MustParse("1"),
+						},
+					},
+				},
+			},
+		}, nil
+	})
+
+	result, err := Nodes(ctx, client.CoreV1(), NodeFilter{}, "")
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Equal(t, "node-1", result[0].Name)
+	require.Equal(t, "node-2", result[1].Name)
 }
