@@ -9,6 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
 	"github.com/trezorg/k8spodsmetrics/pkg/pods"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	corefake "k8s.io/client-go/kubernetes/fake"
+	ktesting "k8s.io/client-go/testing"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metricsfake "k8s.io/metrics/pkg/client/clientset/versioned/fake"
 )
 
 func TestConfig(t *testing.T) {
@@ -165,4 +173,110 @@ func TestMerge(t *testing.T) {
 		require.NotContains(t, logs, `"level":"WARN"`)
 		require.Contains(t, logs, "Skipped unmatched pod metrics")
 	})
+}
+
+func TestFetchPodMetricsFollowsPagination(t *testing.T) {
+	ctx := t.Context()
+	coreClient := corefake.NewSimpleClientset()
+	metricsClient := metricsfake.NewSimpleClientset()
+
+	type listOptionsGetter interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	coreClient.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		require.Equal(t, "", listAction.GetListOptions().Continue)
+
+		return true, &v1.PodList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []v1.Pod{{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+				Spec: v1.PodSpec{
+					NodeName: "worker-1",
+					Containers: []v1.Container{{
+						Name: "app",
+						Resources: v1.ResourceRequirements{
+							Requests: v1.ResourceList{v1.ResourceCPU: resource.MustParse("100m")},
+						},
+					}},
+				},
+			}},
+		}, nil
+	})
+	coreClient.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &v1.PodList{
+			Items: []v1.Pod{{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+				Spec: v1.PodSpec{
+					NodeName: "worker-2",
+					Containers: []v1.Container{{
+						Name: "app",
+						Resources: v1.ResourceRequirements{
+							Requests: v1.ResourceList{v1.ResourceCPU: resource.MustParse("200m")},
+						},
+					}},
+				},
+			}},
+		}, nil
+	})
+
+	metricsClient.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		require.Equal(t, "", listAction.GetListOptions().Continue)
+
+		return true, &metricsv1beta1.PodMetricsList{
+			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Items: []metricsv1beta1.PodMetrics{{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+				Containers: []metricsv1beta1.ContainerMetrics{{
+					Name:  "app",
+					Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("150m")},
+				}},
+			}},
+		}, nil
+	})
+	metricsClient.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(listOptionsGetter)
+		require.True(t, ok)
+		if listAction.GetListOptions().Continue != "page-2" {
+			return false, nil, nil
+		}
+
+		return true, &metricsv1beta1.PodMetricsList{
+			Items: []metricsv1beta1.PodMetrics{{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+				Containers: []metricsv1beta1.ContainerMetrics{{
+					Name:  "app",
+					Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("250m")},
+				}},
+			}},
+		}, nil
+	})
+
+	result, err := FetchPodMetrics(ctx, NewPodRepository(), metricsClient.MetricsV1beta1(), coreClient.CoreV1(), FetchConfig{
+		Namespaces: []string{"default"},
+	})
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+
+	byName := make(map[string]PodMetricsResource, len(result))
+	for _, item := range result {
+		byName[item.Name] = item
+	}
+
+	require.Equal(t, int64(100), byName["pod-1"].PodResource.Containers[0].Requests.CPU)
+	require.Equal(t, int64(150), byName["pod-1"].PodMetric.Containers[0].CPU)
+	require.Equal(t, "worker-1", byName["pod-1"].NodeName)
+	require.Equal(t, int64(200), byName["pod-2"].PodResource.Containers[0].Requests.CPU)
+	require.Equal(t, int64(250), byName["pod-2"].PodMetric.Containers[0].CPU)
+	require.Equal(t, "worker-2", byName["pod-2"].NodeName)
 }
