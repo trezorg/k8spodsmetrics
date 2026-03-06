@@ -79,7 +79,7 @@ func (c *Config) Request(ctx context.Context) (PodMetricsResourceList, error) {
 	)
 }
 
-func (c *Config) Watch(ctx context.Context) chan WatchResponse {
+func (c *Config) Watch(ctx context.Context) <-chan WatchResponse {
 	return serviceorchestration.WatchWithRepo(
 		ctx,
 		c.KubeConfig,

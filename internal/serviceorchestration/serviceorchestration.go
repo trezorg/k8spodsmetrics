@@ -88,7 +88,7 @@ func WatchWithClients[T any](
 	timeout uint,
 	clientsFactory ClientsFactory,
 	request RequestFunc[T],
-) chan WatchResponse[T] {
+) <-chan WatchResponse[T] {
 	ch := make(chan WatchResponse[T], 1)
 	slog.Debug("Preparing client...")
 
@@ -155,7 +155,7 @@ func WatchWithRepo[T any, R any](
 	clientsFactory ClientsFactory,
 	repoFactory func() R,
 	request RepoRequestFunc[T, R],
-) chan WatchResponse[T] {
+) <-chan WatchResponse[T] {
 	repo := repoFactory()
 	requestWithRepo := func(
 		requestContext context.Context,
@@ -198,7 +198,7 @@ func ProcessRequest[T any](
 
 func ProcessWatch[T any](
 	prepare func() error,
-	watch func(context.Context) chan WatchResponse[T],
+	watch func(context.Context) <-chan WatchResponse[T],
 	successProcessor func(T),
 	errorProcessor func(error),
 ) error {
