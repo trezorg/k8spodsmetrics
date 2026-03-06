@@ -1,6 +1,6 @@
 module github.com/trezorg/k8spodsmetrics
 
-go 1.26
+go 1.26.1
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.7.8

@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.26.1"
           cache: true
 
       - name: Install Task
@@ -56,7 +56,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.26.1"
           cache: true
 
       - name: Install Task
@@ -78,11 +78,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.26.1"
           cache: true
 
       - name: Run Govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-version-input: "1.26"
+          go-version-input: "1.26.1"
           cache: true
