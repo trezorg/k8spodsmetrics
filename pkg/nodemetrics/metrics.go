@@ -57,7 +57,7 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 					metric.Memory = memory
 				}
 			case v1.ResourceCPU:
-				metric.CPU = int64(quantity.ToDec().AsApproximateFloat64() * 1000) //nolint:mnd // it is ok
+				metric.CPU = quantity.MilliValue()
 			case v1.ResourceStorage:
 				if storage, ok := quantity.AsInt64(); ok {
 					metric.Storage = storage
