@@ -3,9 +3,9 @@ package nodemetrics
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1" //nolint:revive // it is ok
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1" //nolint:revive // it is ok
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
 
