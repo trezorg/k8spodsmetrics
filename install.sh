@@ -11,9 +11,17 @@ INSTALL_DIR="${HOME}/bin"
 VERSION=""
 VERIFY_CHECKSUMS="false"
 NAME=k8spodsmetrics
-OS=$(uname -o | tr '[:upper:]' '[:lower:]')
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-OS="${OS##*/}"
+
+case "${OS}" in
+linux) OS="linux" ;;
+darwin) OS="darwin" ;;
+*)
+	echo "Unsupported operating system: ${OS}"
+	exit 1
+	;;
+esac
 
 case "${ARCH}" in
 x86_64) ARCH="amd64" ;;
