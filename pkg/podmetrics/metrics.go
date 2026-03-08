@@ -1,10 +1,10 @@
 package podmetrics
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
-	"sort"
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +52,6 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 	// Multiple namespaces: query each in parallel
 	var wg sync.WaitGroup
 
-	var errs error
 	rErrors := make([]error, len(filter.Namespaces))
 	metrics := make([]PodMetricList, len(filter.Namespaces))
 
@@ -64,14 +63,8 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 
 	wg.Wait()
 
-	for _, err := range rErrors {
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-	}
-
-	if errs != nil {
-		return nil, errs
+	if err := errors.Join(rErrors...); err != nil {
+		return nil, err
 	}
 
 	return slices.Concat(metrics...), nil
@@ -111,8 +104,8 @@ func listMetrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface
 				}
 				metric.Containers = append(metric.Containers, containerMetric)
 			}
-			sort.Slice(metric.Containers, func(i, j int) bool {
-				return metric.Containers[i].Name < metric.Containers[j].Name
+			slices.SortFunc(metric.Containers, func(a, b ContainerMetric) int {
+				return cmp.Compare(a.Name, b.Name)
 			})
 			result = append(result, metric)
 		}

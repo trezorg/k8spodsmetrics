@@ -132,16 +132,8 @@ func fetchPodMetricsForNamespace(
 
 	wg.Wait()
 
-	var rErr error
-
-	for _, err := range cErrors {
-		if err != nil {
-			rErr = errors.Join(rErr, err)
-		}
-	}
-
-	if rErr != nil {
-		return podMetricsResourceList, rErr
+	if err := errors.Join(cErrors...); err != nil {
+		return podMetricsResourceList, err
 	}
 
 	podMetricsResourceList = merge(podsList, metricsList)

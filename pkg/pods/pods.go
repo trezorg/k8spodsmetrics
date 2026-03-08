@@ -1,11 +1,11 @@
 package pods
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"sync"
 
 	v1 "k8s.io/api/core/v1" //nolint:revive // it is used
@@ -110,8 +110,8 @@ func convertPodToResource(pod v1.Pod) PodResource {
 		containers = append(containers, extractContainerResources(container))
 	}
 
-	sort.Slice(containers, func(i, j int) bool {
-		return containers[i].Name < containers[j].Name
+	slices.SortFunc(containers, func(a, b ContainerResource) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	podResource.Containers = containers
@@ -140,7 +140,6 @@ func Pods(
 	// Multiple namespaces: query each in parallel
 	var wg sync.WaitGroup
 
-	var errs error
 	rErrors := make([]error, len(filter.Namespaces))
 	pods := make([]PodResourceList, len(filter.Namespaces))
 
@@ -152,14 +151,8 @@ func Pods(
 
 	wg.Wait()
 
-	for _, err := range rErrors {
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-	}
-
-	if errs != nil {
-		return nil, errs
+	if err := errors.Join(rErrors...); err != nil {
+		return nil, err
 	}
 
 	return slices.Concat(pods...), nil
@@ -178,7 +171,6 @@ func podsForNamespace(
 
 	var wg sync.WaitGroup
 
-	var errs error
 	rErrors := make([]error, len(nodeNames))
 	pods := make([]PodResourceList, len(nodeNames))
 
@@ -192,14 +184,8 @@ func podsForNamespace(
 
 	wg.Wait()
 
-	for _, err := range rErrors {
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-	}
-
-	if errs != nil {
-		return nil, errs
+	if err := errors.Join(rErrors...); err != nil {
+		return nil, err
 	}
 
 	return slices.Concat(pods...), nil
