@@ -48,13 +48,11 @@ require (
 	github.com/aditya43/clear-shell-screen-golang v0.0.0-20200419021057-6fa7bb4a928b
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/snugfox/ansi-escapes v0.2.1-0.20201222033053-82a0109803f0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
-	golang.org/x/exp v0.0.0-20230108222341-4b8118a2686a
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

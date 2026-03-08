@@ -1,6 +1,8 @@
 package client
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,10 +21,12 @@ func TestFindKubeConfig(t *testing.T) {
 
 	t.Run("default path", func(t *testing.T) {
 		t.Setenv("KUBECONFIG", "")
+		homeDir, err := os.UserHomeDir()
+		require.NoError(t, err)
 
 		path, err := FindKubeConfig()
 		require.NoError(t, err)
-		require.Contains(t, path, ".kube/config")
+		require.Equal(t, filepath.Join(homeDir, ".kube", "config"), path)
 	})
 }
 

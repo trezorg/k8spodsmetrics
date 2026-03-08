@@ -3,9 +3,9 @@ package client
 import (
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strconv"
 
-	"github.com/mitchellh/go-homedir"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
@@ -141,9 +141,9 @@ func FindKubeConfig() (string, error) {
 	if env != "" {
 		return env, nil
 	}
-	path, err := homedir.Expand("~/.kube/config")
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return path, nil
+	return filepath.Join(homeDir, ".kube", "config"), nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -36,6 +37,21 @@ func durationFromSeconds(seconds uint, field string) (time.Duration, error) {
 	}
 
 	return time.Duration(seconds) * time.Second, nil
+}
+
+func withSignalCause(parent context.Context, signals chan os.Signal) (context.Context, context.CancelCauseFunc) {
+	ctx, cancel := context.WithCancelCause(parent)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-signals:
+			signal.Stop(signals)
+			cancel(ErrSignalCanceled)
+		}
+	}()
+
+	return ctx, cancel
 }
 
 func RequestWithClients[T any](
@@ -181,9 +197,11 @@ func WatchWithRepo[T any, R any](
 }
 
 func RunWithPreparedContext(prepare func() error, run func(context.Context) error) error {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	ctx, cancel := context.WithCancelCause(ctx)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+
+	ctx, cancel := withSignalCause(context.Background(), signals)
 	defer cancel(nil)
 
 	if err := prepare(); err != nil {

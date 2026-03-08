@@ -3,6 +3,8 @@ package serviceorchestration
 import (
 	"context"
 	"errors"
+	"os"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -135,4 +137,15 @@ func TestRunWithPreparedContext(t *testing.T) {
 
 		require.NoError(t, err)
 	})
+}
+
+func TestWithSignalCause(t *testing.T) {
+	signals := make(chan os.Signal, 1)
+	ctx, cancel := withSignalCause(t.Context(), signals)
+	defer cancel(nil)
+
+	signals <- syscall.SIGTERM
+
+	<-ctx.Done()
+	require.ErrorIs(t, context.Cause(ctx), ErrSignalCanceled)
 }
