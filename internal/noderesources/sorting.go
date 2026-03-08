@@ -1,225 +1,107 @@
 package noderesources
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 
 	"github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
 )
 
-func reverse(less func(i, j int) bool) func(i, j int) bool {
-	return func(i, j int) bool {
-		return less(j, i)
+func direction(reversed bool, result int) int {
+	if reversed {
+		return -result
 	}
+	return result
+}
+
+func sortBy[T cmp.Ordered](n NodeResourceList, reversed bool, field func(NodeResource) T) {
+	slices.SortFunc(n, func(a, b NodeResource) int {
+		return direction(reversed, cmp.Compare(field(a), field(b)))
+	})
 }
 
 func (n NodeResourceList) sortByName(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].Name < n[j].Name
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) string { return resource.Name })
 }
 
 func (n NodeResourceList) sortRequestCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].CPURequest < n[j].CPURequest
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.CPURequest })
 }
 
 func (n NodeResourceList) sortLimitCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].CPULimit < n[j].CPULimit
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.CPULimit })
 }
 
 func (n NodeResourceList) sortUsedCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].UsedCPU < n[j].UsedCPU
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.UsedCPU })
 }
 
 func (n NodeResourceList) sortAvailableCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].AvailableCPU < n[j].AvailableCPU
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.AvailableCPU })
 }
 
 func (n NodeResourceList) sortFreeCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].FreeCPU < n[j].FreeCPU
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.FreeCPU })
 }
 
 func (n NodeResourceList) sortCPU(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].CPU < n[j].CPU
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.CPU })
 }
 
 func (n NodeResourceList) sortRequestMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].MemoryRequest < n[j].MemoryRequest
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.MemoryRequest })
 }
 
 func (n NodeResourceList) sortLimitMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].MemoryLimit < n[j].MemoryLimit
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.MemoryLimit })
 }
 
 func (n NodeResourceList) sortUsedMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].UsedMemory < n[j].UsedMemory
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.UsedMemory })
 }
 
 func (n NodeResourceList) sortAvailableMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].AvailableMemory < n[j].AvailableMemory
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.AvailableMemory })
 }
 
 func (n NodeResourceList) sortFreeMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].FreeMemory < n[j].FreeMemory
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.FreeMemory })
 }
 
 func (n NodeResourceList) sortMemory(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].Memory < n[j].Memory
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.Memory })
 }
 
 func (n NodeResourceList) sortStorage(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].Storage < n[j].Storage
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.Storage })
 }
 
 func (n NodeResourceList) sortStorageEphemeral(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].StorageEphemeral < n[j].StorageEphemeral
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.StorageEphemeral })
 }
 
 func (n NodeResourceList) sortAvailableStorage(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].AllocatableStorage < n[j].AllocatableStorage
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.AllocatableStorage })
 }
 
 func (n NodeResourceList) sortAvailableStorageEphemeral(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].AllocatableStorageEphemeral < n[j].AllocatableStorageEphemeral
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.AllocatableStorageEphemeral })
 }
 
 func (n NodeResourceList) sortUsedStorageEphemeral(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].UsedStorageEphemeral < n[j].UsedStorageEphemeral
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.UsedStorageEphemeral })
 }
 
 func (n NodeResourceList) sortUsedStorage(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].UsedStorage < n[j].UsedStorage
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.UsedStorage })
 }
 
 func (n NodeResourceList) sortFreeStorage(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].FreeStorage < n[j].FreeStorage
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.FreeStorage })
 }
 
 func (n NodeResourceList) sortFreeStorageEphemeral(reversed bool) {
-	less := func(i, j int) bool {
-		return n[i].FreeStorageEphemeral < n[j].FreeStorageEphemeral
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.Slice(n, less)
+	sortBy(n, reversed, func(resource NodeResource) int64 { return resource.FreeStorageEphemeral })
 }
 
 func (n NodeResourceList) sort(by string, reversed bool) { //nolint:revive // it is ok

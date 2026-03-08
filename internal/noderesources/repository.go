@@ -104,16 +104,8 @@ func FetchNodeMetrics(
 
 	wg.Wait()
 
-	var rErr error
-
-	for _, err := range cErrors {
-		if err != nil {
-			rErr = errors.Join(rErr, err)
-		}
-	}
-
-	if rErr != nil {
-		return nodeResources, rErr
+	if err := errors.Join(cErrors...); err != nil {
+		return nodeResources, err
 	}
 
 	nodeResources = merge(podsList, nodesList, nodeMetricsList)

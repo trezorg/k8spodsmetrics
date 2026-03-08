@@ -30,6 +30,14 @@ var (
 	ErrRequestTimeout = errors.New("request timed out")
 )
 
+func durationFromSeconds(seconds uint, field string) (time.Duration, error) {
+	if seconds > uint(math.MaxInt64/int64(time.Second)) {
+		return 0, fmt.Errorf("%s is too large: %d", field, seconds)
+	}
+
+	return time.Duration(seconds) * time.Second, nil
+}
+
 func RequestWithClients[T any](
 	ctx context.Context,
 	kubeConfig string,
@@ -41,10 +49,10 @@ func RequestWithClients[T any](
 	var zero T
 
 	if timeout > 0 {
-		if timeout > uint(math.MaxInt64/int64(time.Second)) {
-			return zero, fmt.Errorf("timeout is too large: %d", timeout)
+		timeoutDuration, err := durationFromSeconds(timeout, "timeout")
+		if err != nil {
+			return zero, err
 		}
-		timeoutDuration := time.Duration(int64(timeout)) * time.Second
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeoutCause(ctx, timeoutDuration, ErrRequestTimeout)
 		defer cancel()
@@ -95,7 +103,11 @@ func WatchWithClients[T any](
 	go func() {
 		defer close(ch)
 
-		watchPeriod := time.Duration(watchPeriodSeconds) * time.Second //nolint:gosec // uint to int64 is safe for realistic watch periods
+		watchPeriod, err := durationFromSeconds(watchPeriodSeconds, "watch period")
+		if err != nil {
+			ch <- WatchResponse[T]{Error: err}
+			return
+		}
 
 		metricsClient, coreClient, err := clientsFactory(kubeConfig, kubeContext)
 		if err != nil {
@@ -105,11 +117,11 @@ func WatchWithClients[T any](
 
 		var timeoutDuration time.Duration
 		if timeout > 0 {
-			if timeout > uint(math.MaxInt64/int64(time.Second)) {
-				ch <- WatchResponse[T]{Error: fmt.Errorf("timeout is too large: %d", timeout)}
+			timeoutDuration, err = durationFromSeconds(timeout, "timeout")
+			if err != nil {
+				ch <- WatchResponse[T]{Error: err}
 				return
 			}
-			timeoutDuration = time.Duration(int64(timeout)) * time.Second
 		}
 
 		produce := func() {

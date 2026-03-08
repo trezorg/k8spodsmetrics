@@ -92,27 +92,11 @@ func FetchPodMetrics(
 
 	wg.Wait()
 
-	var rErr error
-	for _, err := range rErrors {
-		if err != nil {
-			rErr = errors.Join(rErr, err)
-		}
+	if err := errors.Join(rErrors...); err != nil {
+		return nil, err
 	}
 
-	if rErr != nil {
-		return nil, rErr
-	}
-
-	// Merge results from all namespaces
-	resultLen := 0
-	for _, r := range results {
-		resultLen += len(r)
-	}
-	merged := make(PodMetricsResourceList, 0, resultLen)
-	for _, r := range results {
-		merged = append(merged, r...)
-	}
-	return merged, nil
+	return slices.Concat(results...), nil
 }
 
 func fetchPodMetricsForNamespace(

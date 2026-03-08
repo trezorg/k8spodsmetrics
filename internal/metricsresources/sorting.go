@@ -1,7 +1,8 @@
 package metricsresources
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 
 	"github.com/trezorg/k8spodsmetrics/internal/sorting/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/pkg/podmetrics"
@@ -12,6 +13,13 @@ func reverse(less func(i, j int) bool) func(i, j int) bool {
 	return func(i, j int) bool {
 		return less(j, i)
 	}
+}
+
+func direction(reversed bool, result int) int {
+	if reversed {
+		return -result
+	}
+	return result
 }
 
 func cpuRequest(containers []pods.ContainerResource) int64 {
@@ -79,39 +87,24 @@ func storageEphemeralUsed(containers []podmetrics.ContainerMetric) int64 {
 }
 
 func (r PodMetricsResourceList) sortByNamespace(reversed bool) {
-	less := func(i, j int) bool {
-		if r[i].PodResource.Namespace < r[j].PodResource.Namespace {
-			return true
-		}
-		if r[i].PodResource.Namespace > r[j].PodResource.Namespace {
-			return false
-		}
-		return r[i].PodResource.Name < r[j].PodResource.Name
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.SliceStable(r, less)
+	slices.SortStableFunc(r, func(a, b PodMetricsResource) int {
+		return direction(reversed, cmp.Or(
+			cmp.Compare(a.PodResource.Namespace, b.PodResource.Namespace),
+			cmp.Compare(a.PodResource.Name, b.PodResource.Name),
+		))
+	})
 }
 
 func (r PodMetricsResourceList) sortByName(reversed bool) {
-	less := func(i, j int) bool {
-		return r[i].PodResource.Name < r[j].PodResource.Name
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.SliceStable(r, less)
+	slices.SortStableFunc(r, func(a, b PodMetricsResource) int {
+		return direction(reversed, cmp.Compare(a.PodResource.Name, b.PodResource.Name))
+	})
 }
 
 func (r PodMetricsResourceList) sortByNode(reversed bool) {
-	less := func(i, j int) bool {
-		return r[i].NodeName < r[j].NodeName
-	}
-	if reversed {
-		less = reverse(less)
-	}
-	sort.SliceStable(r, less)
+	slices.SortStableFunc(r, func(a, b PodMetricsResource) int {
+		return direction(reversed, cmp.Compare(a.NodeName, b.NodeName))
+	})
 }
 
 func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.ContainerResource) int64) {
@@ -126,11 +119,8 @@ func (r PodMetricsResourceList) sortPodResource(reversed bool, f func([]pods.Con
 			key:      f(r[i].PodResource.Containers),
 		}
 	}
-	sort.SliceStable(items, func(i, j int) bool {
-		if reversed {
-			return items[j].key < items[i].key
-		}
-		return items[i].key < items[j].key
+	slices.SortStableFunc(items, func(a, b sortItem) int {
+		return direction(reversed, cmp.Compare(a.key, b.key))
 	})
 	for i := range items {
 		r[i] = items[i].resource
@@ -149,11 +139,8 @@ func (r PodMetricsResourceList) sortPodMetric(reversed bool, f func([]podmetrics
 			key:      f(r[i].PodMetric.Containers),
 		}
 	}
-	sort.SliceStable(items, func(i, j int) bool {
-		if reversed {
-			return items[j].key < items[i].key
-		}
-		return items[i].key < items[j].key
+	slices.SortStableFunc(items, func(a, b sortItem) int {
+		return direction(reversed, cmp.Compare(a.key, b.key))
 	})
 	for i := range items {
 		r[i] = items[i].resource
