@@ -61,6 +61,17 @@ func TestCommonConfigValidate(t *testing.T) {
 
 		require.ErrorContains(t, cfg.Validate(), "alert should be one of")
 	})
+
+	t.Run("invalid table view", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      "table",
+			TableView:   "invalid",
+			Alert:       "none",
+			WatchPeriod: 5,
+		}
+
+		require.ErrorContains(t, cfg.Validate(), "table view should be one of")
+	})
 }
 
 func TestPodConfigValidate(t *testing.T) {

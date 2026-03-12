@@ -35,6 +35,22 @@ func TestNewAppRunConfigRegression(t *testing.T) {
 		require.ErrorContains(t, err, "output should be one of")
 	})
 
+	t.Run("invalid table view surfaces through app", func(t *testing.T) {
+		configPath := writeConfigFile(t, "common:\n  table-view: invalid\nsummary:\n  sorting: name\n")
+
+		err := runApp(t, "--config", configPath, "summary")
+
+		require.ErrorContains(t, err, "table view should be one of")
+	})
+
+	t.Run("file table view is used when flag is omitted", func(t *testing.T) {
+		configPath := writeConfigFile(t, "common:\n  output: table\n  table-view: invalid\nsummary:\n  sorting: name\n")
+
+		err := runApp(t, "--config", configPath, "summary")
+
+		require.ErrorContains(t, err, "table view should be one of")
+	})
+
 	t.Run("file sorting is used when sorting flag is omitted", func(t *testing.T) {
 		configPath := writeConfigFile(t, "summary:\n  sorting: invalid\n")
 
@@ -52,7 +68,7 @@ func TestNewAppRunConfigRegression(t *testing.T) {
 	})
 
 	t.Run("file columns are used when columns flag is omitted", func(t *testing.T) {
-		configPath := writeConfigFile(t, "common:\n  columns:\n    - invalid\nsummary:\n  sorting: name\n")
+		configPath := writeConfigFile(t, "common:\n  output: table\n  columns:\n    - invalid\nsummary:\n  sorting: name\n")
 
 		err := runApp(t, "--config", configPath, "summary")
 
@@ -78,6 +94,25 @@ func TestNewAppRunConfigRegression(t *testing.T) {
 		require.NotContains(t, err.Error(), "sorting should be one of")
 	})
 
+	t.Run("explicit table view overrides invalid file table view", func(t *testing.T) {
+		configPath := writeConfigFile(t, "common:\n  output: table\n  table-view: invalid\nsummary:\n  sorting: name\n")
+		missingKubeconfigPath := filepath.Join(t.TempDir(), "missing-kubeconfig")
+
+		err := runApp(
+			t,
+			"--config", configPath,
+			"--output", "table",
+			"--table-view", "compact",
+			"--kubeconfig", missingKubeconfigPath,
+			"summary",
+			"--sorting", "name",
+		)
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, missingKubeconfigPath)
+		require.NotContains(t, err.Error(), "table view should be one of")
+	})
+
 	t.Run("explicit watch false beats file watch true and reaches kubeconfig error", func(t *testing.T) {
 		configPath := writeConfigFile(t, "common:\n  watch: true\n")
 		missingKubeconfigPath := filepath.Join(t.TempDir(), "missing-kubeconfig")
@@ -94,6 +129,33 @@ func TestNewAppRunConfigRegression(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorContains(t, err, missingKubeconfigPath)
 		require.NotContains(t, err.Error(), "watch period must be greater than 0")
+	})
+
+	t.Run("columns are rejected for compact table view", func(t *testing.T) {
+		err := runApp(
+			t,
+			"--output", "table",
+			"--table-view", "compact",
+			"--columns", "used",
+			"summary",
+		)
+
+		require.ErrorContains(t, err, "--columns is only supported with --table-view expanded")
+	})
+
+	t.Run("columns imply expanded when table view is not explicitly set", func(t *testing.T) {
+		missingKubeconfigPath := filepath.Join(t.TempDir(), "missing-kubeconfig")
+		err := runApp(
+			t,
+			"--output", "table",
+			"--columns", "used",
+			"--kubeconfig", missingKubeconfigPath,
+			"summary",
+		)
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, missingKubeconfigPath)
+		require.NotContains(t, err.Error(), "--columns is only supported with --table-view expanded")
 	})
 }
 

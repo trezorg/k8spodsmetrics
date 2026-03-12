@@ -2,6 +2,7 @@ package noderesources
 
 import (
 	"fmt"
+	"strings"
 
 	escapes "github.com/snugfox/ansi-escapes"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
@@ -256,4 +257,52 @@ func (f Formatter) StorageUsedEphemeralString() string {
 		humanize.Bytes(f.resource.UsedStorageEphemeral),
 		usedStorageEndColor,
 	)
+}
+
+func (f Formatter) CPUCapacityCompactString() string {
+	return compactTriple(
+		fmt.Sprintf("%d", f.resource.AllocatableCPU),
+		fmt.Sprintf("%d", f.resource.UsedCPU),
+		f.CPUFreeString(),
+	)
+}
+
+func (f Formatter) CPUDemandCompactString() string {
+	return compactPair(f.CPURequestString(), f.CPULimitString())
+}
+
+func (f Formatter) MemoryCapacityCompactString() string {
+	return compactTriple(
+		f.MemoryNodeAllocatableString(),
+		f.MemoryNodeUsedString(),
+		f.MemoryFreeString(),
+	)
+}
+
+func (f Formatter) MemoryDemandCompactString() string {
+	return compactPair(f.MemoryRequestString(), f.MemoryLimitString())
+}
+
+func (f Formatter) StorageCapacityCompactString() string {
+	return compactTriple(
+		f.StorageAllocatableString(),
+		f.StorageUsedString(),
+		f.StorageFreeString(),
+	)
+}
+
+func (f Formatter) StorageEphemeralCapacityCompactString() string {
+	return compactTriple(
+		f.StorageAllocatableEphemeralString(),
+		f.StorageUsedEphemeralString(),
+		f.StorageFreeEphemeralString(),
+	)
+}
+
+func compactTriple(first, second, third string) string {
+	return strings.Join([]string{first, second, third}, "/")
+}
+
+func compactPair(first, second string) string {
+	return strings.Join([]string{first, second}, "/")
 }

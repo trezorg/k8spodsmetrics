@@ -1,10 +1,13 @@
 package stdin
 
 import (
+	"fmt"
+
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	nodestable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
+	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 	"github.com/urfave/cli/v2"
 )
 
@@ -14,6 +17,7 @@ type actionFlags struct {
 	watchPeriodSet bool
 	timeoutSet     bool
 	outputSet      bool
+	tableViewSet   bool
 	alertSet       bool
 	columnsSet     bool
 	sortingSet     bool
@@ -36,6 +40,7 @@ func parseActionFlags(c *cli.Context) actionFlags {
 		watchPeriodSet: c.IsSet("watch-period"),
 		timeoutSet:     c.IsSet("timeout"),
 		outputSet:      c.IsSet("output"),
+		tableViewSet:   c.IsSet("table-view"),
 		alertSet:       c.IsSet("alert"),
 		columnsSet:     c.IsSet("columns"),
 		sortingSet:     c.IsSet("sorting"),
@@ -52,6 +57,9 @@ func resolveCommonConfig(cfg commonConfig, flags actionFlags) commonConfig {
 	if !flags.alertSet {
 		mergeCandidate.Alert = ""
 	}
+	if !flags.tableViewSet {
+		mergeCandidate.TableView = ""
+	}
 	if !flags.watchPeriodSet {
 		mergeCandidate.WatchPeriod = 0
 	}
@@ -66,6 +74,12 @@ func resolveCommonConfig(cfg commonConfig, flags actionFlags) commonConfig {
 	if mergedCommon.Alert == "" {
 		mergedCommon.Alert = "none"
 	}
+	if mergedCommon.TableView == "" && (flags.columnsSet || len(mergedCommon.Columns) > 0) {
+		mergedCommon.TableView = string(tableview.Expanded)
+	}
+	if mergedCommon.TableView == "" {
+		mergedCommon.TableView = string(tableview.Compact)
+	}
 	if mergedCommon.WatchPeriod == 0 {
 		mergedCommon.WatchPeriod = defaultWatchPeriodSeconds
 	}
@@ -75,6 +89,7 @@ func resolveCommonConfig(cfg commonConfig, flags actionFlags) commonConfig {
 		KubeConfig:   mergedCommon.KubeConfig,
 		KubeContext:  mergedCommon.KubeContext,
 		Output:       mergedCommon.Output,
+		TableView:    mergedCommon.TableView,
 		Alert:        mergedCommon.Alert,
 		WatchPeriod:  mergedCommon.WatchPeriod,
 		WatchMetrics: mergedCommon.WatchMetrics,
@@ -92,6 +107,13 @@ func mergedResources(cliResources []string, configResources []string) []string {
 		return []string{"all"}
 	}
 	return cliResources
+}
+
+func validateTableViewColumns(view tableview.View, cols []string) error {
+	if view == tableview.Compact && len(cols) > 0 {
+		return fmt.Errorf("--columns is only supported with --table-view %s", tableview.Expanded)
+	}
+	return nil
 }
 
 func resolveSummaryActionConfig(c *cli.Context, cfg commonConfig) summaryConfig {
@@ -180,6 +202,9 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	}
 
 	outputResources := resources.FromStrings(summaryActionConfig.Resources...)
+	if err := validateTableViewColumns(tableview.View(summaryActionConfig.TableView), summaryActionConfig.Columns); err != nil {
+		return err
+	}
 	nodeCols, err := parseColumnsForOutput(
 		output.Output(summaryActionConfig.Output),
 		summaryActionConfig.Columns,
@@ -191,9 +216,23 @@ func runSummaryAction(c *cli.Context, cfg commonConfig) error {
 	}
 
 	summaryCfg := nodeResourcesConfig(summaryActionConfig)
-	outputProcessor := summaryOutputProcessor(output.Output(summaryActionConfig.Output), outputResources, nodeCols)
+	outputProcessor := summaryOutputProcessor(
+		output.Output(summaryActionConfig.Output),
+		tableview.View(summaryActionConfig.TableView),
+		outputResources,
+		nodeCols,
+	)
 	if summaryActionConfig.WatchMetrics {
-		return summaryWatch(&summaryCfg, summaryWatchRenderer(output.Output(summaryActionConfig.Output), outputResources, nodeCols), outputProcessor)
+		return summaryWatch(
+			&summaryCfg,
+			summaryWatchRenderer(
+				output.Output(summaryActionConfig.Output),
+				tableview.View(summaryActionConfig.TableView),
+				outputResources,
+				nodeCols,
+			),
+			outputProcessor,
+		)
 	}
 
 	return summary(&summaryCfg, outputProcessor)
@@ -207,6 +246,9 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	}
 
 	outputResources := resources.FromStrings(podActionConfig.Resources...)
+	if err := validateTableViewColumns(tableview.View(podActionConfig.TableView), podActionConfig.Columns); err != nil {
+		return err
+	}
 	podCols, err := parseColumnsForOutput(
 		output.Output(podActionConfig.Output),
 		podActionConfig.Columns,
@@ -218,9 +260,23 @@ func runPodsAction(c *cli.Context, cfg commonConfig) error {
 	}
 
 	podCfg := metricsResourcesConfig(podActionConfig)
-	outputProcessor := podsOutputProcessor(output.Output(podActionConfig.Output), outputResources, podCols)
+	outputProcessor := podsOutputProcessor(
+		output.Output(podActionConfig.Output),
+		tableview.View(podActionConfig.TableView),
+		outputResources,
+		podCols,
+	)
 	if podActionConfig.WatchMetrics {
-		return podsWatch(&podCfg, podsWatchRenderer(output.Output(podActionConfig.Output), outputResources, podCols), outputProcessor)
+		return podsWatch(
+			&podCfg,
+			podsWatchRenderer(
+				output.Output(podActionConfig.Output),
+				tableview.View(podActionConfig.TableView),
+				outputResources,
+				podCols,
+			),
+			outputProcessor,
+		)
 	}
 
 	return pods(&podCfg, outputProcessor)

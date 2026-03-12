@@ -5,6 +5,7 @@ import (
 
 	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
+	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 	"github.com/urfave/cli/v2"
 )
 
@@ -83,9 +84,23 @@ func commonFlags(config *commonConfig) []cli.Flag {
 				return nil
 			},
 		},
+		&cli.StringFlag{
+			Name:        "table-view",
+			Value:       string(tableview.Compact),
+			Usage:       fmt.Sprintf("Table view. [%s]", tableview.StringListDefault()),
+			Destination: &config.TableView,
+			Action: func(_ *cli.Context, value string) error {
+				if err := tableview.Valid(tableview.View(value)); err != nil {
+					return err
+				}
+				config.TableView = value
+				return nil
+			},
+		},
 		&cli.StringSliceFlag{
-			Name:  "columns",
-			Usage: "Table columns to display (table output only). Nodes: [total|allocatable|used|request|limit|available|free], Pods: [request|limit|used]",
+			Name: "columns",
+			Usage: "Table columns to display (table output only, implies --table-view expanded). " +
+				"Nodes: [total|allocatable|used|request|limit|available|free], Pods: [request|limit|used]",
 		},
 		&cli.UintFlag{
 			Name:        "timeout",

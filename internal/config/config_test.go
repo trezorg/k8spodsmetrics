@@ -15,6 +15,7 @@ common:
   kubeconfig: /path/to/kubeconfig
   context: my-context
   output: json
+  table-view: compact
   alert: cpu
   watch-period: 10
   watch: true
@@ -49,6 +50,7 @@ summary:
 		require.Equal(t, "/path/to/kubeconfig", cfg.Common.KubeConfig)
 		require.Equal(t, "my-context", cfg.Common.KubeContext)
 		require.Equal(t, "json", cfg.Common.Output)
+		require.Equal(t, "compact", cfg.Common.TableView)
 		require.Equal(t, "cpu", cfg.Common.Alert)
 		require.Equal(t, uint(10), cfg.Common.WatchPeriod)
 		require.True(t, cfg.Common.WatchMetrics)
@@ -124,6 +126,7 @@ func TestMergeCommon(t *testing.T) {
 				KubeConfig:   "/path/to/kubeconfig",
 				KubeContext:  "my-context",
 				Output:       "json",
+				TableView:    "compact",
 				Alert:        "cpu",
 				WatchPeriod:  10,
 				WatchMetrics: true,
@@ -136,6 +139,7 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "/path/to/kubeconfig", common.KubeConfig)
 		require.Equal(t, "my-context", common.KubeContext)
 		require.Equal(t, "json", common.Output)
+		require.Equal(t, "compact", common.TableView)
 		require.Equal(t, "cpu", common.Alert)
 		require.Equal(t, uint(10), common.WatchPeriod)
 		require.True(t, common.WatchMetrics)
@@ -148,6 +152,7 @@ func TestMergeCommon(t *testing.T) {
 				KubeConfig:  "/file/kubeconfig",
 				KubeContext: "file-context",
 				Output:      "yaml",
+				TableView:   "compact",
 				Alert:       "memory",
 				WatchPeriod: 5,
 				Timeout:     20,
@@ -157,6 +162,7 @@ func TestMergeCommon(t *testing.T) {
 			KubeConfig:  "/cli/kubeconfig",
 			KubeContext: "cli-context",
 			Output:      "json",
+			TableView:   "expanded",
 			Alert:       "cpu",
 			WatchPeriod: 15,
 			Timeout:     10,
@@ -166,6 +172,7 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "/cli/kubeconfig", common.KubeConfig)
 		require.Equal(t, "cli-context", common.KubeContext)
 		require.Equal(t, "json", common.Output)
+		require.Equal(t, "expanded", common.TableView)
 		require.Equal(t, "cpu", common.Alert)
 		require.Equal(t, uint(15), common.WatchPeriod)
 		require.Equal(t, uint(10), common.Timeout)
@@ -194,6 +201,7 @@ func TestMergeCommon(t *testing.T) {
 				KubeConfig:  "/file/kubeconfig",
 				KubeContext: "file-context",
 				Output:      "",
+				TableView:   "compact",
 				Alert:       "",
 			},
 		}
@@ -206,6 +214,23 @@ func TestMergeCommon(t *testing.T) {
 		require.Equal(t, "/file/kubeconfig", common.KubeConfig)
 		require.Equal(t, "file-context", common.KubeContext)
 		require.Equal(t, "json", common.Output)
+		require.Equal(t, "compact", common.TableView)
+	})
+
+	t.Run("merges table view from file", func(t *testing.T) {
+		fileConfig := &Config{Common: Common{TableView: "compact"}}
+		common := &Common{}
+
+		fileConfig.MergeCommon(common)
+		require.Equal(t, "compact", common.TableView)
+	})
+
+	t.Run("cli table view takes precedence", func(t *testing.T) {
+		fileConfig := &Config{Common: Common{TableView: "compact"}}
+		common := &Common{TableView: "expanded"}
+
+		fileConfig.MergeCommon(common)
+		require.Equal(t, "expanded", common.TableView)
 	})
 }
 

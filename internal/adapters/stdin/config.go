@@ -10,6 +10,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
 	metricssorting "github.com/trezorg/k8spodsmetrics/internal/sorting/metricsresources"
 	nodesorting "github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
+	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 )
 
 func (c *commonConfig) Validate() error {
@@ -17,6 +18,13 @@ func (c *commonConfig) Validate() error {
 		return errors.New("watch period must be greater than 0")
 	}
 	if err := output.Valid(output.Output(c.Output)); err != nil {
+		return err
+	}
+	view := tableview.View(c.TableView)
+	if view == "" {
+		view = tableview.Compact
+	}
+	if err := tableview.Valid(view); err != nil {
 		return err
 	}
 	return alert.Valid(alert.Alert(c.Alert))

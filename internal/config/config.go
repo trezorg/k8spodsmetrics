@@ -58,6 +58,7 @@ type Common struct {
 	KubeConfig   string   `yaml:"kubeconfig"`
 	KubeContext  string   `yaml:"context"`
 	Output       string   `yaml:"output"`
+	TableView    string   `yaml:"table-view"`
 	Alert        string   `yaml:"alert"`
 	WatchPeriod  uint     `yaml:"watch-period"`
 	WatchMetrics bool     `yaml:"watch"`
@@ -138,6 +139,9 @@ func (c *Config) MergeCommon(common *Common) {
 	}
 	if common.Output == "" && c.Common.Output != "" {
 		common.Output = c.Common.Output
+	}
+	if common.TableView == "" && c.Common.TableView != "" {
+		common.TableView = c.Common.TableView
 	}
 	if common.Alert == "" && c.Common.Alert != "" {
 		common.Alert = c.Common.Alert

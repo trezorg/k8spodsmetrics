@@ -7,10 +7,19 @@ import (
 	"log/slog"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	formatmetricsresources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
+)
+
+const (
+	expandedPodColumnContainer = 1
+	expandedPodColumnNamespace = 2
+	expandedPodColumnNode      = 3
+	expandedPodFirstMetricCol  = 4
+	expandedPodMaxMetricCol    = 15
 )
 
 type Table func(list metricsresources.PodMetricsResourceList)
@@ -341,6 +350,7 @@ func PrintTo(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(w)
+	configureExpandedTable(t)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod/Container", "Namespace", "Node"), rowConfigAutoMerge)
 	t.AppendHeader(cs.secondaryHeaderRow(outputResources))
@@ -385,6 +395,43 @@ func PrintTo(
 	// Add footer with totals
 	t.AppendFooter(cs.totalRow(outputResources, total), rowConfigAutoMerge)
 	t.Render()
+}
+
+func configureExpandedTable(t table.Writer) {
+	applyTableStyle(t)
+	t.SetColumnConfigs(expandedColumnConfigs())
+}
+
+func expandedColumnConfigs() []table.ColumnConfig {
+	configs := []table.ColumnConfig{
+		{
+			Number:      expandedPodColumnContainer,
+			Align:       text.AlignLeft,
+			AlignHeader: text.AlignLeft,
+			AlignFooter: text.AlignLeft,
+		},
+		{
+			Number:      expandedPodColumnNamespace,
+			Align:       text.AlignLeft,
+			AlignHeader: text.AlignLeft,
+			AlignFooter: text.AlignLeft,
+		},
+		{
+			Number:      expandedPodColumnNode,
+			Align:       text.AlignLeft,
+			AlignHeader: text.AlignLeft,
+			AlignFooter: text.AlignLeft,
+		},
+	}
+	for number := expandedPodFirstMetricCol; number <= expandedPodMaxMetricCol; number++ {
+		configs = append(configs, table.ColumnConfig{
+			Number:      number,
+			Align:       text.AlignRight,
+			AlignHeader: text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+	return configs
 }
 
 func (s Table) Success(list metricsresources.PodMetricsResourceList) {
