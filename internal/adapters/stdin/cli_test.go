@@ -180,6 +180,57 @@ func TestApplyCommonConfig(t *testing.T) {
 	})
 }
 
+func TestResolveCommonConfig(t *testing.T) {
+	t.Run("uses file-backed defaults when flags are omitted", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      string(output.Table),
+			Alert:       "none",
+			WatchPeriod: defaultWatchPeriodSeconds,
+			Columns:     []string{"used"},
+			fileConfig: &config.Config{Common: config.Common{
+				Output:      string(output.JSON),
+				Alert:       "cpu",
+				WatchPeriod: 12,
+				Columns:     []string{"limit"},
+			}},
+		}
+
+		resolved := resolveCommonConfig(cfg, actionFlags{})
+
+		require.Equal(t, string(output.JSON), resolved.Output)
+		require.Equal(t, "cpu", resolved.Alert)
+		require.Equal(t, uint(12), resolved.WatchPeriod)
+		require.Equal(t, []string{"limit"}, resolved.Columns)
+	})
+
+	t.Run("keeps cli values when flags are explicitly set", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      string(output.Table),
+			Alert:       "none",
+			WatchPeriod: defaultWatchPeriodSeconds,
+			Columns:     []string{"used"},
+			fileConfig: &config.Config{Common: config.Common{
+				Output:      string(output.JSON),
+				Alert:       "cpu",
+				WatchPeriod: 12,
+				Columns:     []string{"limit"},
+			}},
+		}
+
+		resolved := resolveCommonConfig(cfg, actionFlags{
+			outputSet:      true,
+			alertSet:       true,
+			watchPeriodSet: true,
+			columnsSet:     true,
+		})
+
+		require.Equal(t, string(output.Table), resolved.Output)
+		require.Equal(t, "none", resolved.Alert)
+		require.Equal(t, uint(defaultWatchPeriodSeconds), resolved.WatchPeriod)
+		require.Equal(t, []string{"used"}, resolved.Columns)
+	})
+}
+
 func TestApplyPodsConfig(t *testing.T) {
 	t.Run("uses file reverse when flag is not explicitly set", func(t *testing.T) {
 		cfg := &podConfig{Reverse: false}
