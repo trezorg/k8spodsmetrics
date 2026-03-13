@@ -123,4 +123,4 @@ tasks:
 
   default:
     deps:
-      - build
+      - check
