@@ -2,6 +2,7 @@ package metricsresources
 
 import (
 	"fmt"
+	"strings"
 
 	escapes "github.com/snugfox/ansi-escapes"
 	"github.com/trezorg/k8spodsmetrics/internal/humanize"
@@ -193,4 +194,61 @@ func (f ContainerFormatter) StorageUsed() string {
 
 func (f ContainerFormatter) StorageEphemeralUsed() string {
 	return NewMetrics(f.resource.Requests).StorageEphemeralString()
+}
+
+func (f ContainerFormatter) CPUCompactString() string {
+	return compactTriple(
+		f.Requests().CPURequestString(),
+		fallbackEmpty(f.CPUUsed()),
+		f.Limits().CPURequestString(),
+	)
+}
+
+func (f ContainerFormatter) MemoryCompactString() string {
+	return compactTriple(
+		f.Requests().MemoryRequestString(),
+		fallbackEmpty(f.MemoryUsed()),
+		f.Limits().MemoryRequestString(),
+	)
+}
+
+func (f ContainerFormatter) StorageCompactString() string {
+	return compactTriple(
+		f.Requests().StorageRequestString(),
+		fallbackEmpty(f.storageUsedCompactValue()),
+		f.Limits().StorageRequestString(),
+	)
+}
+
+func (f ContainerFormatter) StorageEphemeralCompactString() string {
+	return compactTriple(
+		f.Requests().StorageEphemeralRequestString(),
+		fallbackEmpty(f.storageEphemeralUsedCompactValue()),
+		f.Limits().StorageEphemeralRequestString(),
+	)
+}
+
+func (f ContainerFormatter) storageUsedCompactValue() string {
+	if f.resource.Requests.StorageUsed == unset {
+		return ""
+	}
+	return f.StorageUsed()
+}
+
+func (f ContainerFormatter) storageEphemeralUsedCompactValue() string {
+	if f.resource.Requests.StorageEphemeralUsed == unset {
+		return ""
+	}
+	return f.StorageEphemeralUsed()
+}
+
+func compactTriple(first, second, third string) string {
+	return strings.Join([]string{fallbackEmpty(first), fallbackEmpty(second), fallbackEmpty(third)}, "/")
+}
+
+func fallbackEmpty(value string) string {
+	if value == "" {
+		return "-"
+	}
+	return value
 }

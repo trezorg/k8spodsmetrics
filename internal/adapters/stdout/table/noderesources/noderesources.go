@@ -5,11 +5,18 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	formatnoderesources "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/format/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
 	"log/slog"
+)
+
+const (
+	expandedNodeNameColumn  = 1
+	expandedNodeFirstMetric = 2
+	expandedNodeMaxMetric   = 23
 )
 
 type Table func(
@@ -319,6 +326,7 @@ func PrintTo(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(w)
+	configureExpandedTable(t)
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t.AppendHeader(cs.headerFooterRow(outputResources, "Name"), rowConfigAutoMerge)
 	t.AppendHeader(cs.secondaryHeaderRow(outputResources))
@@ -366,6 +374,29 @@ func PrintTo(
 	t.AppendFooter(cs.headerFooterRow(outputResources, "Total"), rowConfigAutoMerge)
 	t.AppendFooter(cs.dataRow(total, outputResources))
 	t.Render()
+}
+
+func configureExpandedTable(t table.Writer) {
+	applyTableStyle(t)
+	t.SetColumnConfigs(expandedColumnConfigs())
+}
+
+func expandedColumnConfigs() []table.ColumnConfig {
+	configs := []table.ColumnConfig{{
+		Number:      expandedNodeNameColumn,
+		Align:       text.AlignLeft,
+		AlignHeader: text.AlignLeft,
+		AlignFooter: text.AlignLeft,
+	}}
+	for number := expandedNodeFirstMetric; number <= expandedNodeMaxMetric; number++ {
+		configs = append(configs, table.ColumnConfig{
+			Number:      number,
+			Align:       text.AlignRight,
+			AlignHeader: text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+	return configs
 }
 
 func (s Table) Success(list noderesources.NodeResourceList) {

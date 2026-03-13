@@ -1,10 +1,12 @@
 package stdin
 
 import (
+	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/trezorg/k8spodsmetrics/internal/config"
+	"github.com/urfave/cli/v2"
 )
 
 func TestCommonConfigValidate(t *testing.T) {
@@ -58,6 +60,17 @@ func TestCommonConfigValidate(t *testing.T) {
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "alert should be one of")
+	})
+
+	t.Run("invalid table view", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      "table",
+			TableView:   "invalid",
+			Alert:       "none",
+			WatchPeriod: 5,
+		}
+
+		require.ErrorContains(t, cfg.Validate(), "table view should be one of")
 	})
 }
 
@@ -130,30 +143,37 @@ func TestSummaryConfigValidate(t *testing.T) {
 }
 
 func TestValidateRejectsInvalidMergedFileConfig(t *testing.T) {
-	base := summaryConfig{
-		Sorting: "name",
-		Resources: []string{
-			"all",
-		},
-		commonConfig: commonConfig{
-			Output:      "",
-			Alert:       "none",
-			WatchPeriod: 5,
-		},
+	base := commonConfig{
+		Output:      "",
+		Alert:       "none",
+		WatchPeriod: 5,
 	}
 
-	fileCfg := &config.Config{
+	base.fileConfig = &config.Config{
 		Common: config.Common{Output: "invalid"},
+		Summary: config.Summary{
+			Sorting:   "name",
+			Resources: []string{"all"},
+		},
 	}
 
-	mergedCommon := applyCommonConfig(&base.commonConfig, fileCfg, false, false)
-	base.KubeConfig = mergedCommon.KubeConfig
-	base.KubeContext = mergedCommon.KubeContext
-	base.Output = mergedCommon.Output
-	base.Alert = mergedCommon.Alert
-	base.WatchPeriod = mergedCommon.WatchPeriod
-	base.WatchMetrics = mergedCommon.WatchMetrics
-	base.Columns = mergedCommon.Columns
+	resolved := resolveSummaryActionConfig(newSummaryTestContext(t), base)
 
-	require.ErrorContains(t, base.Validate(), "output should be one of")
+	require.ErrorContains(t, resolved.Validate(), "output should be one of")
+}
+
+func newSummaryTestContext(t *testing.T, args ...string) *cli.Context {
+	t.Helper()
+
+	set := flag.NewFlagSet("summary", flag.ContinueOnError)
+	cfg := commonConfig{}
+	for _, cliFlag := range commonFlags(&cfg) {
+		require.NoError(t, cliFlag.Apply(set))
+	}
+	for _, cliFlag := range summaryFlags() {
+		require.NoError(t, cliFlag.Apply(set))
+	}
+	require.NoError(t, set.Parse(args))
+
+	return cli.NewContext(cli.NewApp(), set, nil)
 }

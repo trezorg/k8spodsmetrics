@@ -1,10 +1,12 @@
 package metricsresources
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
@@ -267,6 +269,33 @@ func TestValidateColumns(t *testing.T) {
 		err := ValidateColumns([]columns.Column{columns.Available})
 		require.Error(t, err)
 	})
+}
+
+func TestPrintToUsesLightTableStyle(t *testing.T) {
+	var buf bytes.Buffer
+	PrintTo(&buf, metricsresources.PodMetricsResourceList{}, resources.Resources{resources.CPU}, newColumnSet(nil))
+
+	output := buf.String()
+	require.Contains(t, output, "┌")
+	require.Contains(t, output, "│ POD/CONTAINER │")
+	require.NotContains(t, output, "+---------------+")
+}
+
+func TestExpandedColumnConfigs(t *testing.T) {
+	configs := expandedColumnConfigs()
+	require.Len(t, configs, expandedPodMaxMetricCol)
+
+	for _, config := range configs[:3] {
+		require.Equal(t, text.AlignLeft, config.Align)
+		require.Equal(t, text.AlignLeft, config.AlignHeader)
+		require.Equal(t, text.AlignLeft, config.AlignFooter)
+	}
+
+	for _, config := range configs[3:] {
+		require.Equal(t, text.AlignRight, config.Align)
+		require.Equal(t, text.AlignRight, config.AlignHeader)
+		require.Equal(t, text.AlignRight, config.AlignFooter)
+	}
 }
 
 func TestColumnSetTotalRowStorageColumns(t *testing.T) {

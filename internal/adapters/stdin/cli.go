@@ -21,6 +21,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/metricsresources"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
+	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 	"github.com/urfave/cli/v2"
 )
 
@@ -29,6 +30,7 @@ type commonConfig struct {
 	KubeConfig   string
 	KubeContext  string
 	Output       string
+	TableView    string
 	Alert        string
 	WatchPeriod  uint
 	WatchMetrics bool
@@ -83,9 +85,12 @@ type PodsWatcher interface {
 	ProcessWatch(metricsresources.SuccessProcessor, metricsresources.ErrorProcessor) error
 }
 
-func summaryOutputProcessor(out output.Output, res resources.Resources, cols []columns.Column) SummaryOutputProcessor {
+func summaryOutputProcessor(out output.Output, view tableview.View, res resources.Resources, cols []columns.Column) SummaryOutputProcessor {
 	switch out {
 	case output.Table:
+		if view == tableview.Compact {
+			return nodestable.ToCompactTable(res)
+		}
 		return nodestable.ToTable(res, cols)
 	case output.JSON:
 		return nodesjson.JSON(nodesjson.Print)
@@ -97,9 +102,17 @@ func summaryOutputProcessor(out output.Output, res resources.Resources, cols []c
 	return nodestable.ToTable(res, cols)
 }
 
-func summaryWatchRenderer(out output.Output, res resources.Resources, cols []columns.Column) func(io.Writer, noderesources.NodeResourceList) {
+func summaryWatchRenderer(
+	out output.Output,
+	view tableview.View,
+	res resources.Resources,
+	cols []columns.Column,
+) func(io.Writer, noderesources.NodeResourceList) {
 	switch out {
 	case output.Table:
+		if view == tableview.Compact {
+			return nodestable.ToCompactWriter(res)
+		}
 		return nodestable.ToWriter(res, cols)
 	case output.JSON:
 		return nodesjson.PrintTo
@@ -111,9 +124,12 @@ func summaryWatchRenderer(out output.Output, res resources.Resources, cols []col
 	return nodestable.ToWriter(res, cols)
 }
 
-func podsOutputProcessor(out output.Output, res resources.Resources, cols []columns.Column) PodsOutputProcessor {
+func podsOutputProcessor(out output.Output, view tableview.View, res resources.Resources, cols []columns.Column) PodsOutputProcessor {
 	switch out {
 	case output.Table:
+		if view == tableview.Compact {
+			return metricstable.ToCompactTable(res)
+		}
 		return metricstable.ToTable(res, cols)
 	case output.JSON:
 		return metricsjson.JSON(metricsjson.Print)
@@ -125,9 +141,17 @@ func podsOutputProcessor(out output.Output, res resources.Resources, cols []colu
 	return metricstable.ToTable(res, cols)
 }
 
-func podsWatchRenderer(out output.Output, res resources.Resources, cols []columns.Column) func(io.Writer, metricsresources.PodMetricsResourceList) {
+func podsWatchRenderer(
+	out output.Output,
+	view tableview.View,
+	res resources.Resources,
+	cols []columns.Column,
+) func(io.Writer, metricsresources.PodMetricsResourceList) {
 	switch out {
 	case output.Table:
+		if view == tableview.Compact {
+			return metricstable.ToCompactWriter(res)
+		}
 		return metricstable.ToWriter(res, cols)
 	case output.JSON:
 		return metricsjson.PrintTo
@@ -200,6 +224,7 @@ func applyCommonConfig(cfg *commonConfig, fileConfig *config.Config, watchMetric
 		KubeConfig:   cfg.KubeConfig,
 		KubeContext:  cfg.KubeContext,
 		Output:       cfg.Output,
+		TableView:    cfg.TableView,
 		Alert:        cfg.Alert,
 		WatchPeriod:  cfg.WatchPeriod,
 		WatchMetrics: cfg.WatchMetrics,

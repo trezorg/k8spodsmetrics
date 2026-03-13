@@ -1,10 +1,12 @@
 package noderesources
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
@@ -179,4 +181,29 @@ func TestValidateColumns(t *testing.T) {
 		err := ValidateColumns([]columns.Column{columns.Column("invalid")})
 		require.Error(t, err)
 	})
+}
+
+func TestPrintToUsesLightTableStyle(t *testing.T) {
+	var buf bytes.Buffer
+	PrintTo(&buf, noderesources.NodeResourceList{}, resources.Resources{resources.CPU}, newColumnSet(nil))
+
+	output := buf.String()
+	require.Contains(t, output, "┌")
+	require.Contains(t, output, "NAME")
+	require.NotContains(t, output, "+-------+")
+}
+
+func TestExpandedColumnConfigs(t *testing.T) {
+	configs := expandedColumnConfigs()
+	require.Len(t, configs, expandedNodeMaxMetric)
+
+	require.Equal(t, text.AlignLeft, configs[0].Align)
+	require.Equal(t, text.AlignLeft, configs[0].AlignHeader)
+	require.Equal(t, text.AlignLeft, configs[0].AlignFooter)
+
+	for _, config := range configs[1:] {
+		require.Equal(t, text.AlignRight, config.Align)
+		require.Equal(t, text.AlignRight, config.AlignHeader)
+		require.Equal(t, text.AlignRight, config.AlignFooter)
+	}
 }

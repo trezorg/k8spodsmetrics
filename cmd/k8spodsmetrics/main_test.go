@@ -39,3 +39,11 @@ func TestInitLogger(t *testing.T) {
 	err = initLogger("unknown")
 	require.ErrorContains(t, err, "unknown log level")
 }
+
+func TestRun(t *testing.T) {
+	t.Run("returns invalid log level error", func(t *testing.T) {
+		err := run([]string{"k8spodsmetrics", "--loglevel", "trace", "summary"})
+
+		require.ErrorContains(t, err, "unknown log level")
+	})
+}

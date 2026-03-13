@@ -9,6 +9,7 @@ import (
 	"github.com/trezorg/k8spodsmetrics/internal/columns"
 	"github.com/trezorg/k8spodsmetrics/internal/config"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
+	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 	"github.com/urfave/cli/v2"
 )
 
@@ -30,6 +31,26 @@ func TestCommonFlagsAlertNaming(t *testing.T) {
 	require.NotNil(t, alertFlag)
 	require.Contains(t, alertFlag.Aliases, "alerts")
 	require.Contains(t, alertFlag.Aliases, "a")
+}
+
+func TestCommonFlagsTableViewNaming(t *testing.T) {
+	flags := commonFlags(&commonConfig{})
+
+	var tableViewFlag *cli.StringFlag
+	for _, flag := range flags {
+		f, ok := flag.(*cli.StringFlag)
+		if !ok {
+			continue
+		}
+		if f.Name == "table-view" {
+			tableViewFlag = f
+			break
+		}
+	}
+
+	require.NotNil(t, tableViewFlag)
+	require.Equal(t, string(tableview.Compact), tableViewFlag.Value)
+	require.Contains(t, tableViewFlag.Usage, string(tableview.Compact))
 }
 
 func TestPodsFlagsResourcesNaming(t *testing.T) {
@@ -139,6 +160,27 @@ func TestParseColumnsForOutput(t *testing.T) {
 	})
 }
 
+func TestValidateTableViewColumns(t *testing.T) {
+	t.Run("expanded allows columns", func(t *testing.T) {
+		require.NoError(t, validateTableViewColumns(tableview.Expanded, []string{"used"}))
+	})
+
+	t.Run("default compact rejects columns", func(t *testing.T) {
+		err := validateTableViewColumns(tableview.Compact, []string{"used"})
+		require.ErrorContains(t, err, "--columns is only supported")
+	})
+
+	t.Run("compact rejects columns", func(t *testing.T) {
+		err := validateTableViewColumns(tableview.Compact, []string{"used"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "--columns is only supported")
+	})
+
+	t.Run("compact allows empty columns", func(t *testing.T) {
+		require.NoError(t, validateTableViewColumns(tableview.Compact, nil))
+	})
+}
+
 func TestApplyCommonConfig(t *testing.T) {
 	t.Run("uses file bool when flag is not explicitly set", func(t *testing.T) {
 		cfg := &commonConfig{WatchMetrics: false}
@@ -177,6 +219,97 @@ func TestApplyCommonConfig(t *testing.T) {
 
 		merged := applyCommonConfig(cfg, nil, false, false)
 		require.Equal(t, uint(defaultTimeoutSeconds), merged.Timeout)
+	})
+
+	t.Run("uses file table view when flag is not explicitly set", func(t *testing.T) {
+		cfg := &commonConfig{TableView: ""}
+		fileCfg := &config.Config{Common: config.Common{TableView: string(tableview.Compact)}}
+
+		merged := applyCommonConfig(cfg, fileCfg, false, false)
+		require.Equal(t, string(tableview.Compact), merged.TableView)
+	})
+}
+
+func TestResolveCommonConfig(t *testing.T) {
+	t.Run("uses file-backed defaults when flags are omitted", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      string(output.Table),
+			TableView:   string(tableview.Expanded),
+			Alert:       "none",
+			WatchPeriod: defaultWatchPeriodSeconds,
+			Columns:     []string{"used"},
+			fileConfig: &config.Config{Common: config.Common{
+				Output:      string(output.JSON),
+				TableView:   string(tableview.Compact),
+				Alert:       "cpu",
+				WatchPeriod: 12,
+				Columns:     []string{"limit"},
+			}},
+		}
+
+		resolved := resolveCommonConfig(cfg, actionFlags{})
+
+		require.Equal(t, string(output.JSON), resolved.Output)
+		require.Equal(t, string(tableview.Compact), resolved.TableView)
+		require.Equal(t, "cpu", resolved.Alert)
+		require.Equal(t, uint(12), resolved.WatchPeriod)
+		require.Equal(t, []string{"limit"}, resolved.Columns)
+	})
+
+	t.Run("keeps cli values when flags are explicitly set", func(t *testing.T) {
+		cfg := commonConfig{
+			Output:      string(output.Table),
+			TableView:   string(tableview.Expanded),
+			Alert:       "none",
+			WatchPeriod: defaultWatchPeriodSeconds,
+			Columns:     []string{"used"},
+			fileConfig: &config.Config{Common: config.Common{
+				Output:      string(output.JSON),
+				TableView:   string(tableview.Compact),
+				Alert:       "cpu",
+				WatchPeriod: 12,
+				Columns:     []string{"limit"},
+			}},
+		}
+
+		resolved := resolveCommonConfig(cfg, actionFlags{
+			outputSet:      true,
+			tableViewSet:   true,
+			alertSet:       true,
+			watchPeriodSet: true,
+			columnsSet:     true,
+		})
+
+		require.Equal(t, string(output.Table), resolved.Output)
+		require.Equal(t, string(tableview.Expanded), resolved.TableView)
+		require.Equal(t, "none", resolved.Alert)
+		require.Equal(t, uint(defaultWatchPeriodSeconds), resolved.WatchPeriod)
+		require.Equal(t, []string{"used"}, resolved.Columns)
+	})
+
+	t.Run("defaults table view to compact when unset", func(t *testing.T) {
+		resolved := resolveCommonConfig(commonConfig{}, actionFlags{})
+		require.Equal(t, string(tableview.Compact), resolved.TableView)
+	})
+
+	t.Run("cli columns imply expanded when table view is not explicitly set", func(t *testing.T) {
+		resolved := resolveCommonConfig(commonConfig{Columns: []string{"used"}}, actionFlags{columnsSet: true})
+		require.Equal(t, string(tableview.Expanded), resolved.TableView)
+	})
+
+	t.Run("file columns imply expanded when table view is not explicitly set", func(t *testing.T) {
+		resolved := resolveCommonConfig(commonConfig{
+			fileConfig: &config.Config{Common: config.Common{Columns: []string{"used"}}},
+		}, actionFlags{})
+		require.Equal(t, string(tableview.Expanded), resolved.TableView)
+	})
+
+	t.Run("explicit compact table view is preserved when columns are set", func(t *testing.T) {
+		resolved := resolveCommonConfig(commonConfig{
+			TableView: string(tableview.Compact),
+			Columns:   []string{"used"},
+		}, actionFlags{tableViewSet: true, columnsSet: true})
+		require.Equal(t, string(tableview.Compact), resolved.TableView)
 	})
 }
 
