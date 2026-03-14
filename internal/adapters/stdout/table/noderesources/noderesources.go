@@ -63,53 +63,53 @@ func newColumnSet(cols []columns.Column) ColumnSet {
 
 func (cs ColumnSet) appendResourceHeader(result table.Row, label string) table.Row {
 	if cs.Total {
-		result = append(result, label)
+		result = append(result, label+" Total")
 	}
 	if cs.Allocatable {
-		result = append(result, label)
+		result = append(result, label+" Allocatable")
 	}
 	if cs.Used {
-		result = append(result, label)
+		result = append(result, label+" Used")
 	}
 	if cs.Request {
-		result = append(result, label)
+		result = append(result, label+" Request")
 	}
 	if cs.Limit {
-		result = append(result, label)
+		result = append(result, label+" Limit")
 	}
 	if cs.Available {
-		result = append(result, label)
+		result = append(result, label+" Available")
 	}
 	if cs.Free {
-		result = append(result, label)
+		result = append(result, label+" Free")
 	}
 	return result
 }
 
 func (cs ColumnSet) appendStorageHeader(result table.Row) table.Row {
 	if cs.Total {
-		result = append(result, "Storage")
+		result = append(result, "Storage Total")
 	}
 	if cs.Allocatable {
-		result = append(result, "Storage")
+		result = append(result, "Storage Allocatable")
 	}
 	if cs.Used {
-		result = append(result, "Storage")
+		result = append(result, "Storage Used")
 	}
 	if cs.Free {
-		result = append(result, "Storage")
+		result = append(result, "Storage Free")
 	}
 	if cs.Total {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Total")
 	}
 	if cs.Allocatable {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Allocatable")
 	}
 	if cs.Used {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Used")
 	}
 	if cs.Free {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Free")
 	}
 	return result
 }
@@ -124,73 +124,6 @@ func (cs ColumnSet) headerFooterRow(outputResources resources.Resources, firstCo
 	}
 	if outputResources.IsStorage() {
 		result = cs.appendStorageHeader(result)
-	}
-	return result
-}
-
-func (cs ColumnSet) appendSecondaryHeader(result table.Row) table.Row {
-	if cs.Total {
-		result = append(result, "Total")
-	}
-	if cs.Allocatable {
-		result = append(result, "Allocatable")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	if cs.Request {
-		result = append(result, "Request")
-	}
-	if cs.Limit {
-		result = append(result, "Limit")
-	}
-	if cs.Available {
-		result = append(result, "Available")
-	}
-	if cs.Free {
-		result = append(result, "Free")
-	}
-	return result
-}
-
-func (cs ColumnSet) appendStorageSecondaryHeader(result table.Row) table.Row {
-	if cs.Total {
-		result = append(result, "Total")
-	}
-	if cs.Allocatable {
-		result = append(result, "Allocatable")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	if cs.Free {
-		result = append(result, "Free")
-	}
-	if cs.Total {
-		result = append(result, "Total")
-	}
-	if cs.Allocatable {
-		result = append(result, "Allocatable")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	if cs.Free {
-		result = append(result, "Free")
-	}
-	return result
-}
-
-func (cs ColumnSet) secondaryHeaderRow(outputResources resources.Resources) table.Row {
-	result := table.Row{""}
-	if outputResources.IsCPU() {
-		result = cs.appendSecondaryHeader(result)
-	}
-	if outputResources.IsMemory() {
-		result = cs.appendSecondaryHeader(result)
-	}
-	if outputResources.IsStorage() {
-		result = cs.appendStorageSecondaryHeader(result)
 	}
 	return result
 }
@@ -327,10 +260,9 @@ func PrintTo(
 	t := table.NewWriter()
 	t.SetOutputMirror(w)
 	configureExpandedTable(t)
-	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t.AppendHeader(cs.headerFooterRow(outputResources, "Name"), rowConfigAutoMerge)
-	t.AppendHeader(cs.secondaryHeaderRow(outputResources))
+	t.AppendHeader(cs.headerFooterRow(outputResources, "Name"))
 	total := noderesources.NodeResource{}
+	total.Name = "Total"
 	for _, resource := range list {
 		t.AppendRow(cs.dataRow(resource, outputResources))
 		t.AppendSeparator()
@@ -371,7 +303,6 @@ func PrintTo(
 			total.FreeStorageEphemeral += resource.FreeStorageEphemeral
 		}
 	}
-	t.AppendFooter(cs.headerFooterRow(outputResources, "Total"), rowConfigAutoMerge)
 	t.AppendFooter(cs.dataRow(total, outputResources))
 	t.Render()
 }

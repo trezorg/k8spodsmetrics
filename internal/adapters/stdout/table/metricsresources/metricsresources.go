@@ -53,35 +53,35 @@ func newColumnSet(cols []columns.Column) ColumnSet {
 
 func (cs ColumnSet) appendResourceHeaderRow(result table.Row, label string) table.Row {
 	if cs.Request {
-		result = append(result, label)
+		result = append(result, label+" Request")
 	}
 	if cs.Limit {
-		result = append(result, label)
+		result = append(result, label+" Limit")
 	}
 	if cs.Used {
-		result = append(result, label)
+		result = append(result, label+" Used")
 	}
 	return result
 }
 
 func (cs ColumnSet) appendStorageHeaderRow(result table.Row) table.Row {
 	if cs.Request {
-		result = append(result, "Storage")
+		result = append(result, "Storage Request")
 	}
 	if cs.Limit {
-		result = append(result, "Storage")
+		result = append(result, "Storage Limit")
 	}
 	if cs.Used {
-		result = append(result, "Storage")
+		result = append(result, "Storage Used")
 	}
 	if cs.Request {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Request")
 	}
 	if cs.Limit {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Limit")
 	}
 	if cs.Used {
-		result = append(result, "Storage Ephemeral")
+		result = append(result, "Storage Ephemeral Used")
 	}
 	return result
 }
@@ -106,55 +106,6 @@ func (cs ColumnSet) headerFooterRow(outputResources resources.Resources, columnN
 	}
 	if outputResources.IsStorage() {
 		result = cs.appendStorageHeaderRow(result)
-	}
-	return result
-}
-
-func (cs ColumnSet) appendSecondaryHeaderRow(result table.Row) table.Row {
-	if cs.Request {
-		result = append(result, "Request")
-	}
-	if cs.Limit {
-		result = append(result, "Limit")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	return result
-}
-
-func (cs ColumnSet) appendStorageSecondaryHeaderRow(result table.Row) table.Row {
-	if cs.Request {
-		result = append(result, "Request")
-	}
-	if cs.Limit {
-		result = append(result, "Limit")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	if cs.Request {
-		result = append(result, "Request")
-	}
-	if cs.Limit {
-		result = append(result, "Limit")
-	}
-	if cs.Used {
-		result = append(result, "Used")
-	}
-	return result
-}
-
-func (cs ColumnSet) secondaryHeaderRow(outputResources resources.Resources) table.Row {
-	result := table.Row{"", "", ""}
-	if outputResources.IsCPU() {
-		result = cs.appendSecondaryHeaderRow(result)
-	}
-	if outputResources.IsMemory() {
-		result = cs.appendSecondaryHeaderRow(result)
-	}
-	if outputResources.IsStorage() {
-		result = cs.appendStorageSecondaryHeaderRow(result)
 	}
 	return result
 }
@@ -268,7 +219,7 @@ func (cs ColumnSet) containerRow(container metricsresources.ContainerMetricsReso
 }
 
 func (cs ColumnSet) totalRow(outputResources resources.Resources, total metricsresources.ContainerMetricsResource) table.Row {
-	totalRow := table.Row{"Total", "Total", "Total"}
+	totalRow := table.Row{"", "", ""}
 	if outputResources.IsCPU() {
 		if cs.Request {
 			totalRow = append(totalRow, formatmetricsresources.NewMetrics(total.Requests).CPURequestString())
@@ -351,9 +302,7 @@ func PrintTo(
 	t := table.NewWriter()
 	t.SetOutputMirror(w)
 	configureExpandedTable(t)
-	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod/Container", "Namespace", "Node"), rowConfigAutoMerge)
-	t.AppendHeader(cs.secondaryHeaderRow(outputResources))
+	t.AppendHeader(cs.headerFooterRow(outputResources, "Pod/Container", "Namespace", "Node"))
 
 	total := metricsresources.ContainerMetricsResource{}
 
@@ -363,10 +312,8 @@ func PrintTo(
 			continue
 		}
 
-		// Add pod row with first container
 		t.AppendRow(cs.dataRow(resource, outputResources))
 
-		// Add additional container rows
 		for _, container := range containers {
 			t.AppendRow(cs.containerRow(container, outputResources))
 		}
@@ -392,8 +339,9 @@ func PrintTo(
 		}
 	}
 
-	// Add footer with totals
-	t.AppendFooter(cs.totalRow(outputResources, total), rowConfigAutoMerge)
+	t.AppendRow(cs.headerFooterRow(outputResources, "Total"))
+	t.AppendSeparator()
+	t.AppendFooter(cs.totalRow(outputResources, total))
 	t.Render()
 }
 

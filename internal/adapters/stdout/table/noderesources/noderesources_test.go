@@ -2,6 +2,7 @@ package noderesources
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ func TestHeaderFooter(t *testing.T) {
 		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 8)
 		require.Equal(t, "Test", result[0])
-		require.Equal(t, "CPU", result[1])
+		require.Equal(t, "CPU Total", result[1])
 	})
 
 	t.Run("with Memory only", func(t *testing.T) {
@@ -28,7 +29,7 @@ func TestHeaderFooter(t *testing.T) {
 		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 8)
 		require.Equal(t, "Test", result[0])
-		require.Equal(t, "Memory", result[1])
+		require.Equal(t, "Memory Total", result[1])
 	})
 
 	t.Run("with all resources", func(t *testing.T) {
@@ -37,28 +38,7 @@ func TestHeaderFooter(t *testing.T) {
 		result := cs.headerFooterRow(outputResources, "Test")
 		require.Len(t, result, 23)
 		require.Equal(t, "Test", result[0])
-	})
-}
-
-func TestSecondaryHeader(t *testing.T) {
-	t.Run("with CPU only", func(t *testing.T) {
-		outputResources := resources.Resources{resources.CPU}
-		cs := newColumnSet(nil)
-		result := cs.secondaryHeaderRow(outputResources)
-		require.Len(t, result, 8)
-		require.Equal(t, "Total", result[1])
-		require.Equal(t, "Allocatable", result[2])
-		require.Equal(t, "Used", result[3])
-	})
-
-	t.Run("with Memory only", func(t *testing.T) {
-		outputResources := resources.Resources{resources.Memory}
-		cs := newColumnSet(nil)
-		result := cs.secondaryHeaderRow(outputResources)
-		require.Len(t, result, 8)
-		require.Equal(t, "Total", result[1])
-		require.Equal(t, "Allocatable", result[2])
-		require.Equal(t, "Used", result[3])
+		require.Equal(t, "CPU Total", result[1])
 	})
 }
 
@@ -191,6 +171,17 @@ func TestPrintToUsesLightTableStyle(t *testing.T) {
 	require.Contains(t, output, "┌")
 	require.Contains(t, output, "NAME")
 	require.NotContains(t, output, "+-------+")
+}
+
+func TestPrintToExpandedSingleHeaderAndTotalFooter(t *testing.T) {
+	var buf bytes.Buffer
+	PrintTo(&buf, noderesources.NodeResourceList{}, resources.Resources{resources.CPU}, newColumnSet(nil))
+
+	output := buf.String()
+	require.Equal(t, 1, strings.Count(output, "CPU TOTAL"))
+	require.Equal(t, 1, strings.Count(output, "CPU ALLOCATABLE"))
+	require.Equal(t, 1, strings.Count(output, "CPU USED"))
+	require.Contains(t, output, "TOTAL")
 }
 
 func TestExpandedColumnConfigs(t *testing.T) {
