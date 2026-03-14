@@ -262,7 +262,6 @@ func PrintTo(
 	configureExpandedTable(t)
 	t.AppendHeader(cs.headerFooterRow(outputResources, "Name"))
 	total := noderesources.NodeResource{}
-	total.Name = "Total"
 	for _, resource := range list {
 		t.AppendRow(cs.dataRow(resource, outputResources))
 		t.AppendSeparator()
@@ -303,6 +302,8 @@ func PrintTo(
 			total.FreeStorageEphemeral += resource.FreeStorageEphemeral
 		}
 	}
+	t.AppendRow(cs.headerFooterRow(outputResources, "Total"))
+	t.AppendSeparator()
 	t.AppendFooter(cs.dataRow(total, outputResources))
 	t.Render()
 }

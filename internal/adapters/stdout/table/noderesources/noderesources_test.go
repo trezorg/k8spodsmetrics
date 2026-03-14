@@ -2,6 +2,7 @@ package noderesources
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -178,10 +179,11 @@ func TestPrintToExpandedSingleHeaderAndTotalFooter(t *testing.T) {
 	PrintTo(&buf, noderesources.NodeResourceList{}, resources.Resources{resources.CPU}, newColumnSet(nil))
 
 	output := buf.String()
-	require.Equal(t, 1, strings.Count(output, "CPU TOTAL"))
-	require.Equal(t, 1, strings.Count(output, "CPU ALLOCATABLE"))
-	require.Equal(t, 1, strings.Count(output, "CPU USED"))
-	require.Contains(t, output, "TOTAL")
+	cleanOutput := regexp.MustCompile(`\x1b\[[0-9;]*m`).ReplaceAllString(output, "")
+	require.Equal(t, 1, strings.Count(cleanOutput, "CPU TOTAL"))
+	require.Equal(t, 1, strings.Count(cleanOutput, "CPU ALLOCATABLE"))
+	require.Equal(t, 1, strings.Count(cleanOutput, "CPU USED"))
+	require.Regexp(t, regexp.MustCompile(`(?s)│ Total │ CPU Total │ CPU Allocatable │ CPU Used │ CPU Request │ CPU Limit │ CPU Available │ CPU Free │\n├[-┼┤├─]+\n│       │         0 │               0 │        0 │           0 │         0 │             0 │        0 │`), cleanOutput)
 }
 
 func TestExpandedColumnConfigs(t *testing.T) {
