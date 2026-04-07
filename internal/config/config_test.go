@@ -98,12 +98,24 @@ pods:
 	t.Run("invalid yaml", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte("invalid: yaml: content:\n  - ["), 0644)
+		err := os.WriteFile(configPath, []byte("invalid: yaml: content:\n  - ["), 0o644)
 		require.NoError(t, err)
 
 		_, err = Load(configPath)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to parse config file")
+	})
+
+	t.Run("unknown field", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte("common:\n  unsupported-key: true\n"), 0o644)
+		require.NoError(t, err)
+
+		_, err = Load(configPath)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to parse config file")
+		require.Contains(t, err.Error(), "unsupported-key")
 	})
 
 	t.Run("empty config", func(t *testing.T) {

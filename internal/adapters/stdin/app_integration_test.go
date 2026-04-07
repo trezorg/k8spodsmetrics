@@ -27,6 +27,15 @@ func TestNewAppRunConfigRegression(t *testing.T) {
 		require.ErrorContains(t, err, "failed to parse config file")
 	})
 
+	t.Run("unknown config key surfaces through app", func(t *testing.T) {
+		configPath := writeConfigFile(t, "common:\n  unsupported-key: true\n")
+
+		err := runApp(t, "--config", configPath, "summary")
+
+		require.ErrorContains(t, err, "failed to parse config file")
+		require.ErrorContains(t, err, "unsupported-key")
+	})
+
 	t.Run("file output is used when output flag is omitted", func(t *testing.T) {
 		configPath := writeConfigFile(t, "common:\n  output: invalid\nsummary:\n  sorting: name\n")
 
