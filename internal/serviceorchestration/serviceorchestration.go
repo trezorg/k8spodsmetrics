@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"log/slog"
@@ -198,7 +197,7 @@ func WatchWithRepo[T any, R any](
 
 func RunWithPreparedContext(prepare func() error, run func(context.Context) error) error {
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signals, shutdownSignals...)
 	defer signal.Stop(signals)
 
 	ctx, cancel := withSignalCause(context.Background(), signals)
