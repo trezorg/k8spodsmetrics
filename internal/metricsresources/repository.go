@@ -3,6 +3,7 @@ package metricsresources
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -87,6 +88,9 @@ func FetchPodMetrics(
 	for idx, ns := range config.Namespaces {
 		wg.Go(func() {
 			results[idx], rErrors[idx] = fetchPodMetricsForNamespace(ctx, repo, metricsClient, podsClient, config, ns)
+			if rErrors[idx] != nil {
+				rErrors[idx] = wrapPodMetricsNamespaceError(rErrors[idx], ns)
+			}
 		})
 	}
 
@@ -120,6 +124,9 @@ func fetchPodMetricsForNamespace(
 			LabelSelector: config.Label,
 			FieldSelector: config.FieldSelector,
 		})
+		if cErrors[0] != nil {
+			cErrors[0] = wrapPodMetricsActionError("fetch pod usage metrics", namespace, cErrors[0])
+		}
 	})
 
 	wg.Go(func() {
@@ -128,6 +135,9 @@ func fetchPodMetricsForNamespace(
 			LabelSelector: config.Label,
 			FieldSelector: config.FieldSelector,
 		}, config.Nodes...)
+		if cErrors[1] != nil {
+			cErrors[1] = wrapPodMetricsActionError("fetch pod resources", namespace, cErrors[1])
+		}
 	})
 
 	wg.Wait()
@@ -138,4 +148,24 @@ func fetchPodMetricsForNamespace(
 
 	podMetricsResourceList = merge(podsList, metricsList)
 	return podMetricsResourceList, nil
+}
+
+func wrapPodMetricsNamespaceError(err error, namespace string) error {
+	if err == nil {
+		return nil
+	}
+	if namespace == "" {
+		return fmt.Errorf("fetch pod metrics across all namespaces: %w", err)
+	}
+	return fmt.Errorf("fetch pod metrics for namespace %q: %w", namespace, err)
+}
+
+func wrapPodMetricsActionError(action string, namespace string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if namespace == "" {
+		return fmt.Errorf("%s across all namespaces: %w", action, err)
+	}
+	return fmt.Errorf("%s for namespace %q: %w", action, namespace, err)
 }
