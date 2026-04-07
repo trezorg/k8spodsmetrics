@@ -233,13 +233,26 @@ func ProcessWatch[T any](
 	errorProcessor func(error),
 ) error {
 	return RunWithPreparedContext(prepare, func(ctx context.Context) error {
+		lastErrorFingerprint := ""
 		for resources := range watch(ctx) {
 			if resources.Error != nil {
-				errorProcessor(resources.Error)
+				fingerprint := watchErrorFingerprint(resources.Error)
+				if fingerprint != lastErrorFingerprint {
+					errorProcessor(resources.Error)
+					lastErrorFingerprint = fingerprint
+				}
 			} else {
+				lastErrorFingerprint = ""
 				successProcessor(resources.Data)
 			}
 		}
 		return nil
 	})
+}
+
+func watchErrorFingerprint(err error) string {
+	if err == nil {
+		return ""
+	}
+	return fmt.Sprintf("%T:%s", err, err.Error())
 }

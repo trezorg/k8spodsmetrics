@@ -109,6 +109,77 @@ func TestWatchWithClients(t *testing.T) {
 	})
 }
 
+func TestProcessWatchSuppressesRepeatedErrors(t *testing.T) {
+	t.Run("suppresses identical consecutive errors", func(t *testing.T) {
+		errRepeated := errors.New("temporary failure")
+		reportedErrors := []error{}
+		successes := []int{}
+
+		err := ProcessWatch(
+			func() error { return nil },
+			func(context.Context) <-chan WatchResponse[int] {
+				return watchResponses(
+					WatchResponse[int]{Error: errRepeated},
+					WatchResponse[int]{Error: errRepeated},
+				)
+			},
+			func(v int) { successes = append(successes, v) },
+			func(err error) { reportedErrors = append(reportedErrors, err) },
+		)
+
+		require.NoError(t, err)
+		require.Len(t, reportedErrors, 1)
+		require.ErrorIs(t, reportedErrors[0], errRepeated)
+		require.Empty(t, successes)
+	})
+
+	t.Run("reports changed errors", func(t *testing.T) {
+		errFirst := errors.New("temporary failure")
+		errSecond := errors.New("permission denied")
+		reportedErrors := []error{}
+
+		err := ProcessWatch(
+			func() error { return nil },
+			func(context.Context) <-chan WatchResponse[int] {
+				return watchResponses(
+					WatchResponse[int]{Error: errFirst},
+					WatchResponse[int]{Error: errSecond},
+				)
+			},
+			func(int) {},
+			func(err error) { reportedErrors = append(reportedErrors, err) },
+		)
+
+		require.NoError(t, err)
+		require.Len(t, reportedErrors, 2)
+		require.ErrorIs(t, reportedErrors[0], errFirst)
+		require.ErrorIs(t, reportedErrors[1], errSecond)
+	})
+
+	t.Run("success resets suppression", func(t *testing.T) {
+		errRepeated := errors.New("temporary failure")
+		reportedErrors := []error{}
+		successes := []int{}
+
+		err := ProcessWatch(
+			func() error { return nil },
+			func(context.Context) <-chan WatchResponse[int] {
+				return watchResponses(
+					WatchResponse[int]{Error: errRepeated},
+					WatchResponse[int]{Data: 42},
+					WatchResponse[int]{Error: errRepeated},
+				)
+			},
+			func(v int) { successes = append(successes, v) },
+			func(err error) { reportedErrors = append(reportedErrors, err) },
+		)
+
+		require.NoError(t, err)
+		require.Len(t, reportedErrors, 2)
+		require.Equal(t, []int{42}, successes)
+	})
+}
+
 func TestRunWithPreparedContext(t *testing.T) {
 	t.Run("returns prepare error", func(t *testing.T) {
 		expectedErr := errors.New("prepare error")
@@ -148,4 +219,13 @@ func TestWithSignalCause(t *testing.T) {
 
 	<-ctx.Done()
 	require.ErrorIs(t, context.Cause(ctx), ErrSignalCanceled)
+}
+
+func watchResponses[T any](responses ...WatchResponse[T]) <-chan WatchResponse[T] {
+	ch := make(chan WatchResponse[T], len(responses))
+	for _, response := range responses {
+		ch <- response
+	}
+	close(ch)
+	return ch
 }
