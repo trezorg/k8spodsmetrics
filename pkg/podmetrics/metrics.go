@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -58,6 +59,9 @@ func Metrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface, fi
 	for idx, ns := range filter.Namespaces {
 		wg.Go(func() {
 			metrics[idx], rErrors[idx] = listMetrics(ctx, api, filter, ns)
+			if rErrors[idx] != nil {
+				rErrors[idx] = fmt.Errorf("list pod metrics for namespace %q: %w", ns, rErrors[idx])
+			}
 		})
 	}
 

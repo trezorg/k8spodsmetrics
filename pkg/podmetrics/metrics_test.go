@@ -1,6 +1,7 @@
 package podmetrics
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -178,4 +179,28 @@ func TestListMetricsFollowsPagination(t *testing.T) {
 	require.Len(t, result, 2)
 	require.Equal(t, "pod-1", result[0].Name)
 	require.Equal(t, "pod-2", result[1].Name)
+}
+
+func TestMetricsWrapsNamespaceErrors(t *testing.T) {
+	ctx := t.Context()
+	client := metricsfake.NewSimpleClientset()
+	expectedErr := errors.New("metrics request failed")
+
+	type namespacedAction interface {
+		GetNamespace() string
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(namespacedAction)
+		require.True(t, ok)
+		if listAction.GetNamespace() == "broken" {
+			return true, nil, expectedErr
+		}
+		return true, &metricsv1beta1.PodMetricsList{}, nil
+	})
+
+	_, err := Metrics(ctx, client.MetricsV1beta1(), MetricFilter{Namespaces: []string{"healthy", "broken"}})
+	require.Error(t, err)
+	require.ErrorContains(t, err, `list pod metrics for namespace "broken"`)
+	require.ErrorIs(t, err, expectedErr)
 }
