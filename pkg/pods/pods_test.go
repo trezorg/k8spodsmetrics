@@ -1,6 +1,7 @@
 package pods
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -226,4 +227,77 @@ func TestListPodsFollowsPagination(t *testing.T) {
 	require.Len(t, result, 2)
 	require.Equal(t, "pod-1", result[0].Name)
 	require.Equal(t, "pod-2", result[1].Name)
+}
+
+func TestPodsWrapsNamespaceErrors(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewSimpleClientset()
+	expectedErr := errors.New("namespace request failed")
+
+	type namespacedAction interface {
+		GetNamespace() string
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(namespacedAction)
+		require.True(t, ok)
+		if listAction.GetNamespace() == "broken" {
+			return true, nil, expectedErr
+		}
+		return true, &v1.PodList{}, nil
+	})
+
+	_, err := Pods(ctx, client.CoreV1(), PodFilter{Namespaces: []string{"healthy", "broken"}})
+	require.Error(t, err)
+	require.ErrorContains(t, err, `list pods for namespace "broken"`)
+	require.ErrorIs(t, err, expectedErr)
+}
+
+func TestPodsWrapsNodeErrors(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewSimpleClientset()
+	expectedErr := errors.New("node request failed")
+
+	type nodeListAction interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(nodeListAction)
+		require.True(t, ok)
+		if listAction.GetListOptions().FieldSelector == "spec.nodeName=node-bad" {
+			return true, nil, expectedErr
+		}
+		return true, &v1.PodList{}, nil
+	})
+
+	_, err := Pods(ctx, client.CoreV1(), PodFilter{Namespaces: []string{"default"}}, "node-ok", "node-bad")
+	require.Error(t, err)
+	require.ErrorContains(t, err, `list pods for namespace "default" on node "node-bad"`)
+	require.ErrorIs(t, err, expectedErr)
+}
+
+func TestPodsAvoidsDoubleWrappingNamespaceForNodeErrors(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewSimpleClientset()
+	expectedErr := errors.New("node request failed")
+
+	type nodeListAction interface {
+		GetListOptions() metav1.ListOptions
+	}
+
+	client.PrependReactor("list", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+		listAction, ok := action.(nodeListAction)
+		require.True(t, ok)
+		if listAction.GetListOptions().FieldSelector == "spec.nodeName=node-bad" {
+			return true, nil, expectedErr
+		}
+		return true, &v1.PodList{}, nil
+	})
+
+	_, err := Pods(ctx, client.CoreV1(), PodFilter{Namespaces: []string{"team-a", "team-b"}}, "node-bad")
+	require.Error(t, err)
+	require.ErrorContains(t, err, `list pods for namespace "team-a" on node "node-bad"`)
+	require.NotContains(t, err.Error(), `list pods for namespace "team-a": list pods for namespace "team-a"`)
+	require.ErrorIs(t, err, expectedErr)
 }

@@ -146,6 +146,9 @@ func Pods(
 	for idx, ns := range filter.Namespaces {
 		wg.Go(func() {
 			pods[idx], rErrors[idx] = podsForNamespace(ctx, coreV1Ifc, filter, nodeNames, ns)
+			if rErrors[idx] != nil && len(nodeNames) == 0 {
+				rErrors[idx] = fmt.Errorf("list pods for namespace %q: %w", ns, rErrors[idx])
+			}
 		})
 	}
 
@@ -179,6 +182,9 @@ func podsForNamespace(
 			nodeFilter := filter
 			nodeFilter.NodeName = nodeName
 			pods[idx], rErrors[idx] = listPods(ctx, coreV1Ifc, nodeFilter, namespace)
+			if rErrors[idx] != nil {
+				rErrors[idx] = wrapListPodsError(rErrors[idx], namespace, nodeName)
+			}
 		})
 	}
 
@@ -230,4 +236,21 @@ func buildFieldSelector(filter PodFilter) string {
 	}
 
 	return fieldSelector + "," + nodeSelector
+}
+
+func wrapListPodsError(err error, namespace string, nodeName string) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case namespace != "" && nodeName != "":
+		return fmt.Errorf("list pods for namespace %q on node %q: %w", namespace, nodeName, err)
+	case namespace != "":
+		return fmt.Errorf("list pods for namespace %q: %w", namespace, err)
+	case nodeName != "":
+		return fmt.Errorf("list pods for node %q: %w", nodeName, err)
+	default:
+		return fmt.Errorf("list pods: %w", err)
+	}
 }
