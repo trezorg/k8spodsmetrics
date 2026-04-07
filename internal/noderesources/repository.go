@@ -3,6 +3,7 @@ package noderesources
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"log/slog"
@@ -92,14 +93,23 @@ func FetchNodeMetrics(
 
 	wg.Go(func() {
 		nodesList, cErrors[0] = repo.FetchNodes(ctx, coreClient, nodes.NodeFilter{LabelSelector: config.Label}, config.Name)
+		if cErrors[0] != nil {
+			cErrors[0] = wrapNodeFetchError("fetch nodes", config.Name, cErrors[0])
+		}
 	})
 
 	wg.Go(func() {
 		podsList, cErrors[1] = repo.FetchPods(ctx, coreClient, pods.PodFilter{}, config.Name)
+		if cErrors[1] != nil {
+			cErrors[1] = wrapNodeFetchError("fetch pods", config.Name, cErrors[1])
+		}
 	})
 
 	wg.Go(func() {
 		nodeMetricsList, cErrors[2] = repo.FetchMetrics(ctx, metricsClient, nodemetrics.MetricsFilter{LabelSelector: config.Label}, config.Name)
+		if cErrors[2] != nil {
+			cErrors[2] = wrapNodeFetchError("fetch node metrics", config.Name, cErrors[2])
+		}
 	})
 
 	wg.Wait()
@@ -110,4 +120,14 @@ func FetchNodeMetrics(
 
 	nodeResources = merge(podsList, nodesList, nodeMetricsList)
 	return nodeResources, nil
+}
+
+func wrapNodeFetchError(action string, name string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if name == "" {
+		return fmt.Errorf("%s: %w", action, err)
+	}
+	return fmt.Errorf("%s for node %q: %w", action, name, err)
 }
