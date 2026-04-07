@@ -141,9 +141,18 @@ func FindKubeConfig() (string, error) {
 	if env != "" {
 		return env, nil
 	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(homeDir, ".kube", "config"), nil
+
+	defaultPath := filepath.Join(homeDir, ".kube", "config")
+	if _, err := os.Stat(defaultPath); err == nil {
+		return defaultPath, nil
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+
+	return "", nil
 }

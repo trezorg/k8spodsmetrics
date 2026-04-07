@@ -19,14 +19,27 @@ func TestFindKubeConfig(t *testing.T) {
 		require.Equal(t, expectedPath, path)
 	})
 
-	t.Run("default path", func(t *testing.T) {
+	t.Run("default path when file exists", func(t *testing.T) {
 		t.Setenv("KUBECONFIG", "")
-		homeDir, err := os.UserHomeDir()
-		require.NoError(t, err)
+		homeDir := t.TempDir()
+		t.Setenv("HOME", homeDir)
+		configPath := filepath.Join(homeDir, ".kube", "config")
+		require.NoError(t, os.MkdirAll(filepath.Dir(configPath), 0o755))
+		require.NoError(t, os.WriteFile(configPath, []byte("apiVersion: v1\n"), 0o644))
 
 		path, err := FindKubeConfig()
 		require.NoError(t, err)
-		require.Equal(t, filepath.Join(homeDir, ".kube", "config"), path)
+		require.Equal(t, configPath, path)
+	})
+
+	t.Run("empty when env is unset and default path is missing", func(t *testing.T) {
+		t.Setenv("KUBECONFIG", "")
+		homeDir := t.TempDir()
+		t.Setenv("HOME", homeDir)
+
+		path, err := FindKubeConfig()
+		require.NoError(t, err)
+		require.Empty(t, path)
 	})
 }
 
