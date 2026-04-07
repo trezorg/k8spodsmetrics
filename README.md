@@ -88,7 +88,7 @@ summary:
     - all
 ```
 
-**Merge Behavior:** CLI flags take precedence over file config values. Empty/zero values from CLI are replaced with file config values. For boolean flags, file values are used unless the CLI flag is explicitly set, so `--watch=false` and `--reverse=false` override `true` values from the config file. For timeout, the config `common.timeout` value is used unless `--timeout` is explicitly provided.
+**Merge Behavior:** CLI flags take precedence over file config values. Empty/zero values from CLI are replaced with file config values. For boolean flags, file values are used unless the CLI flag is explicitly set, so `--watch=false` and `--reverse=false` override `true` values from the config file. For timeout, the config `common.timeout` value is used unless `--timeout` is explicitly provided. Unknown YAML keys are rejected when loading the config file.
 
 Table Views
 ------------------------------------
