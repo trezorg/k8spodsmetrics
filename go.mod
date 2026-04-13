@@ -6,8 +6,8 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.7.8
 	golang.org/x/term v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.35.1
-	k8s.io/apimachinery v0.35.1
+	k8s.io/api v0.35.3
+	k8s.io/apimachinery v0.35.3
 )
 
 require (
@@ -56,9 +56,9 @@ require (
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/client-go v0.35.1
+	k8s.io/client-go v0.35.3
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/metrics v0.35.1
+	k8s.io/metrics v0.35.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 )
