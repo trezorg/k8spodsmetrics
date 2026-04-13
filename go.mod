@@ -3,7 +3,7 @@ module github.com/trezorg/k8spodsmetrics
 go 1.26.1
 
 require (
-	github.com/jedib0t/go-pretty/v6 v6.7.8
+	github.com/jedib0t/go-pretty/v6 v6.7.9
 	golang.org/x/term v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.3
