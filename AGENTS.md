@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - `cmd/k8spodsmetrics/`: CLI entrypoint (`main`).
 - `internal/`: non-exported app code (adapters, output formats, sorting, resources, alerts, humanize, config).
-  - Examples: `internal/adapters/stdin` (CLI wiring), `internal/adapters/stdout/{table,json,yaml,string,screen}` (printers), `internal/{metricsresources,noderesources}` (domain services), `internal/config` (YAML config file handling).
+  - Examples: `internal/adapters/stdin` (CLI wiring), `internal/adapters/stdout/{table,json,yaml,string,screen}` (printers), `internal/{metricsresources,noderesources}` (domain services), `internal/serviceorchestration` (request lifecycle, signal handling), `internal/config` (YAML config file handling).
 - `pkg/`: public Go APIs (`client`, `pods`, `nodes`, `podmetrics`, `nodemetrics`). Preferred for reuse.
 - `build/`: compiled binaries. CI/artifacts target.
 
@@ -13,7 +13,7 @@
 - Kubernetes access: `pkg/client` constructs CoreV1 and Metrics clients; domain packages in `pkg/` provide helpers.
 - Presentation: `internal/adapters/stdout` implement output strategies; `screen` wraps watch mode.
 - Utilities: `internal/{sorting,resources,humanize,alert,config}` provide common transforms, validation, and configuration handling.
-- Flow: CLI → Config → Service → `pkg/client` → Formatter → stdout; watch mode uses screen wrappers for live updates.
+- Flow: CLI flags → Config merge (file + CLI) → Service → `pkg/client` → Formatter → stdout; watch mode uses screen wrappers for live updates at `--watch-period` intervals.
 
 ## Build, Test, and Development Commands
 - `task build` — builds CLI to `build/k8spodsmetrics-${GOOS}-${GOARCH}`. Env vars default to `linux/amd64` (override with `GOOS=darwin GOARCH=arm64 task build`).
@@ -34,11 +34,17 @@
 - Run `task test` locally; race detector must be clean.
 
 ## Commit & Pull Request Guidelines
-- Commits: concise, imperative style (e.g., "Refactor metricsresources", "Add pods resource filter").
+- Commits: concise, imperative style (e.g., "Refactor metricsresources", "Add pods resource filter"). Do not use any agent name as contributor or coauthor.
 - PRs: clear description, rationale, and linked issue; include sample CLI output/screenshot for UX changes.
 - CI readiness: `task check` must pass; update `README.md` when flags or behavior change.
 
-## Security & Configuration Tips
+## MCP Servers
+- **serena** — semantic code retrieval and editing (prefer for code operations).
+- **context7** — up-to-date documentation on third-party libraries (use `resolve-library-id` first).
+- **sequential-thinking** — decision making for complex or multi-step reasoning.
+
+## Security & Configuration
 - Supports YAML config file via `--config` flag. CLI flags take precedence over file values.
-- Always MUST check go formatting, linters and tests
-- PROACTIVELY use MCP servers.
+
+## Pre-commit Requirements
+- Always run formatting, linting, and tests before committing (`task check`).
