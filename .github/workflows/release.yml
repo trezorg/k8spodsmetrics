@@ -43,7 +43,7 @@ jobs:
           sha256sum k8spodsmetrics-* > checksums.txt
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: build/*
           generate_release_notes: true
