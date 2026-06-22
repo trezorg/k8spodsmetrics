@@ -11,7 +11,7 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ github.token }}
           persist-credentials: false
@@ -48,7 +48,7 @@ jobs:
     needs: lint-and-test
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ github.token }}
           persist-credentials: false
@@ -70,7 +70,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ github.token }}
           persist-credentials: false
