@@ -5,8 +5,11 @@ import (
 
 	metricstable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/metricsresources"
 	nodestable "github.com/trezorg/k8spodsmetrics/internal/adapters/stdout/table/noderesources"
+	"github.com/trezorg/k8spodsmetrics/internal/alert"
 	"github.com/trezorg/k8spodsmetrics/internal/output"
 	"github.com/trezorg/k8spodsmetrics/internal/resources"
+	metricssorting "github.com/trezorg/k8spodsmetrics/internal/sorting/metricsresources"
+	nodesorting "github.com/trezorg/k8spodsmetrics/internal/sorting/noderesources"
 	"github.com/trezorg/k8spodsmetrics/internal/tableview"
 	"github.com/urfave/cli/v2"
 )
@@ -44,8 +47,8 @@ func parseActionFlags(c *cli.Context) actionFlags {
 		alertSet:       c.IsSet("alert"),
 		columnsSet:     c.IsSet("columns"),
 		sortingSet:     c.IsSet("sorting"),
-		resourcesSet:   c.IsSet("resources"),
-		resources:      c.StringSlice("resources"),
+		resourcesSet:   c.IsSet(flagNameResources),
+		resources:      c.StringSlice(flagNameResources),
 	}
 }
 
@@ -72,7 +75,7 @@ func resolveCommonConfig(cfg commonConfig, flags actionFlags) commonConfig {
 		mergedCommon.Output = string(output.Table)
 	}
 	if mergedCommon.Alert == "" {
-		mergedCommon.Alert = "none"
+		mergedCommon.Alert = string(alert.None)
 	}
 	if mergedCommon.TableView == "" && (flags.columnsSet || len(mergedCommon.Columns) > 0) {
 		mergedCommon.TableView = string(tableview.Expanded)
@@ -104,7 +107,7 @@ func mergedResources(cliResources []string, configResources []string) []string {
 		return configResources
 	}
 	if len(cliResources) == 0 {
-		return []string{"all"}
+		return []string{string(resources.All)}
 	}
 	return cliResources
 }
@@ -119,7 +122,7 @@ func validateTableViewColumns(view tableview.View, cols []string) error {
 func resolveSummaryActionConfig(c *cli.Context, cfg commonConfig) summaryConfig {
 	flags := parseActionFlags(c)
 	resolved := summaryConfig{
-		Name:      c.String("name"),
+		Name:      c.String(flagNameName),
 		Label:     c.String("label"),
 		Sorting:   c.String("sorting"),
 		Reverse:   c.Bool("reverse"),
@@ -142,7 +145,7 @@ func resolveSummaryActionConfig(c *cli.Context, cfg commonConfig) summaryConfig 
 	resolved.Sorting = mergedSummary.Sorting
 	resolved.Reverse = mergedSummary.Reverse
 	if resolved.Sorting == "" {
-		resolved.Sorting = "name"
+		resolved.Sorting = string(nodesorting.Name)
 	}
 	resourcesFromCLI := []string(nil)
 	if flags.resourcesSet {
@@ -156,7 +159,7 @@ func resolveSummaryActionConfig(c *cli.Context, cfg commonConfig) summaryConfig 
 func resolvePodsActionConfig(c *cli.Context, cfg commonConfig) podConfig {
 	flags := parseActionFlags(c)
 	resolved := podConfig{
-		Namespaces:    c.StringSlice("namespace"),
+		Namespaces:    c.StringSlice(flagNameNamespace),
 		Label:         c.String("label"),
 		FieldSelector: c.String("field-selector"),
 		Sorting:       c.String("sorting"),
@@ -183,7 +186,7 @@ func resolvePodsActionConfig(c *cli.Context, cfg commonConfig) podConfig {
 	resolved.Sorting = mergedPods.Sorting
 	resolved.Reverse = mergedPods.Reverse
 	if resolved.Sorting == "" {
-		resolved.Sorting = "namespace"
+		resolved.Sorting = string(metricssorting.Namespace)
 	}
 	resourcesFromCLI := []string(nil)
 	if flags.resourcesSet {

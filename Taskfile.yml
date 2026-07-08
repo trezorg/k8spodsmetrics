@@ -7,8 +7,8 @@ vars:
   GOOS: linux
   GOARCH: amd64
   CGO_ENABLED: "0"
-  GOLANGCI_VERSION: 2.10.1
-  GOVULNCHECK_VERSION: 1.1.4
+  GOLANGCI_VERSION: 2.12.2
+  GOVULNCHECK_VERSION: 1.5.0
   TESTFLAGS: -race -count 1
 
 env:
@@ -20,7 +20,7 @@ tasks:
       - |
         command -v golangci-lint && [ "$(golangci-lint version --short)" = "{{.GOLANGCI_VERSION}}" ]
     cmds:
-      - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v{{.GOLANGCI_VERSION}}
+      - curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v{{.GOLANGCI_VERSION}}
 
   install:govulncheck:
     status:
@@ -106,9 +106,16 @@ tasks:
           exit 1
         fi
 
+  tidy:
+    desc: go mod tidy
+    cmds:
+      - go mod tidy
+      - go mod tidy -C tools
+
   check:
     desc: Run lint and test
     deps:
+      - tidy
       - fix
       - format
     cmds:

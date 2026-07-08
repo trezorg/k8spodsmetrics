@@ -17,7 +17,7 @@ func summaryFlags() []cli.Flag {
 			Usage:   "K8S node label",
 		},
 		&cli.StringFlag{
-			Name:    "name",
+			Name:    flagNameName,
 			Aliases: []string{"n"},
 			Value:   "",
 			Usage:   "K8S node name",
@@ -25,7 +25,7 @@ func summaryFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "sorting",
 			Aliases: []string{"s"},
-			Value:   "name",
+			Value:   string(nodesorting.Name),
 			Usage:   fmt.Sprintf("Sorting. [%s]", nodesorting.StringListDefault()),
 			Action: func(_ *cli.Context, value string) error {
 				return nodesorting.Valid(nodesorting.Sorting(value))
@@ -38,7 +38,7 @@ func summaryFlags() []cli.Flag {
 			Usage:   "Reverse sort",
 		},
 		&cli.StringSliceFlag{
-			Name:    "resources",
+			Name:    flagNameResources,
 			Aliases: []string{"res", "resource"},
 			Value:   cli.NewStringSlice(string(resources.All)),
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),

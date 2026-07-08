@@ -1,6 +1,6 @@
 module github.com/trezorg/k8spodsmetrics/tools
 
-go 1.26.2
+go 1.26
 
 require github.com/go-task/task/v3 v3.42.1
 

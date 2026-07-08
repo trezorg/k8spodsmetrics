@@ -12,6 +12,10 @@ import (
 const (
 	defaultWatchPeriodSeconds = 5
 	defaultTimeoutSeconds     = 30
+
+	flagNameName      = "name"
+	flagNameNamespace = "namespace"
+	flagNameResources = "resources"
 )
 
 func commonFlags(config *commonConfig) []cli.Flag {

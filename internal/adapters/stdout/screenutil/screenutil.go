@@ -1,4 +1,4 @@
-package common
+package screenutil
 
 import (
 	"io"
@@ -17,7 +17,6 @@ func WriteStringLine(text string) {
 func getTerminalHeight() int {
 	const defaultHeight = 24
 	fd := os.Stdout.Fd()
-	//nolint:gosec // fd is a file descriptor, always a small positive integer
 	if _, height, err := term.GetSize(int(fd)); err == nil && height > 0 {
 		return height
 	}

@@ -11,7 +11,7 @@ import (
 func podsFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringSliceFlag{
-			Name:    "namespace",
+			Name:    flagNameNamespace,
 			Aliases: []string{"n"},
 			Usage:   "K8S namespace(s)",
 		},
@@ -35,7 +35,7 @@ func podsFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "sorting",
 			Aliases: []string{"s"},
-			Value:   "namespace",
+			Value:   string(metricssorting.Namespace),
 			Usage:   fmt.Sprintf("Sorting. [%s]", metricssorting.StringListDefault()),
 			Action: func(_ *cli.Context, value string) error {
 				return metricssorting.Valid(metricssorting.Sorting(value))
@@ -48,7 +48,7 @@ func podsFlags() []cli.Flag {
 			Usage:   "Reverse sort",
 		},
 		&cli.StringSliceFlag{
-			Name:    "resources",
+			Name:    flagNameResources,
 			Aliases: []string{"res", "resource"},
 			Value:   cli.NewStringSlice(string(resources.All)),
 			Usage:   fmt.Sprintf("Resources. [%s]", resources.StringListDefault()),
