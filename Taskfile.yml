@@ -46,6 +46,15 @@ tasks:
     cmds:
       - govulncheck ./...
 
+  coverage:
+    desc: Calculate the project test coverage
+    deps:
+      - test
+    cmds:
+      - go tool cover -func coverage.out > coverage.txt
+      - |
+        awk '/^total:/ { value = $3; sub(/%$/, "", value); printf "Project coverage: %.2f%%\n", value }' coverage.txt
+
   test:
     desc: Run tests with race detector and coverage
     env:

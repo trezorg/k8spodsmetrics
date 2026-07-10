@@ -8,8 +8,9 @@
 /.cache
 /.serena
 /k8spodsmetrics
-coverage.out
+coverage.*
 .claude
 .codex
 .opencode
 .sisyphus
+/docs
