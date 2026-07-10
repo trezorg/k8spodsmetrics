@@ -121,8 +121,6 @@ linters:
         - -ST1021
         - -ST1022
         - all
-      dot-import-whitelist:
-        - github.com/Boli-AI-Algo-Trading/algo-management/pkg/iterslice
     usestdlibvars:
       time-month: true
       time-layout: true
@@ -159,18 +157,8 @@ linters:
           - staticcheck
         path: _test\.go
       - linters:
-          - revive
-        path: internal/generate/
-      - linters:
-          - forbidigo
-          - revive
-        path: internal/swagger/
-      - linters:
           - goconst
         path: (.+)_test\.go
-      - linters:
-          - revive
-        path: internal/lock/dummy
     paths:
       - .*\_gen\.go$
       - .*\.gen\.go$
