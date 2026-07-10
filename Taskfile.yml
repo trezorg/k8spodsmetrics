@@ -48,10 +48,8 @@ tasks:
 
   coverage:
     desc: Calculate the project test coverage
-    deps:
-      - test
     cmds:
-      - go tool cover -func coverage.out > coverage.txt
+      - go tool cover -func coverage.out | tee coverage.txt
       - |
         awk '/^total:/ { value = $3; sub(/%$/, "", value); printf "Project coverage: %.2f%%\n", value }' coverage.txt
 
@@ -73,7 +71,7 @@ tasks:
       CGO_ENABLED: "1"
     cmds:
       - go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...
-      - go tool cover -func=coverage.out
+      - task: coverage
 
   build:
     desc: Build binary for target GOOS/GOARCH
