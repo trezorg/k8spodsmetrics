@@ -97,10 +97,8 @@ func TestExtractContainerResources(t *testing.T) {
 func TestConvertPodToResource(t *testing.T) {
 	t.Run("single container", func(t *testing.T) {
 		pod := v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod",
-				Namespace: "test-ns",
-			},
+			Name:      "test-pod",
+			Namespace: "test-ns",
 			Spec: v1.PodSpec{
 				NodeName: "worker-1",
 				Containers: []v1.Container{
@@ -126,10 +124,8 @@ func TestConvertPodToResource(t *testing.T) {
 
 	t.Run("multiple containers sorted", func(t *testing.T) {
 		pod := v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "multi-pod",
-				Namespace: "default",
-			},
+			Name:      "multi-pod",
+			Namespace: "default",
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{
 					{Name: "z-container"},
@@ -176,8 +172,8 @@ func TestResourceStructs(t *testing.T) {
 
 	t.Run("PodResourceList", func(t *testing.T) {
 		list := PodResourceList{
-			{NamespaceName: NamespaceName{Name: "pod1"}},
-			{NamespaceName: NamespaceName{Name: "pod2"}},
+			{Name: "pod1"},
+			{Name: "pod2"},
 		}
 		require.Len(t, list, 2)
 	})
@@ -196,11 +192,11 @@ func TestListPodsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &v1.PodList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []v1.Pod{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
-					Spec:       v1.PodSpec{NodeName: "worker-1"},
+					Name: "pod-1", Namespace: "default",
+					Spec: v1.PodSpec{NodeName: "worker-1"},
 				},
 			},
 		}, nil
@@ -215,8 +211,8 @@ func TestListPodsFollowsPagination(t *testing.T) {
 		return true, &v1.PodList{
 			Items: []v1.Pod{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
-					Spec:       v1.PodSpec{NodeName: "worker-2"},
+					Name: "pod-2", Namespace: "default",
+					Spec: v1.PodSpec{NodeName: "worker-2"},
 				},
 			},
 		}, nil

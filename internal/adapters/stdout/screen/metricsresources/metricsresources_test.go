@@ -30,11 +30,9 @@ func TestNewScreenSuccessWriter(t *testing.T) {
 
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",

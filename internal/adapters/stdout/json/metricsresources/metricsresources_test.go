@@ -18,13 +18,11 @@ func TestPrint(t *testing.T) {
 	t.Run("prints valid JSON", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
-					NodeName: "node-1",
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
+				NodeName: "node-1",
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",
 					Namespace:  "default",
@@ -80,11 +78,9 @@ func TestJSON_Success(t *testing.T) {
 	t.Run("calls Print", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",

@@ -98,11 +98,9 @@ func extractContainerResources(container v1.Container) ContainerResource {
 
 func convertPodToResource(pod v1.Pod) PodResource {
 	podResource := PodResource{
-		NamespaceName: NamespaceName{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-		},
-		NodeName: pod.Spec.NodeName,
+		Name:      pod.Name,
+		Namespace: pod.Namespace,
+		NodeName:  pod.Spec.NodeName,
 	}
 
 	containers := make([]ContainerResource, 0, len(pod.Spec.Containers))

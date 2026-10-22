@@ -113,11 +113,11 @@ func testCompactPodResource() servicemetricsresources.PodMetricsResource {
 			Name:      "api-server",
 			Namespace: "default",
 			Containers: []podmetrics.ContainerMetric{{
-				Name:   "frontend",
-				Metric: podmetrics.Metric{CPU: 120, Memory: 1536, Storage: 512, StorageEphemeral: 1024},
+				Name: "frontend",
+				CPU:  120, Memory: 1536, Storage: 512, StorageEphemeral: 1024,
 			}, {
-				Name:   "worker",
-				Metric: podmetrics.Metric{CPU: 150, Memory: 1536, Storage: 256, StorageEphemeral: 512},
+				Name: "worker",
+				CPU:  150, Memory: 1536, Storage: 256, StorageEphemeral: 512,
 			}},
 		},
 	}
@@ -138,8 +138,8 @@ func testSecondCompactPodResource() servicemetricsresources.PodMetricsResource {
 			Name:      "dns",
 			Namespace: "kube-system",
 			Containers: []podmetrics.ContainerMetric{{
-				Name:   "dns",
-				Metric: podmetrics.Metric{CPU: 40, Memory: 256},
+				Name: "dns",
+				CPU:  40, Memory: 256,
 			}},
 		},
 	}

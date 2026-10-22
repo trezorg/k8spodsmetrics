@@ -73,8 +73,8 @@ func TestContainerMetric(t *testing.T) {
 
 	t.Run("with values", func(t *testing.T) {
 		metric := ContainerMetric{
-			Name:   "container1",
-			Metric: Metric{CPU: 1000, Memory: 1024 * 1024},
+			Name: "container1",
+			CPU:  1000, Memory: 1024 * 1024,
 		}
 		require.Equal(t, "container1", metric.Name)
 		require.Equal(t, int64(1000), metric.CPU)
@@ -95,7 +95,7 @@ func TestPodMetric(t *testing.T) {
 			Namespace: "test-ns",
 			Name:      "test-pod",
 			Containers: []ContainerMetric{
-				{Name: "c1", Metric: Metric{CPU: 100, Memory: 1024}},
+				{Name: "c1", CPU: 100, Memory: 1024},
 			},
 		}
 		require.Equal(t, "test-ns", metric.Namespace)
@@ -134,10 +134,10 @@ func TestListMetricsFollowsPagination(t *testing.T) {
 		}
 
 		return true, &metricsv1beta1.PodMetricsList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []metricsv1beta1.PodMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+					Name: "pod-1", Namespace: "default",
 					Containers: []metricsv1beta1.ContainerMetrics{
 						{
 							Name: "app",
@@ -160,7 +160,7 @@ func TestListMetricsFollowsPagination(t *testing.T) {
 		return true, &metricsv1beta1.PodMetricsList{
 			Items: []metricsv1beta1.PodMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+					Name: "pod-2", Namespace: "default",
 					Containers: []metricsv1beta1.ContainerMetrics{
 						{
 							Name: "app",

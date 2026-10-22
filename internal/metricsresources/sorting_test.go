@@ -48,11 +48,9 @@ func testContainerResource(name string, cpuReq, cpuLimit, memReq, memLimit int64
 
 func testContainerMetric(name string, cpu, memory int64) podmetrics.ContainerMetric {
 	return podmetrics.ContainerMetric{
-		Name: name,
-		Metric: podmetrics.Metric{
-			CPU:    cpu,
-			Memory: memory,
-		},
+		Name:   name,
+		CPU:    cpu,
+		Memory: memory,
 	}
 }
 
@@ -190,8 +188,8 @@ func TestMemoryUsed(t *testing.T) {
 
 func TestStorageUsed(t *testing.T) {
 	containers := []podmetrics.ContainerMetric{
-		{Name: "c1", Metric: podmetrics.Metric{Storage: 1000}},
-		{Name: "c2", Metric: podmetrics.Metric{Storage: 2000}},
+		{Name: "c1", Storage: 1000},
+		{Name: "c2", Storage: 2000},
 	}
 	require.Equal(t, int64(3000), storageUsed(containers))
 	require.Equal(t, int64(0), storageUsed([]podmetrics.ContainerMetric{}))
@@ -199,8 +197,8 @@ func TestStorageUsed(t *testing.T) {
 
 func TestStorageEphemeralUsed(t *testing.T) {
 	containers := []podmetrics.ContainerMetric{
-		{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 500}},
-		{Name: "c2", Metric: podmetrics.Metric{StorageEphemeral: 700}},
+		{Name: "c1", StorageEphemeral: 500},
+		{Name: "c2", StorageEphemeral: 700},
 	}
 	require.Equal(t, int64(1200), storageEphemeralUsed(containers))
 	require.Equal(t, int64(0), storageEphemeralUsed([]podmetrics.ContainerMetric{}))
@@ -384,9 +382,9 @@ func TestSortByUsedMemory(t *testing.T) {
 
 func TestSortByUsedStorage(t *testing.T) {
 	list := PodMetricsResourceList{
-		testPodMetricsResource("pod-1", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{Storage: 3000}}}),
-		testPodMetricsResource("pod-2", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{Storage: 1000}}}),
-		testPodMetricsResource("pod-3", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{Storage: 2000}}}),
+		testPodMetricsResource("pod-1", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Storage: 3000}}),
+		testPodMetricsResource("pod-2", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Storage: 1000}}),
+		testPodMetricsResource("pod-3", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Storage: 2000}}),
 	}
 
 	list.sortByUsedStorage(false)
@@ -402,9 +400,9 @@ func TestSortByUsedStorage(t *testing.T) {
 
 func TestSortByUsedStorageEphemeral(t *testing.T) {
 	list := PodMetricsResourceList{
-		testPodMetricsResource("pod-1", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 4000}}}),
-		testPodMetricsResource("pod-2", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 1000}}}),
-		testPodMetricsResource("pod-3", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 2000}}}),
+		testPodMetricsResource("pod-1", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", StorageEphemeral: 4000}}),
+		testPodMetricsResource("pod-2", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", StorageEphemeral: 1000}}),
+		testPodMetricsResource("pod-3", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", StorageEphemeral: 2000}}),
 	}
 
 	list.sortByUsedStorageEphemeral(false)
@@ -531,8 +529,8 @@ func TestSort(t *testing.T) {
 			by:      string(metricsresources.UsedStorage),
 			reverse: false,
 			list: PodMetricsResourceList{
-				testPodMetricsResource("pod-b", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{Storage: 2000}}}),
-				testPodMetricsResource("pod-a", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{Storage: 1000}}}),
+				testPodMetricsResource("pod-b", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Storage: 2000}}),
+				testPodMetricsResource("pod-a", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Storage: 1000}}),
 			},
 			expected: []string{"pod-a", "pod-b"},
 		},
@@ -541,8 +539,8 @@ func TestSort(t *testing.T) {
 			by:      string(metricsresources.UsedStorageEphemeral),
 			reverse: false,
 			list: PodMetricsResourceList{
-				testPodMetricsResource("pod-b", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 2000}}}),
-				testPodMetricsResource("pod-a", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", Metric: podmetrics.Metric{StorageEphemeral: 1000}}}),
+				testPodMetricsResource("pod-b", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", StorageEphemeral: 2000}}),
+				testPodMetricsResource("pod-a", "ns1", nil, []podmetrics.ContainerMetric{{Name: "c1", StorageEphemeral: 1000}}),
 			},
 			expected: []string{"pod-a", "pod-b"},
 		},
@@ -601,14 +599,10 @@ func TestSortWithEqualValues(t *testing.T) {
 func TestSortByNameUsesPodResourceIdentity(t *testing.T) {
 	list := PodMetricsResourceList{
 		{
-			PodResource: pods.PodResource{
-				NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-b"},
-			},
+			NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-b"},
 		},
 		{
-			PodResource: pods.PodResource{
-				NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-a"},
-			},
+			NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod-a"},
 		},
 	}
 
@@ -620,14 +614,10 @@ func TestSortByNameUsesPodResourceIdentity(t *testing.T) {
 func TestSortByNamespaceUsesPodResourceIdentity(t *testing.T) {
 	list := PodMetricsResourceList{
 		{
-			PodResource: pods.PodResource{
-				NamespaceName: pods.NamespaceName{Namespace: "ns-b", Name: "pod-b"},
-			},
+			NamespaceName: pods.NamespaceName{Namespace: "ns-b", Name: "pod-b"},
 		},
 		{
-			PodResource: pods.PodResource{
-				NamespaceName: pods.NamespaceName{Namespace: "ns-a", Name: "pod-a"},
-			},
+			NamespaceName: pods.NamespaceName{Namespace: "ns-a", Name: "pod-a"},
 		},
 	}
 

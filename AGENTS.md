@@ -16,13 +16,13 @@
 - Flow: CLI flags → Config merge (file + CLI) → Service → `pkg/client` → Formatter → stdout; watch mode uses screen wrappers for live updates at `--watch-period` intervals.
 
 ## Build, Test, and Development Commands
-- `task build` — builds CLI to `build/k8spodsmetrics-${GOOS}-${GOARCH}`. Env vars default to `linux/amd64` (override with `GOOS=darwin GOARCH=arm64 task build`).
-- `task check` — runs format, lint and test (recommended before committing).
+- `mise run build` — builds CLI to `build/k8spodsmetrics-${GOOS}-${GOARCH}`. Env vars default to `linux/amd64` (override with `GOOS=darwin GOARCH=arm64 mise run build`).
+- `mise run check` — runs tidy, lint and test (recommended before committing).
 - Run locally: `go run ./cmd/k8spodsmetrics --help`.
 - Cross-compile matrix: `bash build.sh`.
 
 ## Coding Style & Naming Conventions
-- Go formatting is mandatory: `gofmt`/`goimports` and `golangci-lint` must pass (`task lint`).
+- Go formatting is mandatory: `gofmt`/`goimports` and `golangci-lint` must pass (`mise run lint`).
 - Idiomatic Go naming: exported `CamelCase`, unexported `lowerCamelCase`; package names short, lowercase.
 - Keep packages cohesive; prefer `internal/` for non-public code, `pkg/` for reusable APIs.
 - Avoid breaking public `pkg/` APIs without a semver bump.
@@ -31,12 +31,12 @@
 - Frameworks: `testing` + `github.com/stretchr/testify/require`.
 - Use table-driven tests; name as `TestXxx` and colocate with code.
 - Cover sorting, resource parsing, and formatters; include edge cases.
-- Run `task test` locally; race detector must be clean.
+- Run `mise run test` locally; race detector must be clean.
 
 ## Commit & Pull Request Guidelines
 - Commits: concise, imperative style (e.g., "Refactor metricsresources", "Add pods resource filter"). Do not use any agent name as contributor or coauthor.
 - PRs: clear description, rationale, and linked issue; include sample CLI output/screenshot for UX changes.
-- CI readiness: `task check` must pass; update `README.md` when flags or behavior change.
+- CI readiness: `mise run check` must pass; update `README.md` when flags or behavior change.
 
 ## MCP Servers
 - **serena** — semantic code retrieval and editing (prefer for code operations).
@@ -47,4 +47,4 @@
 - Supports YAML config file via `--config` flag. CLI flags take precedence over file values.
 
 ## Pre-commit Requirements
-- Always run formatting, linting, and tests before committing (`task check`).
+- Always run formatting, linting, and tests before committing (`mise run check`).

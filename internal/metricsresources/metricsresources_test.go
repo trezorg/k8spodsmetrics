@@ -13,10 +13,8 @@ import (
 func posResourceList(name, namespace, container string) pods.PodResourceList {
 	return []pods.PodResource{
 		{
-			NamespaceName: pods.NamespaceName{
-				Name:      name,
-				Namespace: namespace,
-			},
+			Name:      name,
+			Namespace: namespace,
 			Containers: []pods.ContainerResource{
 				{
 					Name: container,
@@ -41,11 +39,9 @@ func posMetricsList(name, namespace, container string) podmetrics.PodMetricList 
 			Namespace: namespace,
 			Containers: []podmetrics.ContainerMetric{
 				{
-					Name: container,
-					Metric: podmetrics.Metric{
-						CPU:    2000,
-						Memory: 2048,
-					},
+					Name:   container,
+					CPU:    2000,
+					Memory: 2048,
 				},
 			},
 		},

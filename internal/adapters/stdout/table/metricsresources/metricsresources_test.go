@@ -120,9 +120,7 @@ func TestRow(t *testing.T) {
 				Containers: []podmetrics.ContainerMetric{
 					{
 						Name: "container-1",
-						Metric: podmetrics.Metric{
-							CPU: 1500,
-						},
+						CPU:  1500,
 					},
 				},
 			},

@@ -81,11 +81,9 @@ func TestPodConfigValidate(t *testing.T) {
 			Resources: []string{
 				"all",
 			},
-			commonConfig: commonConfig{
-				Output:      "table",
-				Alert:       "none",
-				WatchPeriod: 5,
-			},
+			Output:      "table",
+			Alert:       "none",
+			WatchPeriod: 5,
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "sorting should be one of")
@@ -97,11 +95,9 @@ func TestPodConfigValidate(t *testing.T) {
 			Resources: []string{
 				"invalid",
 			},
-			commonConfig: commonConfig{
-				Output:      "table",
-				Alert:       "none",
-				WatchPeriod: 5,
-			},
+			Output:      "table",
+			Alert:       "none",
+			WatchPeriod: 5,
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "invalid resource")
@@ -115,11 +111,9 @@ func TestSummaryConfigValidate(t *testing.T) {
 			Resources: []string{
 				"all",
 			},
-			commonConfig: commonConfig{
-				Output:      "table",
-				Alert:       "none",
-				WatchPeriod: 5,
-			},
+			Output:      "table",
+			Alert:       "none",
+			WatchPeriod: 5,
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "sorting should be one of")
@@ -131,11 +125,9 @@ func TestSummaryConfigValidate(t *testing.T) {
 			Resources: []string{
 				"invalid",
 			},
-			commonConfig: commonConfig{
-				Output:      "table",
-				Alert:       "none",
-				WatchPeriod: 5,
-			},
+			Output:      "table",
+			Alert:       "none",
+			WatchPeriod: 5,
 		}
 
 		require.ErrorContains(t, cfg.Validate(), "invalid resource")
@@ -147,15 +139,14 @@ func TestValidateRejectsInvalidMergedFileConfig(t *testing.T) {
 		Output:      "",
 		Alert:       "none",
 		WatchPeriod: 5,
-	}
 
-	base.fileConfig = &config.Config{
-		Common: config.Common{Output: "invalid"},
-		Summary: config.Summary{
-			Sorting:   "name",
-			Resources: []string{"all"},
-		},
-	}
+		fileConfig: &config.Config{
+			Common: config.Common{Output: "invalid"},
+			Summary: config.Summary{
+				Sorting:   "name",
+				Resources: []string{"all"},
+			},
+		}}
 
 	resolved := resolveSummaryActionConfig(newSummaryTestContext(t), base)
 

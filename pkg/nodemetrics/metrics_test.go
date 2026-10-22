@@ -89,10 +89,10 @@ func TestMetricsFollowsPagination(t *testing.T) {
 		}
 
 		return true, &metricsv1beta1.NodeMetricsList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []metricsv1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
+					Name: "node-1",
 					Usage: v1.ResourceList{
 						v1.ResourceCPU: resource.MustParse("100m"),
 					},
@@ -110,7 +110,7 @@ func TestMetricsFollowsPagination(t *testing.T) {
 		return true, &metricsv1beta1.NodeMetricsList{
 			Items: []metricsv1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+					Name: "node-2",
 					Usage: v1.ResourceList{
 						v1.ResourceCPU: resource.MustParse("200m"),
 					},

@@ -92,8 +92,8 @@ func listMetrics(ctx context.Context, api metricsv1beta1.MetricsV1beta1Interface
 			for _, container := range podMetric.Containers {
 				containerMetric := ContainerMetric{
 					Name: container.Name,
-				}
-				containerMetric.CPU = container.Usage.Cpu().MilliValue()
+
+					CPU: container.Usage.Cpu().MilliValue()}
 				memory, ok := container.Usage.Memory().AsInt64()
 				if ok {
 					containerMetric.Memory = memory

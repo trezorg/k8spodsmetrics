@@ -16,25 +16,19 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v2
         with:
-          go-version: '1.26.5'
           cache: true
 
-      - name: Install Task
-        uses: arduino/setup-task@v3
-        with:
-          version: 3.x
-
       - name: Format check
-        run: task format:check
+        run: mise run format:check
 
       - name: Lint
-        run: task lint
+        run: mise run lint
 
       - name: Test with coverage
-        run: task test:coverage
+        run: mise run test:coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -53,19 +47,13 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v2
         with:
-          go-version: '1.26.5'
           cache: true
 
-      - name: Install Task
-        uses: arduino/setup-task@v3
-        with:
-          version: 3.x
-
       - name: Build
-        run: task build
+        run: mise run build
 
   security:
     runs-on: ubuntu-latest
@@ -75,14 +63,10 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - name: Set up mise
+        uses: jdx/mise-action@v2
         with:
-          go-version: '1.26.5'
           cache: true
 
-      - name: Run Govulncheck
-        uses: golang/govulncheck-action@v1
-        with:
-          go-version-input: "1.26.5"
-          cache: true
+      - name: Run govulncheck
+        run: mise run govulncheck

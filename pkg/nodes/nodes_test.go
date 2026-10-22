@@ -18,9 +18,7 @@ func TestNodes(t *testing.T) {
 	t.Run("list all nodes", func(t *testing.T) {
 		nodes := []v1.Node{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node-1",
-				},
+				Name: "node-1",
 				Status: v1.NodeStatus{
 					Capacity: v1.ResourceList{
 						v1.ResourceCPU:              resource.MustParse("4"),
@@ -37,9 +35,7 @@ func TestNodes(t *testing.T) {
 				},
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node-2",
-				},
+				Name: "node-2",
 				Status: v1.NodeStatus{
 					Capacity: v1.ResourceList{
 						v1.ResourceCPU:              resource.MustParse("2"),
@@ -76,9 +72,7 @@ func TestNodes(t *testing.T) {
 
 	t.Run("get specific node", func(t *testing.T) {
 		node := &v1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "node-1",
-			},
+			Name: "node-1",
 			Status: v1.NodeStatus{
 				Capacity: v1.ResourceList{
 					v1.ResourceCPU:              resource.MustParse("4"),
@@ -106,11 +100,9 @@ func TestNodes(t *testing.T) {
 	t.Run("list with label selector", func(t *testing.T) {
 		nodes := []v1.Node{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node-1",
-					Labels: map[string]string{
-						"env": "prod",
-					},
+				Name: "node-1",
+				Labels: map[string]string{
+					"env": "prod",
 				},
 				Status: v1.NodeStatus{
 					Capacity: v1.ResourceList{
@@ -124,11 +116,9 @@ func TestNodes(t *testing.T) {
 				},
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node-2",
-					Labels: map[string]string{
-						"env": "dev",
-					},
+				Name: "node-2",
+				Labels: map[string]string{
+					"env": "dev",
 				},
 				Status: v1.NodeStatus{
 					Capacity: v1.ResourceList{
@@ -182,10 +172,10 @@ func TestNodesFollowsPagination(t *testing.T) {
 		}
 
 		return true, &v1.NodeList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []v1.Node{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
+					Name: "node-1",
 					Status: v1.NodeStatus{
 						Capacity: v1.ResourceList{
 							v1.ResourceCPU: resource.MustParse("4"),
@@ -208,7 +198,7 @@ func TestNodesFollowsPagination(t *testing.T) {
 		return true, &v1.NodeList{
 			Items: []v1.Node{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+					Name: "node-2",
 					Status: v1.NodeStatus{
 						Capacity: v1.ResourceList{
 							v1.ResourceCPU: resource.MustParse("2"),

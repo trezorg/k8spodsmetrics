@@ -53,7 +53,7 @@ func TestWatchResponse(t *testing.T) {
 	})
 
 	t.Run("with data", func(t *testing.T) {
-		data := PodMetricsResourceList{{PodResource: pods.PodResource{NamespaceName: pods.NamespaceName{Name: "test"}}}}
+		data := PodMetricsResourceList{{NamespaceName: pods.NamespaceName{Name: "test"}}}
 		resp := WatchResponse{Data: data}
 		require.NoError(t, resp.Error)
 		require.Len(t, resp.Data, 1)
@@ -114,7 +114,7 @@ func TestMerge(t *testing.T) {
 
 	t.Run("pod resource without metrics", func(t *testing.T) {
 		podResources := pods.PodResourceList{
-			{NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod1"}},
+			{Namespace: "ns1", Name: "pod1"},
 		}
 		result := merge(podResources, podmetrics.PodMetricList{})
 		require.Len(t, result, 1)
@@ -124,7 +124,7 @@ func TestMerge(t *testing.T) {
 
 	t.Run("matching pod and metrics", func(t *testing.T) {
 		podResources := pods.PodResourceList{
-			{NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod1"}},
+			{Namespace: "ns1", Name: "pod1"},
 		}
 		podMetrics := podmetrics.PodMetricList{
 			{Namespace: "ns1", Name: "pod1"},
@@ -137,7 +137,7 @@ func TestMerge(t *testing.T) {
 
 	t.Run("mismatched namespace/name", func(t *testing.T) {
 		podResources := pods.PodResourceList{
-			{NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod1"}},
+			{Namespace: "ns1", Name: "pod1"},
 		}
 		podMetrics := podmetrics.PodMetricList{
 			{Namespace: "ns2", Name: "pod2"},
@@ -160,7 +160,7 @@ func TestMerge(t *testing.T) {
 		slog.SetDefault(slog.New(handler))
 
 		podResources := pods.PodResourceList{
-			{NamespaceName: pods.NamespaceName{Namespace: "ns1", Name: "pod1"}},
+			{Namespace: "ns1", Name: "pod1"},
 		}
 		podMetrics := podmetrics.PodMetricList{
 			{Namespace: "ns2", Name: "pod2"},
@@ -190,9 +190,9 @@ func TestFetchPodMetricsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &v1.PodList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []v1.Pod{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+				Name: "pod-1", Namespace: "default",
 				Spec: v1.PodSpec{
 					NodeName: "worker-1",
 					Containers: []v1.Container{{
@@ -214,7 +214,7 @@ func TestFetchPodMetricsFollowsPagination(t *testing.T) {
 
 		return true, &v1.PodList{
 			Items: []v1.Pod{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+				Name: "pod-2", Namespace: "default",
 				Spec: v1.PodSpec{
 					NodeName: "worker-2",
 					Containers: []v1.Container{{
@@ -234,9 +234,9 @@ func TestFetchPodMetricsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &metricsv1beta1.PodMetricsList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []metricsv1beta1.PodMetrics{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+				Name: "pod-1", Namespace: "default",
 				Containers: []metricsv1beta1.ContainerMetrics{{
 					Name:  "app",
 					Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("150m")},
@@ -253,7 +253,7 @@ func TestFetchPodMetricsFollowsPagination(t *testing.T) {
 
 		return true, &metricsv1beta1.PodMetricsList{
 			Items: []metricsv1beta1.PodMetrics{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+				Name: "pod-2", Namespace: "default",
 				Containers: []metricsv1beta1.ContainerMetrics{{
 					Name:  "app",
 					Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("250m")},

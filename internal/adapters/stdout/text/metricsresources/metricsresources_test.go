@@ -17,13 +17,11 @@ func TestPrint(t *testing.T) {
 	t.Run("prints text", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
-					NodeName: "node-1",
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
+				NodeName: "node-1",
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",
 					Namespace:  "default",
@@ -76,11 +74,9 @@ func TestTextSuccess(t *testing.T) {
 	t.Run("calls Print", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",
@@ -122,13 +118,11 @@ func TestPrintToDoesNotPanic(t *testing.T) {
 	t.Run("non-empty list", func(t *testing.T) {
 		list := metricsresources.PodMetricsResourceList{
 			{
-				PodResource: pods.PodResource{
-					NamespaceName: pods.NamespaceName{
-						Name:      "test-pod",
-						Namespace: "default",
-					},
-					NodeName: "node-1",
+				NamespaceName: pods.NamespaceName{
+					Name:      "test-pod",
+					Namespace: "default",
 				},
+				NodeName: "node-1",
 				PodMetric: podmetrics.PodMetric{
 					Name:       "test-pod",
 					Namespace:  "default",

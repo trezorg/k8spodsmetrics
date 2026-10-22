@@ -31,13 +31,11 @@ func makeBenchmarkPodMetricsResourceList(size, containers int) PodMetricsResourc
 				},
 			}
 			metricContainers[j] = podmetrics.ContainerMetric{
-				Name: "c-" + strconv.Itoa(j),
-				Metric: podmetrics.Metric{
-					CPU:              base * 8,
-					Memory:           base * 900,
-					Storage:          base * 1200,
-					StorageEphemeral: base * 300,
-				},
+				Name:             "c-" + strconv.Itoa(j),
+				CPU:              base * 8,
+				Memory:           base * 900,
+				Storage:          base * 1200,
+				StorageEphemeral: base * 300,
 			}
 		}
 		list[i] = PodMetricsResource{

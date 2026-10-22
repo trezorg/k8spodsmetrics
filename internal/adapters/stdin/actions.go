@@ -127,8 +127,8 @@ func resolveSummaryActionConfig(c *cli.Context, cfg commonConfig) summaryConfig 
 		Sorting:   c.String("sorting"),
 		Reverse:   c.Bool("reverse"),
 		Resources: flags.resources,
-	}
-	resolved.commonConfig = resolveCommonConfig(cfg, flags)
+
+		commonConfig: resolveCommonConfig(cfg, flags)}
 	if flags.columnsSet {
 		resolved.Columns = c.StringSlice("columns")
 	}
@@ -166,8 +166,8 @@ func resolvePodsActionConfig(c *cli.Context, cfg commonConfig) podConfig {
 		Reverse:       c.Bool("reverse"),
 		Nodes:         c.StringSlice("node"),
 		Resources:     flags.resources,
-	}
-	resolved.commonConfig = resolveCommonConfig(cfg, flags)
+
+		commonConfig: resolveCommonConfig(cfg, flags)}
 	if flags.columnsSet {
 		resolved.Columns = c.StringSlice("columns")
 	}

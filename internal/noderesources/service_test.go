@@ -115,9 +115,9 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &v1.NodeList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []v1.Node{{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
+				Name: "node-1",
 				Status: v1.NodeStatus{
 					Capacity:    v1.ResourceList{v1.ResourceCPU: resource.MustParse("4")},
 					Allocatable: v1.ResourceList{v1.ResourceCPU: resource.MustParse("3")},
@@ -134,7 +134,7 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 
 		return true, &v1.NodeList{
 			Items: []v1.Node{{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
+				Name: "node-2",
 				Status: v1.NodeStatus{
 					Capacity:    v1.ResourceList{v1.ResourceCPU: resource.MustParse("2")},
 					Allocatable: v1.ResourceList{v1.ResourceCPU: resource.MustParse("1500m")},
@@ -149,9 +149,9 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &v1.PodList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []v1.Pod{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"},
+				Name: "pod-1", Namespace: "default",
 				Spec: v1.PodSpec{
 					NodeName: "node-1",
 					Containers: []v1.Container{{
@@ -173,7 +173,7 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 
 		return true, &v1.PodList{
 			Items: []v1.Pod{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod-2", Namespace: "default"},
+				Name: "pod-2", Namespace: "default",
 				Spec: v1.PodSpec{
 					NodeName: "node-2",
 					Containers: []v1.Container{{
@@ -193,10 +193,10 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 		require.Equal(t, "", listAction.GetListOptions().Continue)
 
 		return true, &metricsv1beta1.NodeMetricsList{
-			ListMeta: metav1.ListMeta{Continue: "page-2"},
+			Continue: "page-2",
 			Items: []metricsv1beta1.NodeMetrics{{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-1"},
-				Usage:      v1.ResourceList{v1.ResourceCPU: resource.MustParse("300m")},
+				Name:  "node-1",
+				Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("300m")},
 			}},
 		}, nil
 	})
@@ -209,8 +209,8 @@ func TestFetchNodeMetricsFollowsPagination(t *testing.T) {
 
 		return true, &metricsv1beta1.NodeMetricsList{
 			Items: []metricsv1beta1.NodeMetrics{{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-2"},
-				Usage:      v1.ResourceList{v1.ResourceCPU: resource.MustParse("400m")},
+				Name:  "node-2",
+				Usage: v1.ResourceList{v1.ResourceCPU: resource.MustParse("400m")},
 			}},
 		}, nil
 	})

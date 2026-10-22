@@ -1,0 +1,98 @@
+[settings]
+lockfile = true
+
+[tools]
+go = "1.27.3"
+golangci-lint = "2.15.0"
+shfmt = "3.13.1"
+"go:golang.org/x/vuln/cmd/govulncheck" = "v1.9.0"
+
+[tasks.format]
+description = "Format Go code"
+run = "go fmt ./..."
+
+[tasks."format:check"]
+description = "Check Go code formatting without modifying files"
+run = '''
+UNFORMATTED=$(gofmt -l -d .)
+if [ -n "$UNFORMATTED" ]; then
+  echo "Unformatted Go files found:"
+  echo "$UNFORMATTED"
+  exit 1
+fi
+'''
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.fix]
+description = "Run go fix to apply Go fixes"
+run = "go fix ./..."
+
+[tasks.golangci]
+description = "Run golangci-lint"
+run = "golangci-lint run --timeout 10m0s"
+
+[tasks.govulncheck]
+description = "Run govulncheck"
+run = "govulncheck -show verbose ./..."
+
+[tasks.lint]
+description = "Run all linters"
+depends = ["format", "vet", "fix", "golangci", "govulncheck"]
+
+[tasks.tidy]
+description = "Run go mod tidy"
+run = "go mod tidy"
+
+[tasks.test]
+description = "Run tests with race detector and coverage"
+env = { CGO_ENABLED = "1" }
+run = "go test -race -count 1 -coverprofile=coverage.out -covermode=atomic ./..."
+
+[tasks."test:coverage"]
+description = "Run tests and generate coverage report"
+env = { CGO_ENABLED = "1" }
+run = [
+  "go test -v -race -count 1 -coverprofile=coverage.out -covermode=atomic ./...",
+  { task = "coverage" },
+]
+
+[tasks.coverage]
+description = "Calculate the project test coverage"
+run = '''
+go tool cover -func coverage.out | tee coverage.txt
+awk '/^total:/ { value = $3; sub(/%$/, "", value); printf "Project coverage: %.2f%%\n", value }' coverage.txt
+'''
+
+[tasks.benchmark]
+description = "Run benchmarks"
+env = { CGO_ENABLED = "0" }
+run = "go test -bench=. -benchmem ./..."
+
+[tasks.build]
+description = "Build binary for target GOOS/GOARCH (env: GOOS, GOARCH)"
+env = { CGO_ENABLED = "0" }
+run = '''
+VERSION="$(git describe --tags 2>/dev/null || git describe --match="$(git rev-parse --short=8 HEAD)" --always --dirty --abbrev=8)"
+GOOS="${GOOS:-linux}"
+GOARCH="${GOARCH:-amd64}"
+go build -ldflags "-w -s -X 'main.version=${VERSION}'" -o "build/k8spodsmetrics-${GOOS}-${GOARCH}" ./cmd/k8spodsmetrics
+'''
+
+[tasks.check]
+description = "Run tidy, lint and test (recommended before committing)"
+alias = "default"
+run = [
+  { task = "tidy" },
+  { task = "lint" },
+  { task = "test" },
+]
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = '''
+rm -rf build/
+rm -f coverage.out
+'''
