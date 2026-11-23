@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/aditya43/clear-shell-screen-golang v0.0.0-20200419021057-6fa7bb4a928b
-	github.com/jedib0t/go-pretty/v6 v6.9.1
+	github.com/jedib0t/go-pretty/v6 v6.9.2
 	github.com/snugfox/ansi-escapes v0.2.1-0.20201222033053-82a0109803f0
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v2 v2.27.7
